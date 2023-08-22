@@ -159,9 +159,21 @@ inline ST_Vector3 sphereTraceVector3Scale(ST_Vector3 v, float f)
 	return (ST_Vector3) { v.x* f, v.y* f, v.z* f };
 }
 
+inline void sphereTraceVector3ScaleByRef(ST_Vector3* const pRef, float f)
+{
+	pRef->x *= f;
+	pRef->y *= f;
+	pRef->z *= f;
+}
+
 inline ST_Vector3 sphereTraceVector3Normalize(ST_Vector3 v)
 {
 	return sphereTraceVector3Scale(v, 1.0f / sphereTraceVector3Length(v));
+}
+
+inline void sphereTraceVector3NormalizeByRef(ST_Vector3* const pRef)
+{
+	sphereTraceVector3ScaleByRef(pRef, 1.0f / sphereTraceVector3Length(*pRef));
 }
 
 inline ST_Vector3 sphereTraceVector3Cross(ST_Vector3 v1, ST_Vector3 v2)
@@ -174,14 +186,35 @@ inline ST_Vector3 sphereTraceVector3Add(ST_Vector3 v1, ST_Vector3 v2)
 	return (ST_Vector3) { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z };
 }
 
+inline void sphereTraceVector3AddByRef(ST_Vector3* const pRef, ST_Vector3 v)
+{
+	pRef->x += v.x;
+	pRef->y += v.y;
+	pRef->z += v.z;
+}
+
 inline ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return (ST_Vector3) { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 }
 
+inline void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v)
+{
+	pRef->x -= v.x;
+	pRef->y -= v.y;
+	pRef->z -= v.z;
+}
+
 inline ST_Vector3 sphereTraceVector3Negative(ST_Vector3 v)
 {
 	return (ST_Vector3) { -v.x, -v.y, -v.z };
+}
+
+inline void sphereTraceVector3NegativeByRef(ST_Vector3* pRef)
+{
+	pRef->x = -pRef->x;
+	pRef->y = -pRef->y;
+	pRef->z = -pRef->z;
 }
 
 inline void sphereTraceVector3Print(ST_Vector3 v)
@@ -222,6 +255,13 @@ inline ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toS
 	return sphereTraceVector3Add(toAdd, (ST_Vector3) { toScale.x* scale, toScale.y* scale, toScale.z* scale });
 }
 
+inline void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale)
+{
+	pRef->x += toScale.x * scale;
+	pRef->y += toScale.y * scale;
+	pRef->z += toScale.z * scale;
+}
+
 inline ST_Vector3 sphereTraceVector3Average(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return (ST_Vector3) { 0.5f * (v1.x + v2.x), 0.5f * (v1.y + v2.y), 0.5f * (v1.z + v2.z) };
@@ -232,12 +272,60 @@ inline b32 sphereTraceVector3Nan(ST_Vector3 vec)
 	return fpclassify(vec.x) == FP_NAN && fpclassify(vec.y) == FP_NAN && fpclassify(vec.z) == FP_NAN;
 }
 
+inline b32 sphereTraceVector3NanAny(ST_Vector3 vec)
+{
+	return fpclassify(vec.x) == FP_NAN || fpclassify(vec.y) == FP_NAN || fpclassify(vec.z) == FP_NAN;
+}
+
 inline ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(lineDir, otherLineDir);
 		float crossSquared = sphereTraceVector3Length2(cross);
 		float s = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), otherLineDir), cross) / crossSquared;
 		return sphereTraceVector3AddAndScale(point, lineDir, s);
+}
+
+inline b32 sphereTraceVector3ClosestPointOnLineBetweenTwoLinesIsGreaterThanZeroAndLessThanMaxDist(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float maxDist)
+{
+	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
+	float crossSquared = sphereTraceVector3Length2(cross);
+	float t = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), normalizedLineDir), cross) / crossSquared;
+	return (t>=0.0f && t<=maxDist);
+}
+
+inline float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistanceOnLine(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir)
+{
+	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
+	float crossSquared = sphereTraceVector3Length2(cross);
+	float t = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), otherNormalizedLineDir), cross) / crossSquared;
+	return t;
+}
+
+inline void sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float* dist1, float* dist2)
+{
+	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
+	float crossSquared = sphereTraceVector3Length2(cross);
+	*dist1 = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), otherNormalizedLineDir), cross) / crossSquared;
+	*dist2 = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), normalizedLineDir), cross) / crossSquared;
+}
+
+inline void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir, ST_Vector3* result1, ST_Vector3* result2)
+{
+	ST_Vector3 cross = sphereTraceVector3Cross(lineDir, otherLineDir);
+	float crossSquared = sphereTraceVector3Length2(cross);
+	float s = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), otherLineDir), cross) / crossSquared;
+	float t = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), lineDir), cross) / crossSquared;
+	*result1 = sphereTraceVector3AddAndScale(point, lineDir, s);
+	*result2 = sphereTraceVector3AddAndScale(otherPoint, otherLineDir, t);
+}
+
+inline float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2)
+{
+	float dx, dy, dz;
+	dx = point2.x - point1.x;
+	dy = point2.y - point1.y;
+	dz = point2.z - point1.z;
+	return sqrtf(dx * dx + dy * dy + dz * dz);
 }
 
 inline ST_Matrix4 sphereTraceMatrixIdentity()
@@ -431,20 +519,28 @@ inline ST_Quaternion sphereTraceQuaternionConjugate(ST_Quaternion quat)
 	return (ST_Quaternion) { quat.w, -quat.x, -quat.y, -quat.z };
 }
 
+inline void sphereTraceQuaternionConjugateByRef(ST_Quaternion* const pRef)
+{
+	pRef->w = -pRef->w;
+	pRef->x = -pRef->x;
+	pRef->y = -pRef->y;
+	pRef->z = -pRef->z;
+}
+
 inline ST_Matrix4 sphereTraceMatrixFromQuaternion(ST_Quaternion quat)
 {
 	ST_Matrix4 ret;
-	ret.m00 = -2 * (quat.y * quat.y + quat.z * quat.z) + 1;
-	ret.m01 = 2 * (quat.x * quat.y - quat.w * quat.z);
-	ret.m02 = 2 * (quat.x * quat.z + quat.w * quat.y);
+	ret.m00 = -2.0f * (quat.y * quat.y + quat.z * quat.z) + 1.0f;
+	ret.m01 = 2.0f * (quat.x * quat.y - quat.w * quat.z);
+	ret.m02 = 2.0f * (quat.x * quat.z + quat.w * quat.y);
 	ret.m03 = 0.0f;
-	ret.m10 = 2 * (quat.x * quat.y + quat.w * quat.z);
-	ret.m11 = -2 * (quat.x * quat.x + quat.z * quat.z) + 1;
-	ret.m12 = 2 * (quat.y * quat.z - quat.w * quat.x);
+	ret.m10 = 2.0f * (quat.x * quat.y + quat.w * quat.z);
+	ret.m11 = -2.0f * (quat.x * quat.x + quat.z * quat.z) + 1.0f;
+	ret.m12 = 2.0f * (quat.y * quat.z - quat.w * quat.x);
 	ret.m13 = 0.0f;
-	ret.m20 = 2 * (quat.x * quat.z - quat.w * quat.y);
-	ret.m21 = 2 * (quat.y * quat.z + quat.w * quat.x);
-	ret.m22 = -2 * (quat.x * quat.x + quat.y * quat.y) + 1;
+	ret.m20 = 2.0f * (quat.x * quat.z - quat.w * quat.y);
+	ret.m21 = 2.0f * (quat.y * quat.z + quat.w * quat.x);
+	ret.m22 = -2.0f * (quat.x * quat.x + quat.y * quat.y) + 1.0f;
 	ret.m23 = 0.0f;
 	ret.m30 = 0.0f;
 	ret.m31 = 0.0f;
@@ -483,6 +579,15 @@ inline ST_Quaternion sphereTraceQuaternionNormalize(ST_Quaternion quat)
 {
 	float mag = sqrtf(quat.w * quat.w + quat.x * quat.x + quat.y * quat.y + quat.z * quat.z);
 	return (ST_Quaternion) { quat.w / mag, quat.x / mag, quat.y / mag, quat.z / mag };
+}
+
+inline void sphereTraceQuaternionNormalizeByRef(ST_Quaternion* const pRef)
+{
+	float mag = sqrtf(pRef->w * pRef->w + pRef->x * pRef->x + pRef->y * pRef->y + pRef->z * pRef->z);
+	pRef->w = pRef->w / mag;
+	pRef->x = pRef->x / mag;
+	pRef->y = pRef->y / mag;
+	pRef->z = pRef->z / mag;
 }
 
 inline ST_Quaternion sphereTraceQuaternionMultiply(ST_Quaternion a, ST_Quaternion b)
