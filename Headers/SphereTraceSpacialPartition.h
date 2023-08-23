@@ -32,13 +32,14 @@ typedef struct ST_SpacialPartitionStaticContainer
 ST_SpacialPartitiononDynamicContainer sphereTraceSpacialPartitionStaticHorizontalCreate(float partitionSize)
 {
 	ST_SpacialPartitiononDynamicContainer spacialPartitionContainer;
-	spacialPartitionContainer.buckets = (ST_SpacialPartitiononDynamicContainer*)malloc(sizeof(ST_SpacialPartitiononDynamicContainer));
+	spacialPartitionContainer.buckets = (ST_SpacialPartitionBucket*)malloc(sizeof(ST_SpacialPartitionBucket));
 	spacialPartitionContainer.buckets[0].centroid = gVector3Zero;
 	spacialPartitionContainer.buckets[0].containerIndex = 0;
 	spacialPartitionContainer.buckets[0].planeColliderIndices = sphereTraceIntListConstruct();
 	spacialPartitionContainer.buckets[0].sphereColliderIndices = sphereTraceIntListConstruct();
 	spacialPartitionContainer.count = 1;
 	spacialPartitionContainer.capacity = 1;
+	return spacialPartitionContainer;
 }
 
 
@@ -56,20 +57,20 @@ ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(fl
 				float centroidY = -partitionSize * 0.5f + (y - SPACIAL_PARTITION_STATIC_DIMENSION/2+1) * partitionSize;
 				float centroidZ = -partitionSize * 0.5f + (z - SPACIAL_PARTITION_STATIC_DIMENSION/2+1) * partitionSize;
 				ST_SpacialPartitionBucket bucket;
-				bucket.centroid = (ST_Vector3){ centroidX, centroidY, centroidZ };
+				bucket.centroid = sphereTraceVector3Construct( centroidX, centroidY, centroidZ );
 				bucket.containerIndex = z * SPACIAL_PARTITION_STATIC_DIMENSION* SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
 				bucket.planeColliderIndices = sphereTraceIntListConstruct();
 				bucket.sphereColliderIndices = sphereTraceIntListConstruct();
-				bucket.aabb.halfExtents = (ST_Vector3){ partitionSize * 0.5f, partitionSize * 0.5f, partitionSize * 0.5f };
+				bucket.aabb.halfExtents = sphereTraceVector3Construct(partitionSize * 0.5f, partitionSize * 0.5f, partitionSize * 0.5f );
 				bucket.aabb.leftDownBackTransformedVertex = sphereTraceVector3Subtract(bucket.centroid, bucket.aabb.halfExtents);
 				bucket.aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(bucket.centroid, bucket.aabb.halfExtents);
 				spacialPartitionContainer.buckets[bucket.containerIndex] = bucket;
 			}
 		}
 	}
-	spacialPartitionContainer.aabb.halfExtents = (ST_Vector3){ (SPACIAL_PARTITION_STATIC_DIMENSION / 2)*partitionSize , (SPACIAL_PARTITION_STATIC_DIMENSION / 2) * partitionSize , (SPACIAL_PARTITION_STATIC_DIMENSION / 2) * partitionSize };
-	spacialPartitionContainer.aabb.leftDownBackTransformedVertex = sphereTraceVector3Add(spacialPartitionContainer.buckets[0].centroid, (ST_Vector3) { -partitionSize * 0.5f, -partitionSize * 0.5f, -partitionSize * 0.5f });
-	spacialPartitionContainer.aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(spacialPartitionContainer.buckets[SPACIAL_PARTITION_STATIC_SIZE-1].centroid, (ST_Vector3) { partitionSize * 0.5f, partitionSize * 0.5f, partitionSize * 0.5f });
+	spacialPartitionContainer.aabb.halfExtents = sphereTraceVector3Construct((SPACIAL_PARTITION_STATIC_DIMENSION / 2)*partitionSize , (SPACIAL_PARTITION_STATIC_DIMENSION / 2) * partitionSize , (SPACIAL_PARTITION_STATIC_DIMENSION / 2) * partitionSize );
+	spacialPartitionContainer.aabb.leftDownBackTransformedVertex = sphereTraceVector3Add(spacialPartitionContainer.buckets[0].centroid, sphereTraceVector3Construct(-partitionSize * 0.5f, -partitionSize * 0.5f, -partitionSize * 0.5f ));
+	spacialPartitionContainer.aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(spacialPartitionContainer.buckets[SPACIAL_PARTITION_STATIC_SIZE-1].centroid, sphereTraceVector3Construct(partitionSize * 0.5f, partitionSize * 0.5f, partitionSize * 0.5f ));
 	spacialPartitionContainer.count = SPACIAL_PARTITION_STATIC_SIZE;
 	spacialPartitionContainer.capacity = SPACIAL_PARTITION_STATIC_SIZE;
 	spacialPartitionContainer.outsideBucket.planeColliderIndices = sphereTraceIntListConstruct();
@@ -103,7 +104,7 @@ ST_IntList sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(const ST_Sp
 		{
 			for (float z = aabb->leftDownBackTransformedVertex.z; z < zExtent; z += pSpacialPartitionContainer->partitionSize)
 			{
-				sphereTraceIntListAddUnique(&intList, sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { x, y, z }));
+				sphereTraceIntListAddUnique(&intList, sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct( x, y, z )));
 			}
 		}
 	}
@@ -127,22 +128,22 @@ ST_IntList sphereTraceSpacialPartitionStaticUpdateBucketIndicesFromAABBAndReturn
 		{
 			for (float z = aabb->leftDownBackTransformedVertex.z; z <= aabb->rightTopForwardsTransformedVertex.z; z += pSpacialPartitionContainer->partitionSize)
 			{
-				int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { x, y, z });
+				int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(x, y, z ));
 				sphereTraceIntListAddUnique(intList, bucket);
 			}
 		}
 	}
-	int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->rightTopForwardsTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->leftDownBackTransformedVertex.z });
+	int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->rightTopForwardsTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->leftDownBackTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
-	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->leftDownBackTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->leftDownBackTransformedVertex.z });
+	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->leftDownBackTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->leftDownBackTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
-	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->leftDownBackTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z });
+	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->leftDownBackTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
-	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->rightTopForwardsTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z });
+	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->rightTopForwardsTransformedVertex.x, aabb->leftDownBackTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
-	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->rightTopForwardsTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->leftDownBackTransformedVertex.z });
+	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->rightTopForwardsTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->leftDownBackTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
-	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, (ST_Vector3) { aabb->leftDownBackTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z });
+	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->leftDownBackTransformedVertex.x, aabb->rightTopForwardsTransformedVertex.y, aabb->rightTopForwardsTransformedVertex.z ));
 	sphereTraceIntListAddUnique(intList, bucket);
 	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, aabb->rightTopForwardsTransformedVertex);
 	sphereTraceIntListAddUnique(intList, bucket);

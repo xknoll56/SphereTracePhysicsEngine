@@ -31,7 +31,7 @@ ST_StateMachine sphereTraceStateMachineConstruct(int numStates)
 {
 	ST_StateMachine stateMachine;
 	stateMachine.numStates = numStates;
-	stateMachine.states = malloc(sizeof(ST_State) * numStates);
+	stateMachine.states = (ST_State*)malloc(sizeof(ST_State) * numStates);
 	stateMachine.currentStateIndex = 0;
 	stateMachine.startStateIndex = 0;
 	return stateMachine;
@@ -73,7 +73,7 @@ ST_State sphereTraceStateMachineStateConstruct(int stateIndex, int numConnection
 {
 	ST_State state;
 	state.numConnections = numConnections;
-	state.connections = malloc(sizeof(ST_StateConnection) * numConnections);
+	state.connections = (ST_StateConnection*)malloc(sizeof(ST_StateConnection) * numConnections);
 	state.stateIndex = stateIndex;
 	return state;
 }

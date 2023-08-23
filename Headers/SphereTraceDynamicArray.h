@@ -51,7 +51,7 @@ void sphereTraceVectorArrayPointersPushBack(ST_VectorArrayPointers* const pVecto
 			pVectorArrayPointer->data = data;
 		}
 	}
-	(void*)pVectorArrayPointer->data[pVectorArrayPointer->count] = pPointer;
+	pVectorArrayPointer->data[pVectorArrayPointer->count] = pPointer;
 	pVectorArrayPointer->count++;
 }
 
@@ -124,22 +124,30 @@ void sphereTracePointerVectorArrayContactInfoPushBack(ST_VectorArrayContactInfo*
 	void* pContactInfoVectorArray = pVectorArrayContactInfo->contactInfos;
 	switch (type)
 	{
-	case CONTACT_SPHERE_PLANE:;
-		ST_SpherePlaneContactInfo* pSpherePlaneContactInfoVectorArray = pContactInfoVectorArray;
+	case CONTACT_SPHERE_PLANE:
+	{
+		ST_SpherePlaneContactInfo* pSpherePlaneContactInfoVectorArray = (ST_SpherePlaneContactInfo*)pContactInfoVectorArray;
 		pSpherePlaneContactInfoVectorArray[pVectorArrayContactInfo->count] = *(ST_SpherePlaneContactInfo*)contactInfo;
 		break;
-	case CONTACT_SPHERE_SPHERE:;
-		ST_SphereSphereContactInfo* pSphereSphereContactInfoVectorArray = pContactInfoVectorArray;
+	}
+	case CONTACT_SPHERE_SPHERE:
+	{
+		ST_SphereSphereContactInfo* pSphereSphereContactInfoVectorArray = (ST_SphereSphereContactInfo*)pContactInfoVectorArray;
 		pSphereSphereContactInfoVectorArray[pVectorArrayContactInfo->count] = *(ST_SphereSphereContactInfo*)contactInfo;
 		break;
-	case CONTACT_SPHERE_TRIANGLE:;
-		ST_SphereTriangleContactInfo* pSphereTriangleContactInfoVectorArray = pContactInfoVectorArray;
+	}
+	case CONTACT_SPHERE_TRIANGLE:
+	{
+		ST_SphereTriangleContactInfo* pSphereTriangleContactInfoVectorArray = (ST_SphereTriangleContactInfo*)pContactInfoVectorArray;
 		pSphereTriangleContactInfoVectorArray[pVectorArrayContactInfo->count] = *(ST_SphereTriangleContactInfo*)contactInfo;
 		break;
-	case CONTACT_SPHERE_TERRAIN_TRIANGLE:;
-		ST_SphereTerrainTriangleContactInfo* pSphereTerrainTriangleContactInfoVectorArray = pContactInfoVectorArray;
+	}
+	case CONTACT_SPHERE_TERRAIN_TRIANGLE:
+	{
+		ST_SphereTerrainTriangleContactInfo* pSphereTerrainTriangleContactInfoVectorArray = (ST_SphereTerrainTriangleContactInfo*)pContactInfoVectorArray;
 		pSphereTerrainTriangleContactInfoVectorArray[pVectorArrayContactInfo->count] = *(ST_SphereTerrainTriangleContactInfo*)contactInfo;
 		break;
+	}
 	}
 	pVectorArrayContactInfo->count++;
 }
@@ -151,22 +159,30 @@ void* sphereTracePointerVectorArrayContactInfoGet(const ST_VectorArrayContactInf
 		void* pContactInfoVectorArray = pVectorArrayContactInfo->contactInfos;
 		switch (type)
 		{
-		case CONTACT_SPHERE_PLANE:;
-			ST_SpherePlaneContactInfo* pSpherePlaneContactInfoVectorArray = pContactInfoVectorArray;
+		case CONTACT_SPHERE_PLANE:
+		{
+			ST_SpherePlaneContactInfo* pSpherePlaneContactInfoVectorArray = (ST_SpherePlaneContactInfo*)pContactInfoVectorArray;
 			return &pSpherePlaneContactInfoVectorArray[index];
 			break;
-		case CONTACT_SPHERE_SPHERE:;
-			ST_SphereSphereContactInfo* pSphereSphereContactInfoVectorArray = pContactInfoVectorArray;
+		}
+		case CONTACT_SPHERE_SPHERE:
+		{
+			ST_SphereSphereContactInfo* pSphereSphereContactInfoVectorArray = (ST_SphereSphereContactInfo*)pContactInfoVectorArray;
 			return &pSphereSphereContactInfoVectorArray[index];
 			break;
-		case CONTACT_SPHERE_TRIANGLE:;
-			ST_SphereTriangleContactInfo* pSphereTriangleContactInfoVectorArray = pContactInfoVectorArray;
+		}
+		case CONTACT_SPHERE_TRIANGLE:
+		{
+			ST_SphereTriangleContactInfo* pSphereTriangleContactInfoVectorArray = (ST_SphereTriangleContactInfo*)pContactInfoVectorArray;
 			return &pSphereTriangleContactInfoVectorArray[index];
 			break;
-		case CONTACT_SPHERE_TERRAIN_TRIANGLE:;
-			ST_SphereTerrainTriangleContactInfo* pSphereTerrainTriangleContactInfoVectorArray = pContactInfoVectorArray;
+		}
+		case CONTACT_SPHERE_TERRAIN_TRIANGLE:
+		{
+			ST_SphereTerrainTriangleContactInfo* pSphereTerrainTriangleContactInfoVectorArray = (ST_SphereTerrainTriangleContactInfo*)pContactInfoVectorArray;
 			return &pSphereTerrainTriangleContactInfoVectorArray[index];
 			break;
+		}
 		}
 	}
 }
