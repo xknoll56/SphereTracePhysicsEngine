@@ -1,21 +1,5 @@
 #include "SphereTraceCollider.h"
-
-
-extern const ST_Vector3 gVector3Up;
-extern const ST_Vector3 gVector3Right;
-extern const ST_Vector3 gVector3Forward;
-extern const ST_Vector3 gVector3Zero;
-extern const ST_Vector3 gVector3One;
-extern const ST_Vector3 gVector3Max;
-extern const ST_Vector3 gVector3Left;
-extern const ST_Vector3 gVector3Down;
-extern const ST_Vector3 gVector3Back;
-extern const ST_Vector4 gVector4Zero;
-extern const ST_Vector4 gVector4One;
-extern const ST_Vector4 gVector4ColorRed;
-extern const ST_Vector4 gVector4ColorGreen;
-extern const ST_Vector4 gVector4ColorBlue;
-extern const ST_Quaternion gQuaternionIdentity;
+#include "SphereTraceGlobals.h"
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
@@ -1785,8 +1769,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 		if (sphereTraceVector3Nan(dir))
 			return 0;
 		sphereTraceColliderTriangleRayTrace(from, dir, pTriangleCollider, &pSphereCastData->rayTraceData);
-		if (fpclassify(pSphereCastData->rayTraceData.distance) == -FP_INFINITE)
-			return 0;
+		//if (fpclassify(pSphereCastData->rayTraceData.distance) == -FP_INFINITE)
+		//	return 0;
 		ST_Vector3 fromToPlane = sphereTraceVector3Subtract(pTriangleCollider->centroid, from);
 		if (sphereTraceVector3Dot(dir, fromToPlane) < 0.0f)
 			return 0;
