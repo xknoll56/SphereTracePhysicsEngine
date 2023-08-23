@@ -1,31 +1,6 @@
-#pragma once
-
-typedef struct ST_RigidBody
-{
-    //constants
-    float mass;
-    float inertia;
-    float massInv;
-    float inertiaInv;
-    float elasticity;
-
-    //state variables
-    ST_Vector3 position;
-    ST_Quaternion rotation;
-    ST_Matrix4 rotationMatrix;
-    ST_Vector3 linearMomentum;
-    ST_Vector3 angularMomentum;
-
-    //derived quantities
-    ST_Vector3 velocity;
-    ST_Vector3 angularVelocity;
-
-    //applied force/torque will be applie for a single step
-    ST_Vector3List appliedForces;
-    ST_Vector3List appliedDeltaMomentums;
-    ST_Vector3List appliedTorques;
-    ST_Vector3List appliedDeltaAngularMomentums;
-} ST_RigidBody;
+#include "SphereTraceLists.h"
+#include "SphereTraceRigidBody.h"
+#include "SphereTraceMath.h"
 
 ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
 {
@@ -35,13 +10,13 @@ ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
     rigidBody.massInv = 1.0f / mass;
     rigidBody.inertiaInv = 1.0f / inertia;
     rigidBody.elasticity = 0.25f;
-    rigidBody.position = sphereTraceVector3Construct( 0.0f,0.0f,0.0f );
-    rigidBody.rotation = sphereTraceQuaternionFromEulerAngles(sphereTraceVector3Construct(0.0f, 0.0f, 0.0f ));
+    rigidBody.position = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
+    rigidBody.rotation = sphereTraceQuaternionFromEulerAngles(sphereTraceVector3Construct(0.0f, 0.0f, 0.0f));
     rigidBody.rotationMatrix = sphereTraceMatrixFromQuaternion(rigidBody.rotation);
-    rigidBody.linearMomentum = sphereTraceVector3Construct(0.0f,0.0f,0.0f );
-    rigidBody.velocity = sphereTraceVector3Construct(0.0f,0.0f,0.0f );
-    rigidBody.angularMomentum = sphereTraceVector3Construct(0.0f,0.0f,0.0f );
-    rigidBody.angularVelocity = sphereTraceVector3Construct(0.0f,0.0f,0.0f );
+    rigidBody.linearMomentum = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
+    rigidBody.velocity = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
+    rigidBody.angularMomentum = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
+    rigidBody.angularVelocity = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
     rigidBody.appliedForces = sphereTraceVector3ListConstruct();
     rigidBody.appliedDeltaMomentums = sphereTraceVector3ListConstruct();
     rigidBody.appliedTorques = sphereTraceVector3ListConstruct();
@@ -51,14 +26,14 @@ ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
 
 void sphereTraceRigidBodyAddForce(ST_RigidBody* const pRigidBody, const ST_Vector3 force)
 {
-	sphereTraceVector3ListAddFirst(&pRigidBody->appliedForces, force);
+    sphereTraceVector3ListAddFirst(&pRigidBody->appliedForces, force);
 }
 
 void sphereTraceRigidBodyApplyForces(ST_RigidBody* const pRigidBody, float dt)
 {
     //apply forces
     int count = pRigidBody->appliedForces.count;
-    for(int i = 0; i<count; i++)
+    for (int i = 0; i < count; i++)
     {
         pRigidBody->linearMomentum = sphereTraceVector3AddAndScale(pRigidBody->linearMomentum, pRigidBody->appliedForces.pFirst->value, dt);
         sphereTraceVector3ListRemoveFirst(&pRigidBody->appliedForces);
@@ -67,7 +42,7 @@ void sphereTraceRigidBodyApplyForces(ST_RigidBody* const pRigidBody, float dt)
 
 void sphereTraceRigidBodyAddDeltaMomentum(ST_RigidBody* const pRigidBody, const ST_Vector3 dp)
 {
-	sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaMomentums, dp);
+    sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaMomentums, dp);
 }
 
 void sphereTraceRigidBodyApplyDeltaMomentums(ST_RigidBody* const pRigidBody)
@@ -83,7 +58,7 @@ void sphereTraceRigidBodyApplyDeltaMomentums(ST_RigidBody* const pRigidBody)
 
 void sphereTraceRigidBodyAddTorque(ST_RigidBody* const pRigidBody, const ST_Vector3 torque)
 {
-	sphereTraceVector3ListAddFirst(&pRigidBody->appliedTorques, torque);
+    sphereTraceVector3ListAddFirst(&pRigidBody->appliedTorques, torque);
 }
 void sphereTraceRigidBodyApplyTorques(ST_RigidBody* const pRigidBody, float dt)
 {
@@ -98,7 +73,7 @@ void sphereTraceRigidBodyApplyTorques(ST_RigidBody* const pRigidBody, float dt)
 
 void sphereTraceRigidBodyAddDeltaAngularMomentum(ST_RigidBody* const pRigidBody, const ST_Vector3 dl)
 {
-	sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaAngularMomentums, dl);
+    sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaAngularMomentums, dl);
 }
 
 void sphereTraceRigidBodyApplyDeltaAngularMomentums(ST_RigidBody* const pRigidBody)
@@ -123,4 +98,3 @@ void sphereTraceRigidBodySetAngularVelocity(ST_RigidBody* const pRigidBody, cons
     pRigidBody->angularMomentum = sphereTraceVector3Scale(angularVelocity, pRigidBody->inertia);
     pRigidBody->angularVelocity = angularVelocity;
 }
-

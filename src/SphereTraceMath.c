@@ -1,24 +1,4 @@
-#pragma once
-#define _USE_MATH_DEFINES
-#include <math.h>
-#include <float.h>
-#include <stdio.h>
-#include <stdint.h>
-
-typedef int b32;
-
-typedef struct ST_Vector2
-{
-	float x;
-	float y;
-} ST_Vector2;
-
-typedef struct ST_Vector3
-{
-	float x;
-	float y;
-	float z;
-} ST_Vector3;
+#include "SphereTraceMath.h"
 
 const ST_Vector3 gVector3Up = { 0.0f, 1.0f, 0.0f };
 const ST_Vector3 gVector3Right = { 1.0f, 0.0f, 0.0f };
@@ -29,72 +9,38 @@ const ST_Vector3 gVector3Max = { FLT_MAX, FLT_MAX, FLT_MAX };
 const ST_Vector3 gVector3Left = { -1.0f, 0.0f, 0.0f };
 const ST_Vector3 gVector3Down = { 0.0f, -1.0f, 0.0f };
 const ST_Vector3 gVector3Back = { 0.0f, 0.0f, -1.0f };
-
-typedef struct ST_Vector4
-{
-	float x;
-	float y;
-	float z;
-	float w;
-} ST_Vector4;
-
 const ST_Vector4 gVector4Zero = { 0.0f, 0.0f, 0.0f, 0.0f };
 const ST_Vector4 gVector4One = { 1.0f, 1.0f, 1.0f, 1.0f };
 const ST_Vector4 gVector4ColorRed = { 1.0f, 0.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorGreen = { 0.0f, 1.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorBlue = { 0.0f, 0.0f, 1.0f, 1.0f };
+const ST_Quaternion gQuaternionIdentity = { 1.0f, 0.0f, 0.0f, 0.0f };
 
-typedef struct ST_Matrix4
-{
-	float m00, m01, m02, m03;
-	float m10, m11, m12, m13;
-	float m20, m21, m22, m23;
-	float m30, m31, m32, m33;
-} ST_Matrix4;
-
-ST_Matrix4 gMatrix4Identity = {
+const ST_Matrix4 gMatrix4Identity = {
 	1.0f, 0.0f, 0.0f, 0.0f,
 	0.0f, 1.0f, 0.0f, 0.0f,
 	0.0f, 0.0f, 1.0f, 0.0f,
 	0.0f, 0.0f, 0.0f, 1.0f
 };
 
-typedef struct ST_Quaternion
-{
-	float w;
-	float x;
-	float y;
-	float z;
-} ST_Quaternion;
-
-const ST_Quaternion gQuaternionIdentity = { 1.0f, 0.0f, 0.0f, 0.0f };
-
-//typedef struct Matrix4
-//{
-//	float m00, m10, m20, m30;
-//	float m01, m11, m21, m31;
-//	float m02, m12, m22, m32;
-//	float m03, m13, m23, m33;
-//} Matrix4;
-
-inline ST_Vector2 sphereTraceVector2Construct(float x, float y)
+ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	ST_Vector2 v = { x, y };
 	return v;
 }
-inline ST_Vector3 sphereTraceVector3Construct(float x, float y, float z)
+ST_Vector3 sphereTraceVector3Construct(float x, float y, float z)
 {
 	ST_Vector3 v = { x, y, z };
 	return v;
 }
 
-inline ST_Vector4 sphereTraceVector4Construct(float x, float y, float z, float w)
+ST_Vector4 sphereTraceVector4Construct(float x, float y, float z, float w)
 {
 	ST_Vector4 v = { x, y, z, w };
 	return v;
 }
 
-inline ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
+ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
 	float m20, float m21, float m22, float m23,
 	float m30, float m31, float m32, float m33)
@@ -109,7 +55,7 @@ inline ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, fl
 }
 
 
-inline ST_Vector4 sphereTraceMatrixRow(ST_Matrix4 const matrix, int i)
+ST_Vector4 sphereTraceMatrixRow(ST_Matrix4 const matrix, int i)
 {
 	switch (i)
 	{
@@ -126,7 +72,7 @@ inline ST_Vector4 sphereTraceMatrixRow(ST_Matrix4 const matrix, int i)
 
 }
 
-inline ST_Vector4 sphereTraceMatrixCol(ST_Matrix4 const matrix, int i)
+ST_Vector4 sphereTraceMatrixCol(ST_Matrix4 const matrix, int i)
 {
 	switch (i)
 	{
@@ -141,112 +87,112 @@ inline ST_Vector4 sphereTraceMatrixCol(ST_Matrix4 const matrix, int i)
 	}
 }
 
-inline ST_Vector2 sphereTraceVector2Add(ST_Vector2 v1, ST_Vector2 v2)
+ST_Vector2 sphereTraceVector2Add(ST_Vector2 v1, ST_Vector2 v2)
 {
 	return sphereTraceVector2Construct(v1.x + v2.x, v1.y + v2.y );
 }
 
-inline ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2)
+ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2)
 {
 	return sphereTraceVector2Construct(v1.x - v2.x, v1.y - v2.y );
 }
 
 
-inline float sphereTraceDegreesToRadians(float degs)
+float sphereTraceDegreesToRadians(float degs)
 {
 	return degs * ((float)M_PI / 180.0f);
 }
 
-inline b32 sphereTraceVector3Equal(ST_Vector3 v1, ST_Vector3 v2)
+b32 sphereTraceVector3Equal(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
-inline float sphereTraceVector3Length(ST_Vector3 v)
+float sphereTraceVector3Length(ST_Vector3 v)
 {
 	float result = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 	return result;
 }
 
-inline float sphereTraceVector3Dot(ST_Vector3 v1, ST_Vector3 v2)
+float sphereTraceVector3Dot(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
-inline float sphereTraceVector4Dot(ST_Vector4 v1, ST_Vector4 v2)
+float sphereTraceVector4Dot(ST_Vector4 v1, ST_Vector4 v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
 }
 
-inline ST_Vector3 sphereTraceVector3Scale(ST_Vector3 v, float f)
+ST_Vector3 sphereTraceVector3Scale(ST_Vector3 v, float f)
 {
 	return sphereTraceVector3Construct(v.x* f, v.y* f, v.z* f );
 }
 
-inline void sphereTraceVector3ScaleByRef(ST_Vector3* const pRef, float f)
+void sphereTraceVector3ScaleByRef(ST_Vector3* const pRef, float f)
 {
 	pRef->x *= f;
 	pRef->y *= f;
 	pRef->z *= f;
 }
 
-inline ST_Vector3 sphereTraceVector3Normalize(ST_Vector3 v)
+ST_Vector3 sphereTraceVector3Normalize(ST_Vector3 v)
 {
 	return sphereTraceVector3Scale(v, 1.0f / sphereTraceVector3Length(v));
 }
 
-inline void sphereTraceVector3NormalizeByRef(ST_Vector3* const pRef)
+void sphereTraceVector3NormalizeByRef(ST_Vector3* const pRef)
 {
 	sphereTraceVector3ScaleByRef(pRef, 1.0f / sphereTraceVector3Length(*pRef));
 }
 
-inline ST_Vector3 sphereTraceVector3Cross(ST_Vector3 v1, ST_Vector3 v2)
+ST_Vector3 sphereTraceVector3Cross(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return sphereTraceVector3Construct(v1.y* v2.z - v1.z * v2.y, v1.z* v2.x - v1.x * v2.z, v1.x* v2.y - v1.y * v2.x );
 }
 
-inline ST_Vector3 sphereTraceVector3Add(ST_Vector3 v1, ST_Vector3 v2)
+ST_Vector3 sphereTraceVector3Add(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return sphereTraceVector3Construct(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z );
 }
 
-inline void sphereTraceVector3AddByRef(ST_Vector3* const pRef, ST_Vector3 v)
+void sphereTraceVector3AddByRef(ST_Vector3* const pRef, ST_Vector3 v)
 {
 	pRef->x += v.x;
 	pRef->y += v.y;
 	pRef->z += v.z;
 }
 
-inline ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2)
+ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return sphereTraceVector3Construct(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z );
 }
 
-inline void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v)
+void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v)
 {
 	pRef->x -= v.x;
 	pRef->y -= v.y;
 	pRef->z -= v.z;
 }
 
-inline ST_Vector3 sphereTraceVector3Negative(ST_Vector3 v)
+ST_Vector3 sphereTraceVector3Negative(ST_Vector3 v)
 {
 	return sphereTraceVector3Construct(-v.x, -v.y, -v.z );
 }
 
-inline void sphereTraceVector3NegativeByRef(ST_Vector3* pRef)
+void sphereTraceVector3NegativeByRef(ST_Vector3* pRef)
 {
 	pRef->x = -pRef->x;
 	pRef->y = -pRef->y;
 	pRef->z = -pRef->z;
 }
 
-inline void sphereTraceVector3Print(ST_Vector3 v)
+void sphereTraceVector3Print(ST_Vector3 v)
 {
 	printf("x:%f, y:%f, z:%f\n", v.x, v.y, v.z);
 }
 
-inline b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon)
+b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon)
 {
 	if (fabsf(v1.x - v2.x) < epsilon && fabsf(v1.y - v2.y) < epsilon && fabsf(v1.z - v2.z) < epsilon)
 		return 1;
@@ -254,7 +200,7 @@ inline b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float e
 		return 0;
 }
 
-inline b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float epsilon)
+b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float epsilon)
 {
 	if (fabsf(v1.x - v2.x) < epsilon && fabsf(v1.y - v2.y) < epsilon && fabsf(v1.z - v2.z) < epsilon && fabsf(v1.w - v2.w) < epsilon)
 		return 1;
@@ -262,46 +208,46 @@ inline b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float e
 		return 0;
 }
 
-inline ST_Vector3 sphereTraceVector3CopySign(ST_Vector3 v, float f)
+ST_Vector3 sphereTraceVector3CopySign(ST_Vector3 v, float f)
 {
 	float s = 1.0f;
 	s = _copysignf(s, f);
 	return sphereTraceVector3Scale(v, s);
 }
 
-inline float sphereTraceVector3Length2(ST_Vector3 vec)
+float sphereTraceVector3Length2(ST_Vector3 vec)
 {
 	return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z;
 }
 
-inline ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toScale, float scale)
+ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toScale, float scale)
 {
 	return sphereTraceVector3Add(toAdd, sphereTraceVector3Construct(toScale.x* scale, toScale.y* scale, toScale.z* scale ));
 }
 
-inline void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale)
+void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale)
 {
 	pRef->x += toScale.x * scale;
 	pRef->y += toScale.y * scale;
 	pRef->z += toScale.z * scale;
 }
 
-inline ST_Vector3 sphereTraceVector3Average(ST_Vector3 v1, ST_Vector3 v2)
+ST_Vector3 sphereTraceVector3Average(ST_Vector3 v1, ST_Vector3 v2)
 {
 	return sphereTraceVector3Construct(0.5f * (v1.x + v2.x), 0.5f * (v1.y + v2.y), 0.5f * (v1.z + v2.z) );
 }
 
-inline b32 sphereTraceVector3Nan(ST_Vector3 vec)
+b32 sphereTraceVector3Nan(ST_Vector3 vec)
 {
 	return fpclassify(vec.x) == FP_NAN && fpclassify(vec.y) == FP_NAN && fpclassify(vec.z) == FP_NAN;
 }
 
-inline b32 sphereTraceVector3NanAny(ST_Vector3 vec)
+b32 sphereTraceVector3NanAny(ST_Vector3 vec)
 {
 	return fpclassify(vec.x) == FP_NAN || fpclassify(vec.y) == FP_NAN || fpclassify(vec.z) == FP_NAN;
 }
 
-inline ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir)
+ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(lineDir, otherLineDir);
 		float crossSquared = sphereTraceVector3Length2(cross);
@@ -309,7 +255,7 @@ inline ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point,
 		return sphereTraceVector3AddAndScale(point, lineDir, s);
 }
 
-inline b32 sphereTraceVector3ClosestPointOnLineBetweenTwoLinesIsGreaterThanZeroAndLessThanMaxDist(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float maxDist)
+b32 sphereTraceVector3ClosestPointOnLineBetweenTwoLinesIsGreaterThanZeroAndLessThanMaxDist(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float maxDist)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
 	float crossSquared = sphereTraceVector3Length2(cross);
@@ -317,7 +263,7 @@ inline b32 sphereTraceVector3ClosestPointOnLineBetweenTwoLinesIsGreaterThanZeroA
 	return (t>=0.0f && t<=maxDist);
 }
 
-inline float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistanceOnLine(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir)
+float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistanceOnLine(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
 	float crossSquared = sphereTraceVector3Length2(cross);
@@ -325,7 +271,7 @@ inline float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistanceOnLine(S
 	return t;
 }
 
-inline void sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float* dist1, float* dist2)
+void sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float* dist1, float* dist2)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(normalizedLineDir, otherNormalizedLineDir);
 	float crossSquared = sphereTraceVector3Length2(cross);
@@ -333,7 +279,7 @@ inline void sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(
 	*dist2 = sphereTraceVector3Dot(sphereTraceVector3Cross(sphereTraceVector3Subtract(otherPoint, point), normalizedLineDir), cross) / crossSquared;
 }
 
-inline void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir, ST_Vector3* result1, ST_Vector3* result2)
+void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir, ST_Vector3* result1, ST_Vector3* result2)
 {
 	ST_Vector3 cross = sphereTraceVector3Cross(lineDir, otherLineDir);
 	float crossSquared = sphereTraceVector3Length2(cross);
@@ -343,7 +289,7 @@ inline void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 poin
 	*result2 = sphereTraceVector3AddAndScale(otherPoint, otherLineDir, t);
 }
 
-inline float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2)
+float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2)
 {
 	float dx, dy, dz;
 	dx = point2.x - point1.x;
@@ -352,7 +298,7 @@ inline float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2)
 	return sqrtf(dx * dx + dy * dy + dz * dz);
 }
 
-inline ST_Matrix4 sphereTraceMatrixIdentity()
+ST_Matrix4 sphereTraceMatrixIdentity()
 {
 	return sphereTraceMatrixConstruct(
 		1, 0, 0, 0,
@@ -362,7 +308,7 @@ inline ST_Matrix4 sphereTraceMatrixIdentity()
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixRotateX(float rad)
+ST_Matrix4 sphereTraceMatrixRotateX(float rad)
 {
 	float sinTheta = sinf(rad);
 	float cosTheta = cosf(rad);
@@ -374,7 +320,7 @@ inline ST_Matrix4 sphereTraceMatrixRotateX(float rad)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixRotateY(float rad)
+ST_Matrix4 sphereTraceMatrixRotateY(float rad)
 {
 	float sinTheta = sinf(rad);
 	float cosTheta = cosf(rad);
@@ -386,7 +332,7 @@ inline ST_Matrix4 sphereTraceMatrixRotateY(float rad)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixRotateZ(float rad)
+ST_Matrix4 sphereTraceMatrixRotateZ(float rad)
 {
 	float sinTheta = sinf(rad);
 	float cosTheta = cosf(rad);
@@ -398,7 +344,7 @@ inline ST_Matrix4 sphereTraceMatrixRotateZ(float rad)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixTranslation(ST_Vector3 trans)
+ST_Matrix4 sphereTraceMatrixTranslation(ST_Vector3 trans)
 {
 	return sphereTraceMatrixConstruct(
 		1, 0, 0, trans.x,
@@ -408,7 +354,7 @@ inline ST_Matrix4 sphereTraceMatrixTranslation(ST_Vector3 trans)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixScale(ST_Vector3 scale)
+ST_Matrix4 sphereTraceMatrixScale(ST_Vector3 scale)
 {
 	return sphereTraceMatrixConstruct(
 		scale.x, 0, 0, 0,
@@ -418,7 +364,7 @@ inline ST_Matrix4 sphereTraceMatrixScale(ST_Vector3 scale)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixRotate(ST_Vector3 eulerAngles)
+ST_Matrix4 sphereTraceMatrixRotate(ST_Vector3 eulerAngles)
 {
 	float cAlpha = cos(eulerAngles.z);
 	float sAlpha = sin(eulerAngles.z);
@@ -434,7 +380,7 @@ inline ST_Matrix4 sphereTraceMatrixRotate(ST_Vector3 eulerAngles)
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, float zNear, float zFar)
+ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, float zNear, float zFar)
 {
 	float yScale = tanf(0.5f * ((float)M_PI - fovYRadians));
 	float xScale = yScale / aspectRatio;
@@ -463,7 +409,7 @@ inline ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadi
 //	};
 //}
 
-inline ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
+ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
 {
 	ST_Vector3 zAxis = sphereTraceVector3Normalize(sphereTraceVector3Subtract(at, eye));
 	ST_Vector3 xAxis = sphereTraceVector3Normalize(sphereTraceVector3Cross(up, zAxis));
@@ -477,7 +423,7 @@ inline ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vect
 	);
 }
 
-inline ST_Matrix4 sphereTraceMatrixMult(ST_Matrix4 mat1, ST_Matrix4 mat2)
+ST_Matrix4 sphereTraceMatrixMult(ST_Matrix4 mat1, ST_Matrix4 mat2)
 {
 	return sphereTraceMatrixConstruct(
 			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 0), sphereTraceMatrixCol(mat2, 0)),
@@ -499,55 +445,55 @@ inline ST_Matrix4 sphereTraceMatrixMult(ST_Matrix4 mat1, ST_Matrix4 mat2)
 	);
 }
 
-inline ST_Vector3 sphereTraceVector3GetLocalXAxisFromRotationMatrix(ST_Matrix4 mat)
+ST_Vector3 sphereTraceVector3GetLocalXAxisFromRotationMatrix(ST_Matrix4 mat)
 {
 	return sphereTraceVector3Construct( mat.m00, mat.m10, mat.m20 );
 }
 
-inline ST_Vector3 sphereTraceVector3GetLocalYAxisFromRotationMatrix(ST_Matrix4 mat)
+ST_Vector3 sphereTraceVector3GetLocalYAxisFromRotationMatrix(ST_Matrix4 mat)
 {
 	return sphereTraceVector3Construct(mat.m01, mat.m11, mat.m21 );
 }
 
-inline ST_Vector3 sphereTraceVector3GetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
+ST_Vector3 sphereTraceVector3GetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
 {
 	return sphereTraceVector3Construct(mat.m02, mat.m12, mat.m22 );
 }
 
-inline void sphereTraceMatrixSetLocalXAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 xAxis)
+void sphereTraceMatrixSetLocalXAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 xAxis)
 {
 	mat->m00 = xAxis.x;
 	mat->m10 = xAxis.y;
 	mat->m20 = xAxis.z;
 }
 
-inline void sphereTraceMatrixSetLocalYAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 yAxis)
+void sphereTraceMatrixSetLocalYAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 yAxis)
 {
 	mat->m01 = yAxis.x;
 	mat->m11 = yAxis.y;
 	mat->m21 = yAxis.z;
 }
 
-inline void sphereTraceMatrixSetLocalZAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 zAxis)
+void sphereTraceMatrixSetLocalZAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 zAxis)
 {
 	mat->m02 = zAxis.x;
 	mat->m12 = zAxis.y;
 	mat->m22 = zAxis.z;
 }
 
-inline ST_Quaternion sphereTraceQuaternionConstruct(float w, float x, float y, float z)
+ST_Quaternion sphereTraceQuaternionConstruct(float w, float x, float y, float z)
 {
 	ST_Quaternion q = { w, x, y, z };
 	return q;
 }
 
 
-inline ST_Quaternion sphereTraceQuaternionConjugate(ST_Quaternion quat)
+ST_Quaternion sphereTraceQuaternionConjugate(ST_Quaternion quat)
 {
 	return sphereTraceQuaternionConstruct(quat.w, -quat.x, -quat.y, -quat.z );
 }
 
-inline void sphereTraceQuaternionConjugateByRef(ST_Quaternion* const pRef)
+void sphereTraceQuaternionConjugateByRef(ST_Quaternion* const pRef)
 {
 	pRef->w = -pRef->w;
 	pRef->x = -pRef->x;
@@ -555,7 +501,7 @@ inline void sphereTraceQuaternionConjugateByRef(ST_Quaternion* const pRef)
 	pRef->z = -pRef->z;
 }
 
-inline ST_Matrix4 sphereTraceMatrixFromQuaternion(ST_Quaternion quat)
+ST_Matrix4 sphereTraceMatrixFromQuaternion(ST_Quaternion quat)
 {
 	ST_Matrix4 ret;
 	ret.m00 = -2.0f * (quat.y * quat.y + quat.z * quat.z) + 1.0f;
@@ -577,7 +523,7 @@ inline ST_Matrix4 sphereTraceMatrixFromQuaternion(ST_Quaternion quat)
 	return ret;
 }
 
-inline ST_Quaternion sphereTraceQuaternionFromAngleAxis(ST_Vector3 axis, float angle)
+ST_Quaternion sphereTraceQuaternionFromAngleAxis(ST_Vector3 axis, float angle)
 {
 	//axis = sphereTraceVector3Normalize(axis);
 	float sTheta = sinf(angle * 0.5f);
@@ -585,7 +531,7 @@ inline ST_Quaternion sphereTraceQuaternionFromAngleAxis(ST_Vector3 axis, float a
 	return sphereTraceQuaternionConstruct(cTheta, axis.x* sTheta, axis.y* sTheta, axis.z* sTheta );
 }
 
-inline ST_Quaternion sphereTraceQuaternionFromEulerAngles(ST_Vector3 eulerAngles)
+ST_Quaternion sphereTraceQuaternionFromEulerAngles(ST_Vector3 eulerAngles)
 {
 	float cr = cos(eulerAngles.x * 0.5f);
 	float sr = sin(eulerAngles.x * 0.5f);
@@ -603,13 +549,13 @@ inline ST_Quaternion sphereTraceQuaternionFromEulerAngles(ST_Vector3 eulerAngles
 	return q;
 }
 
-inline ST_Quaternion sphereTraceQuaternionNormalize(ST_Quaternion quat)
+ST_Quaternion sphereTraceQuaternionNormalize(ST_Quaternion quat)
 {
 	float mag = sqrtf(quat.w * quat.w + quat.x * quat.x + quat.y * quat.y + quat.z * quat.z);
 	return sphereTraceQuaternionConstruct(quat.w / mag, quat.x / mag, quat.y / mag, quat.z / mag );
 }
 
-inline void sphereTraceQuaternionNormalizeByRef(ST_Quaternion* const pRef)
+void sphereTraceQuaternionNormalizeByRef(ST_Quaternion* const pRef)
 {
 	float mag = sqrtf(pRef->w * pRef->w + pRef->x * pRef->x + pRef->y * pRef->y + pRef->z * pRef->z);
 	pRef->w = pRef->w / mag;
@@ -618,7 +564,7 @@ inline void sphereTraceQuaternionNormalizeByRef(ST_Quaternion* const pRef)
 	pRef->z = pRef->z / mag;
 }
 
-inline ST_Quaternion sphereTraceQuaternionMultiply(ST_Quaternion a, ST_Quaternion b)
+ST_Quaternion sphereTraceQuaternionMultiply(ST_Quaternion a, ST_Quaternion b)
 {
 	ST_Quaternion ret;
 	ret.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
@@ -628,7 +574,7 @@ inline ST_Quaternion sphereTraceQuaternionMultiply(ST_Quaternion a, ST_Quaternio
 	return ret;
 }
 
-inline ST_Quaternion sphereTraceQuaternionAdd(ST_Quaternion a, ST_Quaternion b)
+ST_Quaternion sphereTraceQuaternionAdd(ST_Quaternion a, ST_Quaternion b)
 {
 	ST_Quaternion ret;
 	ret.w = a.w + b.w;
@@ -638,7 +584,7 @@ inline ST_Quaternion sphereTraceQuaternionAdd(ST_Quaternion a, ST_Quaternion b)
 	return ret;
 }
 
-inline ST_Quaternion sphereTraceQuaternionSubtract(ST_Quaternion a, ST_Quaternion b)
+ST_Quaternion sphereTraceQuaternionSubtract(ST_Quaternion a, ST_Quaternion b)
 {
 	ST_Quaternion ret;
 	ret.w = a.w - b.w;
@@ -648,7 +594,7 @@ inline ST_Quaternion sphereTraceQuaternionSubtract(ST_Quaternion a, ST_Quaternio
 	return ret;
 }
 
-inline ST_Quaternion sphereTraceQuaternionScale(float f, ST_Quaternion a)
+ST_Quaternion sphereTraceQuaternionScale(float f, ST_Quaternion a)
 {
 	ST_Quaternion ret;
 	ret.w = a.w * f;
@@ -658,18 +604,18 @@ inline ST_Quaternion sphereTraceQuaternionScale(float f, ST_Quaternion a)
 	return ret;
 }
 
-inline void sphereTraceQuaternionPrint(ST_Quaternion quat)
+void sphereTraceQuaternionPrint(ST_Quaternion quat)
 {
 	printf("w: %f, x: %f, y: %f, z: %f\n", quat.w, quat.x, quat.y, quat.z);
 }
 
-inline ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotation)
+ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotation)
 {
 	ST_Quaternion rotatedQuat = sphereTraceQuaternionMultiply(sphereTraceQuaternionMultiply(rotation, sphereTraceQuaternionConstruct(0.0f, point.x, point.y, point.z )), sphereTraceQuaternionConjugate(rotation));
 	return sphereTraceVector3Construct(rotatedQuat.x, rotatedQuat.y, rotatedQuat.z );
 }
 
-inline ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vector3 up, ST_Vector3 forward)
+ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vector3 up, ST_Vector3 forward)
 {
 	return sphereTraceMatrixConstruct(
 		right.x, up.x, forward.x, 0.0f,
@@ -680,7 +626,7 @@ inline ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right,
 }
 
 
-inline ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat)
+ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat)
 {
 	float tr = mat.m00 + mat.m11 + mat.m22;
 	float qw, qx, qy, qz;

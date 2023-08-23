@@ -1,31 +1,5 @@
-#pragma once
-
-typedef struct ST_StateConnection
-{
-	int stateIndex;
-	int nextStateIndex;
-	b32 (*conditionalFunction)();
-} ST_StateConnection;
-
-typedef struct ST_State
-{
-	void (*onUpdate)();
-	void (*onEnter)();
-	void (*onExit)();
-	int stateIndex;
-	int numConnections;
-	struct ST_StateConnection* connections;
-} ST_State;
-
-
-typedef struct ST_StateMachine
-{
-	ST_State* states;
-	int numStates;
-	int currentStateIndex;
-	int startStateIndex;
-} ST_StateMachine;
-
+#include "SphereTraceMath.h"
+#include "SphereTraceAI.h"
 
 ST_StateMachine sphereTraceStateMachineConstruct(int numStates)
 {
@@ -95,7 +69,7 @@ ST_State sphereTraceStateMachineStateConstructWithStateFunctions(int stateIndex,
 }
 
 
-ST_StateConnection sphereTraceStateMachineStateConnectionConstruct(int stateIndex, int nextStateIndex, b32 (*conditionalFunction)())
+ST_StateConnection sphereTraceStateMachineStateConnectionConstruct(int stateIndex, int nextStateIndex, b32(*conditionalFunction)())
 {
 	ST_StateConnection stateConnection;
 	stateConnection.stateIndex = stateIndex;

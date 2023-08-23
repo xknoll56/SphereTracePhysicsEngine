@@ -1,30 +1,6 @@
-#pragma once
 #include <stdlib.h>
-
-
-typedef struct ST_VectorArrayPointers
-{
-	void** data;
-	int count;
-	int capacity;
-} ST_VectorArrayPointers;
-
-typedef enum ST_ContactInfoType
-{
-	CONTACT_SPHERE_PLANE = 0,
-	CONTACT_SPHERE_SPHERE = 1,
-	CONTACT_SPHERE_TRIANGLE = 2,
-	CONTACT_SPHERE_TERRAIN_TRIANGLE = 3
-
-} ST_ContactInfoType;
-typedef struct ST_VectorArrayContactInfo
-{
-	void* contactInfos;
-	int count;
-	int capacity;
-	ST_ContactInfoType type;
-} ST_VectorArrayContactInfo;
-
+#include "SphereTraceDynamicArray.h"
+#include "SphereTraceCollider.h"
 
 
 ST_VectorArrayPointers sphereTraceVectorArrayPointersConstruct(int capacity)
@@ -115,7 +91,7 @@ void sphereTracePointerVectorArrayContactInfoPushBack(ST_VectorArrayContactInfo*
 			data = (ST_SphereTerrainTriangleContactInfo*)realloc(pVectorArrayContactInfo->contactInfos, pVectorArrayContactInfo->capacity * sizeof(ST_SphereTerrainTriangleContactInfo));
 			break;
 		}
-		
+
 		if (data)
 		{
 			pVectorArrayContactInfo->contactInfos = data;

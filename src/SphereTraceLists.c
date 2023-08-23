@@ -1,17 +1,7 @@
-#pragma once
-#include <stdlib.h>
 
-typedef struct ST_IntListData
-{
-	int value;
-	struct ST_IntListData* pNext;
-} ST_IntListData;
 
-typedef struct ST_IntList
-{
-	int count;
-	ST_IntListData* pFirst;
-} ST_IntList;
+#include "SphereTraceLists.h"
+#include "SphereTraceMath.h"
 
 ST_IntList sphereTraceIntListConstruct()
 {
@@ -183,18 +173,6 @@ void sphereTraceIntListPrint(const ST_IntList* const pIntList)
 	printf("\n");
 }
 
-
-typedef struct ST_Vector3ListData
-{
-	ST_Vector3 value;
-	struct ST_Vector3ListData* pNext;
-} ST_Vector3ListData;
-
-typedef struct ST_Vector3List
-{
-	int count;
-	ST_Vector3ListData* pFirst;
-} ST_Vector3List;
 
 ST_Vector3List sphereTraceVector3ListConstruct()
 {

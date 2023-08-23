@@ -1,175 +1,27 @@
-#pragma once
+#include "SphereTraceCollider.h"
 
-#define COLLIDER_TOLERANCE 1e-6
 
-typedef enum ST_ColliderType
-{
-	COLLIDER_SPHERE = 0,
-	COLLIDER_PLANE = 1,
-	COLLIDER_TERRAIN = 2
-} ST_ColliderType;
-
-typedef int ST_ColliderIndex;
-
-typedef struct ST_SubscriberEntry
-{
-	void (*callback)();
-	struct ST_CallbackEntry* pNext;
-
-} ST_SubscriberEntry;
-
-typedef struct ST_SubscriberList
-{
-	int count;
-
-} ST_SubscriberList;
-
-typedef struct ST_AABB
-{
-	//The size of the aabb
-	ST_Vector3 halfExtents;
-
-	//Transformed vertices
-	ST_Vector3 rightTopForwardsTransformedVertex;
-	ST_Vector3 leftDownBackTransformedVertex;
-} ST_AABB;
-
-typedef struct ST_Edge
-{
-	ST_Vector3 point1;
-	ST_Vector3 point2;
-} ST_Edge;
+extern const ST_Vector3 gVector3Up;
+extern const ST_Vector3 gVector3Right;
+extern const ST_Vector3 gVector3Forward;
+extern const ST_Vector3 gVector3Zero;
+extern const ST_Vector3 gVector3One;
+extern const ST_Vector3 gVector3Max;
+extern const ST_Vector3 gVector3Left;
+extern const ST_Vector3 gVector3Down;
+extern const ST_Vector3 gVector3Back;
+extern const ST_Vector4 gVector4Zero;
+extern const ST_Vector4 gVector4One;
+extern const ST_Vector4 gVector4ColorRed;
+extern const ST_Vector4 gVector4ColorGreen;
+extern const ST_Vector4 gVector4ColorBlue;
+extern const ST_Quaternion gQuaternionIdentity;
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
 	ST_Edge edge = { p1, p2 };
 	return edge;
 }
-
-typedef struct ST_PlaneCollider
-{
-	ST_Vector3 normal;
-	ST_Vector3 right;
-	ST_Vector3 forward;
-	float xHalfExtent;
-	float zHalfExtent;
-	ST_Vector3 position;
-	ST_Quaternion rotation;
-	ST_Vector3 transformedVertices[4];
-	ST_Edge transformedEdges[4];
-	ST_AABB aabb;
-	ST_IntList bucketIndices;
-	ST_ColliderIndex planeColliderIndex;
-} ST_PlaneCollider;
-
-typedef struct ST_TriangleCollider
-{
-	ST_Vector3 transformedVertices[3];
-	ST_Edge transformedEdges[3];
-	ST_Vector3 vertexDirs[3];
-	ST_Vector3 edgeOrthogonalDirs[3];
-	float vertexDists[3];
-	float edgeCenterDists[3];
-	ST_Vector3 edgeDirs[3];
-	float edgeDists[3];
-	ST_Vector3 normal;
-	ST_Vector3 centroid;
-	ST_AABB aabb;
-	ST_IntList bucketIndices;
-	b32 ignoreCollisions;
-} ST_TriangleCollider;
-
-typedef struct ST_SphereCollider
-{
-	float radius;
-	ST_RigidBody* pRigidBody;
-	ST_AABB aabb;
-	ST_IntList bucketIndices;
-	ST_ColliderIndex sphereColliderIndex;
-	b32 ignoreCollisions;
-} ST_SphereCollider;
-
-typedef enum ST_PlaneEdgeDirection
-{
-	PLANE_EDGE_RIGHT = 0,
-	PLANE_EDGE_FORWARD = 1,
-	PLANE_EDGE_LEFT = 2,
-	PLANE_EDGE_BACK = 3
-} ST_PlaneEdgeDirection;
-
-typedef enum ST_PlaneVertexDirection
-{
-	PLANE_VEREX_FORWARD_RIGHT = 0,
-	PLANE_VEREX_FORWARD_LEFT = 1,
-	PLANE_VEREX_BACK_LEFT = 2,
-	PLANE_VEREX_BACK_RIGHT = 3
-} ST_PlaneVertexDirection;
-
-typedef struct ST_RayTraceData
-{
-	ST_Vector3 startPoint;
-	ST_Vector3 hitPoint;
-	ST_Vector3 normal;
-	float distance;
-} ST_RayTraceData;
-
-typedef struct ST_SphereTraceData
-{
-	ST_RayTraceData rayTraceData;
-	ST_Vector3 sphereCenter;
-	float radius;
-	//the trace distance is the distance from the start sphere to the end sphere
-	float traceDistance;
-} ST_SphereTraceData;
-
-typedef enum ST_CollisionType
-{
-	COLLISION_FACE_FACE = 0,
-	COLLISION_FACE_EDGE = 1,
-	COLLISION_FACE_POINT = 2,
-	COLLISION_EDGE_FACE = 3,
-	COLLISION_EDGE_EDGE = 4,
-	COLLISION_EDGE_POINT = 5,
-	COLLISION_POINT_FACE = 6,
-	COLLISION_POINT_EDGE = 7,
-	COLLISION_POINT_POINT = 8
-} ST_CollisionType;
-
-
-typedef struct ST_SpherePlaneContactInfo
-{
-	float penetrationDistance;
-	ST_Vector3 normal;
-	ST_Vector3 point;
-	ST_SphereCollider* pSphereCollider;
-	ST_PlaneCollider* pPlaneCollider;
-	ST_CollisionType collisionType;
-} ST_SpherePlaneContactInfo;
-
-typedef struct ST_SphereTriangleContactInfo
-{
-	float penetrationDistance;
-	ST_Vector3 normal;
-	ST_Vector3 point;
-	ST_SphereCollider* pSphereCollider;
-	ST_TriangleCollider* pTriangleCollider;
-	ST_CollisionType collisionType;
-} ST_SphereTriangleContactInfo;
-
-typedef struct ST_SphereTerrainTriangleContactInfo
-{
-	ST_SphereTriangleContactInfo sphereTriangleContactInfo;
-	ST_SphereTraceData downSphereTraceData;
-} ST_SphereTerrainTriangleContactInfo;
-
-typedef struct ST_SphereSphereContactInfo
-{
-	float penetrationDistance;
-	ST_Vector3 normal;
-	ST_Vector3 point;
-	ST_SphereCollider* pA;
-	ST_SphereCollider* pB;
-} ST_SphereSphereContactInfo;
 
 void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* const pPlaneCollider)
 {
@@ -183,13 +35,13 @@ void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* co
 	pPlaneCollider->transformedVertices[PLANE_VEREX_BACK_RIGHT] = sphereTraceVector3Add(sphereTraceVector3Add(pPlaneCollider->position, sphereTraceVector3Scale(pPlaneCollider->right, pPlaneCollider->xHalfExtent)), sphereTraceVector3Scale(pPlaneCollider->forward, -pPlaneCollider->zHalfExtent));
 
 	//right edge
-	pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[3], pPlaneCollider->transformedVertices[0] );
+	pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[3], pPlaneCollider->transformedVertices[0]);
 	//forward edge
-	pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[0], pPlaneCollider->transformedVertices[1] );
+	pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[0], pPlaneCollider->transformedVertices[1]);
 	//left edge
-	pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[1], pPlaneCollider->transformedVertices[2] );
+	pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[1], pPlaneCollider->transformedVertices[2]);
 	//back edge
-	pPlaneCollider->transformedEdges[PLANE_EDGE_BACK] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[2], pPlaneCollider->transformedVertices[3] );
+	pPlaneCollider->transformedEdges[PLANE_EDGE_BACK] = sphereTraceEdgeConstruct(pPlaneCollider->transformedVertices[2], pPlaneCollider->transformedVertices[3]);
 
 }
 
@@ -197,8 +49,8 @@ void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* co
 ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point)
 {
 	ST_Vector3 distVec = sphereTraceVector3Subtract(point, pPlaneCollider->position);
-	float xDist = sphereTraceVector3Dot(distVec, pPlaneCollider->right)/pPlaneCollider->xHalfExtent;
-	float zDist = sphereTraceVector3Dot(distVec, pPlaneCollider->forward)/pPlaneCollider->zHalfExtent;
+	float xDist = sphereTraceVector3Dot(distVec, pPlaneCollider->right) / pPlaneCollider->xHalfExtent;
+	float zDist = sphereTraceVector3Dot(distVec, pPlaneCollider->forward) / pPlaneCollider->zHalfExtent;
 
 	if (xDist > 0.0f)
 	{
@@ -278,7 +130,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 		}
 		if (t1 >= pPlaneCollider->zHalfExtent)
 		{
-			if (eMin > pPlaneCollider->zHalfExtent*2.0f)
+			if (eMin > pPlaneCollider->zHalfExtent * 2.0f)
 				dt1 = FLT_MAX;
 			else
 				dt1 = pPlaneCollider->zHalfExtent * 2.0f - t1;
@@ -489,7 +341,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToLine(const ST_Tri
 	float s1, t1, s2, t2, s3, t3;
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(point, dir, pTriangleCollider->transformedEdges[0].point1, pTriangleCollider->edgeDirs[0], &s1, &t1);
 	float s = sphereTraceVector3Dot(dir, pTriangleCollider->edgeOrthogonalDirs[0]);
-	if (t1 <0.0f || t1 > pTriangleCollider->edgeDists[0] || s>0.0f || fpclassify(s1) == FP_NAN)
+	if (t1 <0.0f || t1 > pTriangleCollider->edgeDists[0] || s > 0.0f || fpclassify(s1) == FP_NAN)
 		s1 = FLT_MAX;
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(point, dir, pTriangleCollider->transformedEdges[1].point1, pTriangleCollider->edgeDirs[1], &s2, &t2);
 	s = sphereTraceVector3Dot(dir, pTriangleCollider->edgeOrthogonalDirs[1]);
@@ -525,7 +377,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const
 	fwd = sphereTraceVector3Cross(dir, right);
 	float rightDist = sphereTraceVector3Dot(right, pTriangleCollider->transformedEdges[0].point1);
 	float theta = acosf(fabsf(rightDist) / radius);
-	ST_Vector3 start = sphereTraceVector3AddAndScale(point, fwd, radius*sinf(theta));
+	ST_Vector3 start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pTriangleCollider->transformedEdges[0].point1, pTriangleCollider->edgeDirs[0], &s1, &t1);
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(point, dir, pTriangleCollider->transformedEdges[0].point1, pTriangleCollider->edgeDirs[0], &u1, &v1);
 	b32 increasing = 0;
@@ -546,7 +398,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const
 	{
 		if (t1 >= pTriangleCollider->edgeDists[0] * 0.5f)
 		{
-			if(eMin > pTriangleCollider->edgeDists[0])
+			if (eMin > pTriangleCollider->edgeDists[0])
 				dt1 = FLT_MAX;
 			else
 				dt1 = pTriangleCollider->edgeDists[0] - t1;
@@ -584,7 +436,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const
 	fwd = sphereTraceVector3Cross(dir, right);
 	rightDist = sphereTraceVector3Dot(right, pTriangleCollider->transformedEdges[1].point1);
 	theta = acosf(fabsf(rightDist) / radius);
-	start = sphereTraceVector3AddAndScale(point, fwd, radius*sinf(theta));
+	start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pTriangleCollider->transformedEdges[1].point1, pTriangleCollider->edgeDirs[1], &s2, &t2);
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(point, dir, pTriangleCollider->transformedEdges[1].point1, pTriangleCollider->edgeDirs[1], &u2, &v2);
 	//d2 = s2;
@@ -641,7 +493,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const
 	fwd = sphereTraceVector3Cross(dir, right);
 	rightDist = sphereTraceVector3Dot(right, pTriangleCollider->transformedEdges[2].point1);
 	theta = acosf(fabsf(rightDist) / radius);
-	start = sphereTraceVector3AddAndScale(point, fwd, radius*sinf(theta));
+	start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pTriangleCollider->transformedEdges[2].point1, pTriangleCollider->edgeDirs[2], &s3, &t3);
 	sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(point, dir, pTriangleCollider->transformedEdges[2].point1, pTriangleCollider->edgeDirs[2], &u3, &v3);
 	//d3 = s3;
@@ -663,7 +515,7 @@ int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const
 			if (eMin > pTriangleCollider->edgeDists[2])
 				dt3 = FLT_MAX;
 			else
-				dt3 = pTriangleCollider->edgeDists[2]- t3;
+				dt3 = pTriangleCollider->edgeDists[2] - t3;
 			closestPoint3 = pTriangleCollider->transformedEdges[2].point2;
 		}
 		else
@@ -783,13 +635,13 @@ void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* cons
 
 void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleCollider)
 {
-	pTriangleCollider->aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Construct( fmaxf(pTriangleCollider->transformedVertices[0].x, fmaxf(pTriangleCollider->transformedVertices[1].x, pTriangleCollider->transformedVertices[2].x)),
-	fmaxf(pTriangleCollider->transformedVertices[0].y, fmaxf(pTriangleCollider->transformedVertices[1].y, pTriangleCollider->transformedVertices[2].y)),
-	fmaxf(pTriangleCollider->transformedVertices[0].z, fmaxf(pTriangleCollider->transformedVertices[1].z, pTriangleCollider->transformedVertices[2].z)) );
+	pTriangleCollider->aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Construct(fmaxf(pTriangleCollider->transformedVertices[0].x, fmaxf(pTriangleCollider->transformedVertices[1].x, pTriangleCollider->transformedVertices[2].x)),
+		fmaxf(pTriangleCollider->transformedVertices[0].y, fmaxf(pTriangleCollider->transformedVertices[1].y, pTriangleCollider->transformedVertices[2].y)),
+		fmaxf(pTriangleCollider->transformedVertices[0].z, fmaxf(pTriangleCollider->transformedVertices[1].z, pTriangleCollider->transformedVertices[2].z)));
 
 	pTriangleCollider->aabb.leftDownBackTransformedVertex = sphereTraceVector3Construct(fminf(pTriangleCollider->transformedVertices[0].x, fminf(pTriangleCollider->transformedVertices[1].x, pTriangleCollider->transformedVertices[2].x)),
-fminf(pTriangleCollider->transformedVertices[0].y, fminf(pTriangleCollider->transformedVertices[1].y, pTriangleCollider->transformedVertices[2].y)),
-fminf(pTriangleCollider->transformedVertices[0].z, fminf(pTriangleCollider->transformedVertices[1].z, pTriangleCollider->transformedVertices[2].z)) );
+		fminf(pTriangleCollider->transformedVertices[0].y, fminf(pTriangleCollider->transformedVertices[1].y, pTriangleCollider->transformedVertices[2].y)),
+		fminf(pTriangleCollider->transformedVertices[0].z, fminf(pTriangleCollider->transformedVertices[1].z, pTriangleCollider->transformedVertices[2].z)));
 
 	pTriangleCollider->aabb.halfExtents = sphereTraceVector3Subtract(pTriangleCollider->aabb.rightTopForwardsTransformedVertex,
 		sphereTraceVector3Average(pTriangleCollider->aabb.rightTopForwardsTransformedVertex, pTriangleCollider->aabb.leftDownBackTransformedVertex));
@@ -905,9 +757,9 @@ b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, c
 		|| (aabb1->rightTopForwardsTransformedVertex.y >= aabb2->leftDownBackTransformedVertex.y && aabb1->leftDownBackTransformedVertex.y <= aabb2->leftDownBackTransformedVertex.y)
 		|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->rightTopForwardsTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->rightTopForwardsTransformedVertex.y)
 		|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->leftDownBackTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->leftDownBackTransformedVertex.y))
-		{
-			return 1;
-		}
+	{
+		return 1;
+	}
 
 	return 0;
 }
@@ -962,7 +814,7 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
 				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
-						pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
+					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 			}
 		}
 		else
@@ -977,9 +829,9 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 			else
 			{
 				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
-						pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
+					pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
 				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
-						pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
+					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 
 			}
 		}
@@ -991,16 +843,16 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 			if (dp.z >= 0.0f)
 			{
 				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
-						pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
+					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
 				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
-						pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
+					pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
 				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
-						pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
+					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
 				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
-						pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
+					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 			}
 		}
 		else
@@ -1008,9 +860,9 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 			if (dp.z >= 0.0f)
 			{
 				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
-						pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
+					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
 				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
-						pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
+					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
@@ -1019,7 +871,7 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 			}
 		}
 	}
-	
+
 	aabb->halfExtents = sphereTraceVector3Subtract(aabb->rightTopForwardsTransformedVertex, sphereTraceVector3Average(aabb->rightTopForwardsTransformedVertex, aabb->leftDownBackTransformedVertex));
 }
 
@@ -1029,7 +881,7 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normal, float angl
 	planeCollider.position = position;
 	planeCollider.normal = sphereTraceVector3Normalize(normal);
 	float dot = sphereTraceVector3Dot(planeCollider.normal, gVector3Forward);
-	if (dot==1.0f)
+	if (dot == 1.0f)
 	{
 		planeCollider.right = gVector3Right;
 	}
@@ -1059,7 +911,7 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normal, float angl
 	return planeCollider;
 }
 
-ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat,float xHalfExtent, float zHalfExtent, ST_Vector3 position)
+ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
 {
 	ST_PlaneCollider planeCollider;
 	planeCollider.position = position;
@@ -1082,7 +934,7 @@ ST_SphereCollider sphereTraceColliderSphereConstruct(float radius, ST_RigidBody*
 	ST_SphereCollider sphereCollider;
 	sphereCollider.pRigidBody = pRigidBody;
 	sphereCollider.radius = radius;
-	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius );
+	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
 	sphereCollider.ignoreCollisions = 0;
 	sphereTraceColliderSphereAABBSetTransformedVertices(&sphereCollider);
 
@@ -1095,7 +947,7 @@ ST_SphereCollider sphereTraceColliderSphereConstructWithPosition(float radius, S
 	sphereCollider.pRigidBody = pRigidBody;
 	sphereCollider.pRigidBody->position = position;
 	sphereCollider.radius = radius;
-	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius );
+	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
 	sphereCollider.ignoreCollisions = 0;
 	sphereTraceColliderSphereAABBSetTransformedVertices(&sphereCollider);
 
@@ -1107,11 +959,11 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->transformedVertices[0] = v1;
 	pTriangleCollider->transformedVertices[1] = v2;
 	pTriangleCollider->transformedVertices[2] = v3;
-	pTriangleCollider->centroid = sphereTraceVector3Construct((v1.x + v2.x + v3.x) / 3.0f, (v1.y + v2.y + v3.y) / 3.0f , (v1.z + v2.z + v3.z) / 3.0f );
+	pTriangleCollider->centroid = sphereTraceVector3Construct((v1.x + v2.x + v3.x) / 3.0f, (v1.y + v2.y + v3.y) / 3.0f, (v1.z + v2.z + v3.z) / 3.0f);
 	pTriangleCollider->normal = sphereTraceVector3Normalize(sphereTraceVector3Cross(sphereTraceVector3Subtract(v3, v2), sphereTraceVector3Subtract(v1, v2)));
-	pTriangleCollider->transformedEdges[0] = sphereTraceEdgeConstruct( v3, v1 );
-	pTriangleCollider->transformedEdges[1] = sphereTraceEdgeConstruct(v1, v2 );
-	pTriangleCollider->transformedEdges[2] = sphereTraceEdgeConstruct(v2, v3 );
+	pTriangleCollider->transformedEdges[0] = sphereTraceEdgeConstruct(v3, v1);
+	pTriangleCollider->transformedEdges[1] = sphereTraceEdgeConstruct(v1, v2);
+	pTriangleCollider->transformedEdges[2] = sphereTraceEdgeConstruct(v2, v3);
 	pTriangleCollider->vertexDirs[0] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(v1, pTriangleCollider->centroid));
 	pTriangleCollider->vertexDirs[1] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(v2, pTriangleCollider->centroid));
 	pTriangleCollider->vertexDirs[2] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(v3, pTriangleCollider->centroid));
@@ -1196,7 +1048,7 @@ b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoi
 	dot1 = copysignf(1.0f, dot1);
 	dot2 = copysignf(1.0f, dot2);
 	dot3 = copysignf(1.0f, dot3);
-	if ((dot1 == dot2) &&  (dot1== dot3))
+	if ((dot1 == dot2) && (dot1 == dot3))
 	{
 		return 1;
 	}
@@ -1224,7 +1076,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Vector3 dir, const S
 		pRaycastData->hitPoint = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir, pRaycastData->distance));
 
 		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->hitPoint, pTriangleCollider);
-		
+
 	}
 	return 0;
 }
@@ -2102,32 +1954,32 @@ b32 sphereTraceColliderSphereSphereCollisionTest(ST_SphereCollider* const pSpher
 		return 0;
 }
 
-typedef struct ST_UniformTerrainCollider
-{
-	ST_TriangleCollider* triangles;
-	int xCells;
-	int zCells;
-	float xSize;
-	float zSize;
-	float cellSize;
-	ST_AABB aabb;
-	float angle;
-	ST_Vector3 right;
-	ST_Vector3 forward;
-	ST_Vector3 position;
-	ST_Quaternion rotation;
-	ST_IntList bucketIndices;
-	ST_Vector3 halfExtents;
-
-	//needed for quick raytrace
-	//replace with obb when implemented
-	ST_PlaneCollider rightPlane;
-	ST_PlaneCollider topPlane;
-	ST_PlaneCollider forwardPlane;
-	ST_PlaneCollider leftPlane;
-	ST_PlaneCollider bottomPlane;
-	ST_PlaneCollider backPlane;
-} ST_UniformTerrainCollider;
+//typedef struct ST_UniformTerrainCollider
+//{
+//	ST_TriangleCollider* triangles;
+//	int xCells;
+//	int zCells;
+//	float xSize;
+//	float zSize;
+//	float cellSize;
+//	ST_AABB aabb;
+//	float angle;
+//	ST_Vector3 right;
+//	ST_Vector3 forward;
+//	ST_Vector3 position;
+//	ST_Quaternion rotation;
+//	ST_IntList bucketIndices;
+//	ST_Vector3 halfExtents;
+//
+//	//needed for quick raytrace
+//	//replace with obb when implemented
+//	ST_PlaneCollider rightPlane;
+//	ST_PlaneCollider topPlane;
+//	ST_PlaneCollider forwardPlane;
+//	ST_PlaneCollider leftPlane;
+//	ST_PlaneCollider bottomPlane;
+//	ST_PlaneCollider backPlane;
+//} ST_UniformTerrainCollider;
 
 ST_UniformTerrainCollider sphereTraceColliderUniformTerrainConstruct(int xCells, int zCells, float cellSize)
 {
@@ -2142,9 +1994,9 @@ ST_UniformTerrainCollider sphereTraceColliderUniformTerrainConstruct(int xCells,
 	terrain.aabb.leftDownBackTransformedVertex = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
 	terrain.aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Construct(xCells * cellSize, 0.0f, zCells * cellSize);
 	ST_Vector3 midpoint = sphereTraceVector3Average(terrain.aabb.leftDownBackTransformedVertex, terrain.aabb.rightTopForwardsTransformedVertex);
-	terrain.rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, 0.0f, terrain.aabb.halfExtents.z, sphereTraceVector3Construct( 0.0f, midpoint.y, midpoint.z ));
-	terrain.topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrain.aabb.halfExtents.x, terrain.aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z ));
-	terrain.forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrain.aabb.halfExtents.x, 0.0f, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f ));
+	terrain.rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, 0.0f, terrain.aabb.halfExtents.z, sphereTraceVector3Construct(0.0f, midpoint.y, midpoint.z));
+	terrain.topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrain.aabb.halfExtents.x, terrain.aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z));
+	terrain.forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrain.aabb.halfExtents.x, 0.0f, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f));
 	terrain.angle = 0.0f;
 	terrain.right = gVector3Right;
 	terrain.forward = gVector3Forward;
@@ -2157,8 +2009,8 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 {
 
 	pTerrainCollider->angle = angle;
-	pTerrainCollider->right = sphereTraceVector3Construct(cosf(angle), 0.0f, -sinf(angle) );
-	pTerrainCollider->forward = sphereTraceVector3Construct(sinf(angle), 0.0f, cosf(angle) );
+	pTerrainCollider->right = sphereTraceVector3Construct(cosf(angle), 0.0f, -sinf(angle));
+	pTerrainCollider->forward = sphereTraceVector3Construct(sinf(angle), 0.0f, cosf(angle));
 	pTerrainCollider->rotation = sphereTraceQuaternionFromAngleAxis(gVector3Up, angle);
 	pTerrainCollider->aabb.halfExtents = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
 	pTerrainCollider->aabb.leftDownBackTransformedVertex = position;
@@ -2172,9 +2024,9 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 			ST_Vector3 v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
 			ST_Vector3 v2 = sphereTraceVector3Subtract(pTC->transformedVertices[1], pTerrainCollider->position);
 			ST_Vector3 v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);
-			v1 = sphereTraceVector3Construct( cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y,-sinf(angle) * v1.x + cosf(angle) * v1.z );
-			v2 = sphereTraceVector3Construct( cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z );
-			v3 = sphereTraceVector3Construct( cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z );
+			v1 = sphereTraceVector3Construct(cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y, -sinf(angle) * v1.x + cosf(angle) * v1.z);
+			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
+			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
 			sphereTraceColliderTriangleSetVertexAndEdgeData(pTC, sphereTraceVector3Add(v1, position), sphereTraceVector3Add(v2, position), sphereTraceVector3Add(v3, position));
 			//sphereTraceColliderTriangleSetAABB(pTC);
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->aabb, &pTerrainCollider->triangles[triangleIndex].aabb);
@@ -2184,25 +2036,25 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 			v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
 			v2 = sphereTraceVector3Subtract(pTC->transformedVertices[1], pTerrainCollider->position);
 			v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);
-			v1 = sphereTraceVector3Construct( cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y,-sinf(angle) * v1.x + cosf(angle) * v1.z );
-			v2 = sphereTraceVector3Construct( cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z );
-			v3 = sphereTraceVector3Construct( cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z );
+			v1 = sphereTraceVector3Construct(cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y, -sinf(angle) * v1.x + cosf(angle) * v1.z);
+			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
+			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
 			sphereTraceColliderTriangleSetVertexAndEdgeData(pTC, sphereTraceVector3Add(v1, position), sphereTraceVector3Add(v2, position), sphereTraceVector3Add(v3, position)); sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->aabb, &pTerrainCollider->triangles[triangleIndex].aabb);
 			//sphereTraceColliderTriangleSetAABB(pTC);
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->aabb, &pTerrainCollider->triangles[triangleIndex].aabb);
 		}
 	}
 	pTerrainCollider->position = position;
-	ST_Vector3 midpoint = sphereTraceVector3Construct(pTerrainCollider->xCells * pTerrainCollider->cellSize * 0.5f, 0.5f*(pTerrainCollider->aabb.leftDownBackTransformedVertex.y+ pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y), pTerrainCollider->zCells * pTerrainCollider->cellSize * 0.5f);
-	midpoint = sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* midpoint.x + sinf(angle) * midpoint.z, midpoint.y, -sinf(angle) * midpoint.x + cosf(angle) * midpoint.z ));
-	ST_Vector3 endpoint = sphereTraceVector3Construct(pTerrainCollider->xCells * pTerrainCollider->cellSize , pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y, pTerrainCollider->zCells * pTerrainCollider->cellSize);
-	endpoint = sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* endpoint.x + sinf(angle) * endpoint.z, endpoint.y, -sinf(angle) * endpoint.x + cosf(angle) * endpoint.z ));
-	pTerrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(pTerrainCollider->right), 0.0f, pTerrainCollider->leftPlane.xHalfExtent, pTerrainCollider->leftPlane.zHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* pTerrainCollider->leftPlane.position.x + sinf(angle) * pTerrainCollider->leftPlane.position.z, pTerrainCollider->leftPlane.position.y, -sinf(angle) * pTerrainCollider->leftPlane.position.x + cosf(angle) * pTerrainCollider->leftPlane.position.z )));
-	pTerrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, angle, pTerrainCollider->topPlane.xHalfExtent, pTerrainCollider->topPlane.zHalfExtent, sphereTraceVector3Construct(midpoint.x, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y, midpoint.z ));
-	pTerrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(pTerrainCollider->forward), 0.0f, pTerrainCollider->backPlane.zHalfExtent, pTerrainCollider->backPlane.xHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* pTerrainCollider->backPlane.position.x + sinf(angle) * pTerrainCollider->backPlane.position.z, pTerrainCollider->backPlane.position.y, -sinf(angle) * pTerrainCollider->backPlane.position.x + cosf(angle) * pTerrainCollider->backPlane.position.z )));
-	pTerrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(pTerrainCollider->right, 0.0f, pTerrainCollider->rightPlane.xHalfExtent, pTerrainCollider->rightPlane.zHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* pTerrainCollider->rightPlane.position.x + sinf(angle) * pTerrainCollider->rightPlane.position.z, pTerrainCollider->rightPlane.position.y, -sinf(angle) * pTerrainCollider->rightPlane.position.x + cosf(angle) * pTerrainCollider->rightPlane.position.z )));
-	pTerrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, angle, pTerrainCollider->bottomPlane.xHalfExtent, pTerrainCollider->bottomPlane.zHalfExtent, sphereTraceVector3Construct(midpoint.x, pTerrainCollider->aabb.leftDownBackTransformedVertex.y, midpoint.z ));
-	pTerrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(pTerrainCollider->forward, 0.0f, pTerrainCollider->forwardPlane.zHalfExtent, pTerrainCollider->forwardPlane.xHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle)* pTerrainCollider->forwardPlane.position.x + sinf(angle) * pTerrainCollider->forwardPlane.position.z, pTerrainCollider->forwardPlane.position.y, -sinf(angle) * pTerrainCollider->forwardPlane.position.x + cosf(angle) * pTerrainCollider->forwardPlane.position.z )));
+	ST_Vector3 midpoint = sphereTraceVector3Construct(pTerrainCollider->xCells * pTerrainCollider->cellSize * 0.5f, 0.5f * (pTerrainCollider->aabb.leftDownBackTransformedVertex.y + pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y), pTerrainCollider->zCells * pTerrainCollider->cellSize * 0.5f);
+	midpoint = sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * midpoint.x + sinf(angle) * midpoint.z, midpoint.y, -sinf(angle) * midpoint.x + cosf(angle) * midpoint.z));
+	ST_Vector3 endpoint = sphereTraceVector3Construct(pTerrainCollider->xCells * pTerrainCollider->cellSize, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y, pTerrainCollider->zCells * pTerrainCollider->cellSize);
+	endpoint = sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * endpoint.x + sinf(angle) * endpoint.z, endpoint.y, -sinf(angle) * endpoint.x + cosf(angle) * endpoint.z));
+	pTerrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(pTerrainCollider->right), 0.0f, pTerrainCollider->leftPlane.xHalfExtent, pTerrainCollider->leftPlane.zHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * pTerrainCollider->leftPlane.position.x + sinf(angle) * pTerrainCollider->leftPlane.position.z, pTerrainCollider->leftPlane.position.y, -sinf(angle) * pTerrainCollider->leftPlane.position.x + cosf(angle) * pTerrainCollider->leftPlane.position.z)));
+	pTerrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, angle, pTerrainCollider->topPlane.xHalfExtent, pTerrainCollider->topPlane.zHalfExtent, sphereTraceVector3Construct(midpoint.x, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y, midpoint.z));
+	pTerrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(pTerrainCollider->forward), 0.0f, pTerrainCollider->backPlane.zHalfExtent, pTerrainCollider->backPlane.xHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * pTerrainCollider->backPlane.position.x + sinf(angle) * pTerrainCollider->backPlane.position.z, pTerrainCollider->backPlane.position.y, -sinf(angle) * pTerrainCollider->backPlane.position.x + cosf(angle) * pTerrainCollider->backPlane.position.z)));
+	pTerrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(pTerrainCollider->right, 0.0f, pTerrainCollider->rightPlane.xHalfExtent, pTerrainCollider->rightPlane.zHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * pTerrainCollider->rightPlane.position.x + sinf(angle) * pTerrainCollider->rightPlane.position.z, pTerrainCollider->rightPlane.position.y, -sinf(angle) * pTerrainCollider->rightPlane.position.x + cosf(angle) * pTerrainCollider->rightPlane.position.z)));
+	pTerrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, angle, pTerrainCollider->bottomPlane.xHalfExtent, pTerrainCollider->bottomPlane.zHalfExtent, sphereTraceVector3Construct(midpoint.x, pTerrainCollider->aabb.leftDownBackTransformedVertex.y, midpoint.z));
+	pTerrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(pTerrainCollider->forward, 0.0f, pTerrainCollider->forwardPlane.zHalfExtent, pTerrainCollider->forwardPlane.xHalfExtent, sphereTraceVector3Add(position, sphereTraceVector3Construct(cosf(angle) * pTerrainCollider->forwardPlane.position.x + sinf(angle) * pTerrainCollider->forwardPlane.position.z, pTerrainCollider->forwardPlane.position.y, -sinf(angle) * pTerrainCollider->forwardPlane.position.x + cosf(angle) * pTerrainCollider->forwardPlane.position.z)));
 
 
 }
@@ -2219,38 +2071,38 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrai
 			float x2 = (x + 1) * terrainCollider->cellSize;
 			float z1 = z * terrainCollider->cellSize;
 			float z2 = (z + 1) * terrainCollider->cellSize;
-			terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1), z1 ),
+			terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1), z1),
 				sphereTraceVector3Construct(
-				x1, fxz(x1, z2), z2
-			),
+					x1, fxz(x1, z2), z2
+				),
 				sphereTraceVector3Construct(
-				x2, fxz(x2, z1), z1
-			));
+					x2, fxz(x2, z1), z1
+				));
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 			triangleIndex++;
 			//(1,0), (1,1), (0,1)
-			terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1), z1 ),
+			terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1), z1),
 				sphereTraceVector3Construct(
-				x1, fxz(x1, z2), z2
-			),
+					x1, fxz(x1, z2), z2
+				),
 				sphereTraceVector3Construct(
-				x2, fxz(x2, z2), z2
-			));
+					x2, fxz(x2, z2), z2
+				));
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 		}
 	}
 
 	ST_Vector3 midpoint = sphereTraceVector3Average(terrainCollider->aabb.leftDownBackTransformedVertex, terrainCollider->aabb.rightTopForwardsTransformedVertex);
-	terrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Right), 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(0.0f, midpoint.y, midpoint.z ));
-	terrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z ));
-	terrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Forward), 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f ));
-	terrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(terrainCollider->aabb.rightTopForwardsTransformedVertex.x, midpoint.y, midpoint.z ));
-	terrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, 0.0f, midpoint.z ));
-	terrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, terrainCollider->aabb.rightTopForwardsTransformedVertex.z ));
+	terrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Right), 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(0.0f, midpoint.y, midpoint.z));
+	terrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z));
+	terrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Forward), 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f));
+	terrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(terrainCollider->aabb.rightTopForwardsTransformedVertex.x, midpoint.y, midpoint.z));
+	terrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, 0.0f, midpoint.z));
+	terrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, terrainCollider->aabb.rightTopForwardsTransformedVertex.z));
 
 }
 
-void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float), b32 (*conditionalFunc)(float (*fxz)(float, float), float, float))
+void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float), b32(*conditionalFunc)(float (*fxz)(float, float), float, float))
 {
 	for (int z = 0; z < terrainCollider->zCells; z++)
 	{
@@ -2264,23 +2116,23 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 			float z2 = (z + 1) * terrainCollider->cellSize;
 			if (conditionalFunc(fxz, x1, z1))
 			{
-				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1), z1 ),
+				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1), z1),
 					sphereTraceVector3Construct(
-					x1, fxz(x1, z2), z2
-				),
+						x1, fxz(x1, z2), z2
+					),
 					sphereTraceVector3Construct(
-					x2, fxz(x2, z1), z1
-				));
+						x2, fxz(x2, z1), z1
+					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 				triangleIndex++;
 				//(1,0), (1,1), (0,1)
-				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1), z1 ),
+				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1), z1),
 					sphereTraceVector3Construct(
-					x1, fxz(x1, z2), z2
-				),
+						x1, fxz(x1, z2), z2
+					),
 					sphereTraceVector3Construct(
-					x2, fxz(x2, z2), z2
-				));
+						x2, fxz(x2, z2), z2
+					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 			}
 			else
@@ -2294,30 +2146,30 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 	}
 
 	ST_Vector3 midpoint = sphereTraceVector3Average(terrainCollider->aabb.leftDownBackTransformedVertex, terrainCollider->aabb.rightTopForwardsTransformedVertex);
-	terrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Right), 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(0.0f, midpoint.y, midpoint.z ));
-	terrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z ));
-	terrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Forward), 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f ));
-	terrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(terrainCollider->aabb.rightTopForwardsTransformedVertex.x, midpoint.y, midpoint.z ));
-	terrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, 0.0f, midpoint.z ));
-	terrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, terrainCollider->aabb.rightTopForwardsTransformedVertex.z ));
+	terrainCollider->leftPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Right), 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(0.0f, midpoint.y, midpoint.z));
+	terrainCollider->topPlane = sphereTraceColliderPlaneConstruct(gVector3Up, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, midpoint.y, midpoint.z));
+	terrainCollider->backPlane = sphereTraceColliderPlaneConstruct(sphereTraceVector3Negative(gVector3Forward), 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, 0.0f));
+	terrainCollider->rightPlane = sphereTraceColliderPlaneConstruct(gVector3Right, 0.0f, terrainCollider->aabb.halfExtents.y, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(terrainCollider->aabb.rightTopForwardsTransformedVertex.x, midpoint.y, midpoint.z));
+	terrainCollider->bottomPlane = sphereTraceColliderPlaneConstruct(gVector3Down, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.z, sphereTraceVector3Construct(midpoint.x, 0.0f, midpoint.z));
+	terrainCollider->forwardPlane = sphereTraceColliderPlaneConstruct(gVector3Forward, 0.0f, terrainCollider->aabb.halfExtents.x, terrainCollider->aabb.halfExtents.y, sphereTraceVector3Construct(midpoint.x, midpoint.y, terrainCollider->aabb.rightTopForwardsTransformedVertex.z));
 }
 
 int sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 samplePosition)
 {
 	//if (sphereTraceColliderAABBIsPointInside(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, samplePosition.z }))
 	//{
-		float dpx = samplePosition.x - terrainCollider->position.x;
-		float dpz = samplePosition.z - terrainCollider->position.z;
-		float xDist = (dpx * terrainCollider->right.x + dpz * terrainCollider->right.z);
-		float zDist = (dpx * terrainCollider->forward.x + dpz * terrainCollider->forward.z);
-		if (xDist <= terrainCollider->xSize && zDist <= terrainCollider->zSize && xDist >= 0.0f && zDist >= 0.0f)
-		{
-			int x = (int)(xDist / terrainCollider->cellSize);
-			int z = (int)(zDist / terrainCollider->cellSize);
-			return 2 * x + 2 * z * terrainCollider->xCells;
-		}
-		else
-			return -1;
+	float dpx = samplePosition.x - terrainCollider->position.x;
+	float dpz = samplePosition.z - terrainCollider->position.z;
+	float xDist = (dpx * terrainCollider->right.x + dpz * terrainCollider->right.z);
+	float zDist = (dpx * terrainCollider->forward.x + dpz * terrainCollider->forward.z);
+	if (xDist <= terrainCollider->xSize && zDist <= terrainCollider->zSize && xDist >= 0.0f && zDist >= 0.0f)
+	{
+		int x = (int)(xDist / terrainCollider->cellSize);
+		int z = (int)(zDist / terrainCollider->cellSize);
+		return 2 * x + 2 * z * terrainCollider->xCells;
+	}
+	else
+		return -1;
 	//}
 	//else
 	//{
@@ -2339,11 +2191,11 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(const
 		for (float distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
 		{
 			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal, distRight), terrainCollider->forwardPlane.normal, distFwd);
-			int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, pos.z ));
+			int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, pos.z));
 			if (index != -1)
 			{
 				sphereTraceIntListAddFirst(&indices, index);
-				sphereTraceIntListAddFirst(&indices, index+1);
+				sphereTraceIntListAddFirst(&indices, index + 1);
 			}
 
 		}
@@ -2356,7 +2208,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 {
 	ST_IntListData* pIl;
 	ST_AABB imposedAABB;
-	imposedAABB.halfExtents = sphereTraceVector3Construct(imposedRadius, imposedRadius , imposedRadius );
+	imposedAABB.halfExtents = sphereTraceVector3Construct(imposedRadius, imposedRadius, imposedRadius);
 	imposedAABB.rightTopForwardsTransformedVertex = sphereTraceVector3Add(imposedPosition, imposedAABB.halfExtents);
 	imposedAABB.leftDownBackTransformedVertex = sphereTraceVector3Subtract(imposedPosition, imposedAABB.halfExtents);
 	ST_IntList il = sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(pTerrainCollider, imposedPosition, imposedRadius);
@@ -2393,7 +2245,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 	{
 		//now find the point at which the triangle is contacted with the sphere on the y axis
 		pIl = penetratingIndices.pFirst;
-		ST_Vector3 castPoint = sphereTraceVector3Construct(imposedPosition.x, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y+imposedRadius, imposedPosition.z);
+		ST_Vector3 castPoint = sphereTraceVector3Construct(imposedPosition.x, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y + imposedRadius, imposedPosition.z);
 		float minDist = FLT_MAX;
 		int minIndex;
 		ST_SphereTraceData std;
@@ -2735,7 +2587,7 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace
 	ST_Vector3 dir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint));
 	ST_Vector3 sphereRight = sphereTraceVector3Normalize(sphereTraceVector3Cross(gVector3Up, dir));
 	ST_Vector3 rightRadius = sphereTraceVector3Scale(sphereRight, pSphereTraceData->radius);
-	ST_Vector3 sphereForward = sphereTraceVector3Normalize(sphereTraceVector3Construct( dir.x, 0.0f, dir.z ));
+	ST_Vector3 sphereForward = sphereTraceVector3Normalize(sphereTraceVector3Construct(dir.x, 0.0f, dir.z));
 	ST_Vector3 forwardRadius = sphereTraceVector3Scale(sphereForward, pSphereTraceData->radius);
 	float rightRight = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->rightPlane.normal));
 	float rightForward = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->forwardPlane.normal));
@@ -2806,7 +2658,7 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace
 			float height = centerPos.y - pSphereTraceData->radius / cTheta;
 			if (fabsf(distFromCenterLine) <= pSphereTraceData->radius + terrainCollider->cellSize)
 			{
-				int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, pos.z ));
+				int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, pos.z));
 				if (index != -1)
 				{
 					if (terrainCollider->triangles[index].aabb.rightTopForwardsTransformedVertex.y >= height)
