@@ -17,6 +17,6 @@ ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vecto
 //
 b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_TriangleCollider* const pTriangleCollider);
 //
-b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Vector3 dir, const ST_TriangleCollider* const pTriangleCollider, ST_RayTraceData* const pRaycastData);
+b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const ST_TriangleCollider* const pTriangleCollider, ST_RayTraceData* const pRaycastData);
 //
-b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);
+b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);

@@ -3,6 +3,7 @@
 #include "SphereTraceLists.h"
 #include "SphereTraceRigidBody.h"
 
+
 #define COLLIDER_TOLERANCE 1e-6
 
 typedef enum ST_ColliderType
@@ -41,13 +42,15 @@ typedef struct ST_Edge
 {
 	ST_Vector3 point1;
 	ST_Vector3 point2;
+	ST_Direction dir;
+	float dist;
 } ST_Edge;
 
 typedef struct ST_PlaneCollider
 {
-	ST_Vector3 normal;
-	ST_Vector3 right;
-	ST_Vector3 forward;
+	ST_Direction normal;
+	ST_Direction right;
+	ST_Direction forward;
 	float xHalfExtent;
 	float zHalfExtent;
 	ST_Vector3 position;
@@ -69,7 +72,7 @@ typedef struct ST_TriangleCollider
 	float edgeCenterDists[3];
 	ST_Vector3 edgeDirs[3];
 	float edgeDists[3];
-	ST_Vector3 normal;
+	ST_Direction normal;
 	ST_Vector3 centroid;
 	ST_AABB aabb;
 	ST_IntList bucketIndices;
@@ -106,7 +109,7 @@ typedef struct ST_RayTraceData
 {
 	ST_Vector3 startPoint;
 	ST_Vector3 hitPoint;
-	ST_Vector3 normal;
+	ST_Direction normal;
 	float distance;
 } ST_RayTraceData;
 
@@ -135,13 +138,13 @@ typedef enum ST_CollisionType
 typedef struct ST_Contact
 {
 	float penetrationDistance;
-	ST_Vector3 normal;
+	ST_Direction normal;
 	ST_Vector3 point;
 }ST_Contact;
 typedef struct ST_SpherePlaneContactInfo
 {
 	float penetrationDistance;
-	ST_Vector3 normal;
+	ST_Direction normal;
 	ST_Vector3 point;
 	ST_SphereCollider* pSphereCollider;
 	ST_PlaneCollider* pPlaneCollider;
@@ -151,7 +154,7 @@ typedef struct ST_SpherePlaneContactInfo
 typedef struct ST_SphereTriangleContactInfo
 {
 	float penetrationDistance;
-	ST_Vector3 normal;
+	ST_Direction normal;
 	ST_Vector3 point;
 	ST_SphereCollider* pSphereCollider;
 	ST_TriangleCollider* pTriangleCollider;
@@ -167,7 +170,7 @@ typedef struct ST_SphereTerrainTriangleContactInfo
 typedef struct ST_SphereSphereContactInfo
 {
 	float penetrationDistance;
-	ST_Vector3 normal;
+	ST_Direction normal;
 	ST_Vector3 point;
 	ST_SphereCollider* pA;
 	ST_SphereCollider* pB;
@@ -192,9 +195,9 @@ ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb);
 
 void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const pSphereCastData, ST_AABB* const aabb);
 
-b32 sphereTraceColliderPointSphereTrace(ST_Vector3 from, ST_Vector3 dir, float radius, ST_Vector3 point, ST_SphereTraceData* const pSphereTraceData);
+b32 sphereTraceColliderPointSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 point, ST_SphereTraceData* const pSphereTraceData);
 
-b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Vector3 dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData);
+b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData);
 
 typedef struct ST_UniformTerrainCollider
 {
@@ -223,3 +226,7 @@ typedef struct ST_UniformTerrainCollider
 	ST_PlaneCollider backPlane;
 } ST_UniformTerrainCollider;
 
+#include "SphereTraceColliderPlane.h"
+#include "SphereTraceColliderSphere.h"
+#include "SphereTraceColliderTerrain.h"
+#include "SphereTraceColliderTriangle.h"

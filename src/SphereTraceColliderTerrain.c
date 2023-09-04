@@ -208,12 +208,12 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(const
 	ST_IntList indices = sphereTraceIntListConstruct();
 	float distRight = 0.0f;
 	float distFwd = 0.0f;
-	ST_Vector3 posStart = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(spherePosition, terrainCollider->leftPlane.normal, radius), terrainCollider->backPlane.normal, radius);
+	ST_Vector3 posStart = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(spherePosition, terrainCollider->leftPlane.normal.v, radius), terrainCollider->backPlane.normal.v, radius);
 	for (float distFwd = 0.0f; distFwd < maxCheckDistFwd; distFwd += terrainCollider->cellSize)
 	{
 		for (float distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
 		{
-			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal, distRight), terrainCollider->forwardPlane.normal, distFwd);
+			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal.v, distRight), terrainCollider->forwardPlane.normal.v, distFwd);
 			int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->aabb.leftDownBackTransformedVertex.y, pos.z));
 			if (index != -1)
 			{
@@ -274,7 +274,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 		ST_SphereTraceData std;
 		for (int i = 0; i < penetratingIndices.count; i++)
 		{
-			if (sphereTraceColliderTriangleSphereTrace(castPoint, gVector3Down, imposedRadius, &pTerrainCollider->triangles[pIl->value], &std))
+			if (sphereTraceColliderTriangleSphereTrace(castPoint, gDirectionDown, imposedRadius, &pTerrainCollider->triangles[pIl->value], &std))
 			{
 				float height = castPoint.y - std.sphereCenter.y;
 				if (height < minDist)
@@ -313,10 +313,10 @@ b32 sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(const ST_U
 
 
 
-b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 from, ST_Vector3 dir, ST_RayTraceData* const pRayTraceData)
+b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 from, ST_Direction dir, ST_RayTraceData* const pRayTraceData)
 {
-	dir = sphereTraceVector3Normalize(dir);
-	if (dir.x == 0.0f && dir.z == 0.0f)
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	if (dir.v.x == 0.0f && dir.v.z == 0.0f)
 	{
 		int triangleInd = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(pTerrainCollider, from);
 		if (triangleInd != -1)
@@ -337,9 +337,9 @@ b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* c
 	b32 xIncrementing = 0;
 	b32 yIncrementing = 0;
 	b32 zIncrementing = 0;
-	float magX = sphereTraceVector3Dot(dir, pTerrainCollider->rightPlane.normal);
-	float magY = sphereTraceVector3Dot(dir, pTerrainCollider->topPlane.normal);
-	float magZ = sphereTraceVector3Dot(dir, pTerrainCollider->forwardPlane.normal);
+	float magX = sphereTraceVector3Dot(dir.v, pTerrainCollider->rightPlane.normal.v);
+	float magY = sphereTraceVector3Dot(dir.v, pTerrainCollider->topPlane.normal.v);
+	float magZ = sphereTraceVector3Dot(dir.v, pTerrainCollider->forwardPlane.normal.v);
 	ST_Vector3 intersectingDirection;
 	ST_Vector3 intersection = from;
 	ST_Vector3 dp = sphereTraceVector3Subtract(from, pTerrainCollider->position);
@@ -440,7 +440,7 @@ b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* c
 				if (tentativeX < tMin && tentativeX > 0.0f)
 				{
 					tMin = tentativeX;
-					intersectingDirection = pTerrainCollider->rightPlane.normal;
+					intersectingDirection = pTerrainCollider->rightPlane.normal.v;
 				}
 			}
 			else
@@ -454,7 +454,7 @@ b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* c
 				{
 
 					tMin = tentativeX;
-					intersectingDirection = pTerrainCollider->leftPlane.normal;
+					intersectingDirection = pTerrainCollider->leftPlane.normal.v;
 				}
 			}
 
@@ -469,7 +469,7 @@ b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* c
 				{
 
 					tMin = tentativeT;
-					intersectingDirection = pTerrainCollider->forwardPlane.normal;
+					intersectingDirection = pTerrainCollider->forwardPlane.normal.v;
 					incomingFromX = 0;
 				}
 			}
@@ -484,11 +484,11 @@ b32 sphereTraceColliderUniformTerrainRayTrace(const ST_UniformTerrainCollider* c
 				{
 
 					tMin = tentativeT;
-					intersectingDirection = pTerrainCollider->backPlane.normal;
+					intersectingDirection = pTerrainCollider->backPlane.normal.v;
 					incomingFromX = 0;
 				}
 			}
-			ST_Vector3 nextIntersection = sphereTraceVector3AddAndScale(intersection, dir, tMin);
+			ST_Vector3 nextIntersection = sphereTraceVector3AddAndScale(intersection, dir.v, tMin);
 			//need to adjust the intersection so we dont get stuck with floating point error
 			if (incomingFromX)
 			{
@@ -563,7 +563,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceDown(const ST_UniformTerrainColl
 	int triangleMin = 0;
 	for (int i = 0; i < triangleIndices.count; i++)
 	{
-		if (sphereTraceColliderTriangleSphereTrace(from, gVector3Down, radius, &pTerrainCollider->triangles[pild->value], &dataTest))
+		if (sphereTraceColliderTriangleSphereTrace(from, gDirectionDown, radius, &pTerrainCollider->triangles[pild->value], &dataTest))
 		{
 			//rendererDrawSphere(dataTest.rayTraceData.hitPoint, (ST_Vector3) { 0.1f, 0.1f, 0.1f }, gQuaternionIdentity, gVector4ColorRed);
 			//sceneDrawTriangleOutline(&pTerrainCollider->triangles[pild->value], gVector4ColorGreen);
@@ -590,7 +590,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceDown(const ST_UniformTerrainColl
 	}
 	if (maxHeight > -FLT_MAX)
 	{
-		sphereTraceColliderTriangleSphereTrace(from, gVector3Down, radius, &pTerrainCollider->triangles[triangleMin], &dataTest);
+		sphereTraceColliderTriangleSphereTrace(from, gDirectionDown, radius, &pTerrainCollider->triangles[triangleMin], &dataTest);
 		return 1;
 	}
 
@@ -612,10 +612,10 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace
 	ST_Vector3 rightRadius = sphereTraceVector3Scale(sphereRight, pSphereTraceData->radius);
 	ST_Vector3 sphereForward = sphereTraceVector3Normalize(sphereTraceVector3Construct(dir.x, 0.0f, dir.z));
 	ST_Vector3 forwardRadius = sphereTraceVector3Scale(sphereForward, pSphereTraceData->radius);
-	float rightRight = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->rightPlane.normal));
-	float rightForward = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->forwardPlane.normal));
-	float forwardRight = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->rightPlane.normal));
-	float forwardForward = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->forwardPlane.normal));
+	float rightRight = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->rightPlane.normal.v));
+	float rightForward = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->forwardPlane.normal.v));
+	float forwardRight = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->rightPlane.normal.v));
+	float forwardForward = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->forwardPlane.normal.v));
 	float signX = 1.0f;
 	float signZ = 1.0f;
 	if (rightDot1 <= rightDot2)
@@ -674,7 +674,7 @@ ST_IntList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace
 	{
 		for (float distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
 		{
-			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal, signX * distRight), terrainCollider->forwardPlane.normal, signZ * distFwd);
+			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal.v, signX * distRight), terrainCollider->forwardPlane.normal.v, signZ * distFwd);
 			float dirDist = sphereTraceVector3Dot(dir, sphereTraceVector3Subtract(pos, pSphereTraceData->rayTraceData.startPoint));
 			ST_Vector3 centerPos = sphereTraceVector3AddAndScale(pSphereTraceData->rayTraceData.startPoint, dir, fabsf(dirDist));
 			float distFromCenterLine = sphereTraceVector3Dot(sphereTraceVector3Subtract(centerPos, pos), sphereRight);
@@ -703,7 +703,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceByStartEndPoint(const ST_Uniform
 	stdDummy.rayTraceData.startPoint = startPoint;
 	stdDummy.sphereCenter = endPoint;
 	stdDummy.radius = radius;
-	ST_Vector3 dir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(endPoint, startPoint));
+	ST_Direction dir = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(endPoint, startPoint));
 	ST_SphereTerrainTriangleContactInfo sttci;
 	if (sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(pTerrainCollider, startPoint, radius, &sttci))
 	{
@@ -740,10 +740,10 @@ b32 sphereTraceColliderUniformTerrainSphereTraceByStartEndPoint(const ST_Uniform
 }
 
 
-b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 from, ST_Vector3 dir, float radius, ST_SphereTraceData* const pSphereTraceData)
+b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 from, ST_Direction dir, float radius, ST_SphereTraceData* const pSphereTraceData)
 {
-	dir = sphereTraceVector3Normalize(dir);
-	if (dir.x == 0.0f && dir.z == 0.0f)
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	if (dir.v.x == 0.0f && dir.v.z == 0.0f)
 	{
 		return sphereTraceColliderUniformTerrainSphereTraceDown(pTerrainCollider, from, radius, pSphereTraceData);
 	}
@@ -752,9 +752,9 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 	b32 xIncrementing = 0;
 	b32 yIncrementing = 0;
 	b32 zIncrementing = 0;
-	float magX = sphereTraceVector3Dot(dir, pTerrainCollider->rightPlane.normal);
-	float magY = sphereTraceVector3Dot(dir, pTerrainCollider->topPlane.normal);
-	float magZ = sphereTraceVector3Dot(dir, pTerrainCollider->forwardPlane.normal);
+	float magX = sphereTraceVector3Dot(dir.v, pTerrainCollider->rightPlane.normal.v);
+	float magY = sphereTraceVector3Dot(dir.v, pTerrainCollider->topPlane.normal.v);
+	float magZ = sphereTraceVector3Dot(dir.v, pTerrainCollider->forwardPlane.normal.v);
 	ST_Vector3 intersectingDirection;
 	ST_Vector3 intersection = from;
 	ST_Vector3 dp = sphereTraceVector3Subtract(from, pTerrainCollider->position);
@@ -855,7 +855,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 				if (tentativeX < tMin && tentativeX > 0.0f)
 				{
 					tMin = tentativeX;
-					intersectingDirection = pTerrainCollider->rightPlane.normal;
+					intersectingDirection = pTerrainCollider->rightPlane.normal.v;
 				}
 			}
 			else
@@ -869,7 +869,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 				{
 
 					tMin = tentativeX;
-					intersectingDirection = pTerrainCollider->leftPlane.normal;
+					intersectingDirection = pTerrainCollider->leftPlane.normal.v;
 				}
 			}
 
@@ -884,7 +884,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 				{
 
 					tMin = tentativeT;
-					intersectingDirection = pTerrainCollider->forwardPlane.normal;
+					intersectingDirection = pTerrainCollider->forwardPlane.normal.v;
 					incomingFromX = 0;
 				}
 			}
@@ -899,11 +899,11 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 				{
 
 					tMin = tentativeT;
-					intersectingDirection = pTerrainCollider->backPlane.normal;
+					intersectingDirection = pTerrainCollider->backPlane.normal.v;
 					incomingFromX = 0;
 				}
 			}
-			ST_Vector3 nextIntersection = sphereTraceVector3AddAndScale(intersection, dir, tMin);
+			ST_Vector3 nextIntersection = sphereTraceVector3AddAndScale(intersection, dir.v, tMin);
 			//need to adjust the intersection so we dont get stuck with floating point error
 			if (incomingFromX)
 			{
@@ -966,7 +966,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 					int triIndex;
 					ST_TriangleCollider* ptc;
 					stdDummy.rayTraceData.startPoint = pSphereTraceData->sphereCenter;
-					stdDummy.sphereCenter = sphereTraceVector3AddAndScale(stdDummy.rayTraceData.startPoint, dir, radius);
+					stdDummy.sphereCenter = sphereTraceVector3AddAndScale(stdDummy.rayTraceData.startPoint, dir.v, radius);
 					il = sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace(pTerrainCollider, &stdDummy);
 					ST_IntListData* pild = il.pFirst;
 					for (int i = 0; i < il.count; i++)
@@ -988,7 +988,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 					}
 					//sphereTraceColliderTriangleSphereTrace(from, dir, radius, ptc, &stdDummy);
 					ST_Vector3 adjustedDir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint));
-					printf("%i\n", sphereTraceVector3Equal(dir, adjustedDir));
+					printf("%i\n", sphereTraceVector3Equal(dir.v, adjustedDir));
 					sphereTraceIntListFree(&il);
 					return 1;
 				}

@@ -32,7 +32,7 @@ b32 sphereTraceColliderAABBIntersectSphere(const ST_AABB* const aabb, const ST_S
 	return 1;
 }
 
-b32 sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(ST_Vector3 imposedPosition, float imposedRadius, ST_Vector3 planeNormal, ST_Vector3 pointOnPlane, ST_Contact* const pContact)
+b32 sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(ST_Vector3 imposedPosition, float imposedRadius, ST_Direction planeNormal, ST_Vector3 pointOnPlane, ST_Contact* const pContact)
 {
 	ST_RayTraceData rtd;
 	sphereTraceColliderInfinitePlaneRayTrace(imposedPosition, planeNormal, planeNormal, pointOnPlane, &rtd);
@@ -75,17 +75,17 @@ ST_SphereCollider sphereTraceColliderSphereConstructWithPosition(float radius, S
 	return sphereCollider;
 }
 
-b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Vector3 dir, const ST_SphereCollider* const pSphere, ST_RayTraceData* const pData)
+b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const ST_SphereCollider* const pSphere, ST_RayTraceData* const pData)
 {
-	dir = sphereTraceVector3Normalize(dir);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	b32 hits = 0;
 	ST_Vector3 p0 = pSphere->pRigidBody->position;
-	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir);
-	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(p0, start), negativeDir) / sphereTraceVector3Dot(dir, negativeDir);
+	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir.v);
+	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(p0, start), negativeDir) / sphereTraceVector3Dot(dir.v, negativeDir);
 
 	if (dist >= 0.0f)
 	{
-		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir, dist));
+		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir.v, dist));
 		ST_Vector3 intersectionMinusStart = sphereTraceVector3Subtract(intersection, p0);
 		float l2 = sphereTraceVector3Length2(intersectionMinusStart);
 		if (l2 <= pSphere->radius * pSphere->radius)
@@ -96,31 +96,31 @@ b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Vector3 dir, const ST
 			ST_Vector3 dirComp = sphereTraceVector3Scale(negativeDir, length / tanf(theta));
 			if (length == 0.0f)
 				dirComp = sphereTraceVector3Scale(negativeDir, pSphere->radius);
-			pData->normal = sphereTraceVector3Add(intersectionMinusStart, dirComp);
-			pData->hitPoint = sphereTraceVector3Add(pData->normal, p0);
+			pData->normal = sphereTraceDirectionConstruct(sphereTraceVector3Add(intersectionMinusStart, dirComp), 0);
+			pData->hitPoint = sphereTraceVector3Add(pData->normal.v, p0);
 			//stupid hack
 			if (sphereTraceVector3Nan(pData->hitPoint))
 				return 0;
 			pData->startPoint = start;
 			pData->distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->hitPoint, start));
-			pData->normal = sphereTraceVector3Normalize(pData->normal);
+			sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pData->normal);
 		}
 	}
 
 	return hits;
 }
 
-b32 sphereTraceColliderImposedSphereRayTrace(ST_Vector3 start, ST_Vector3 dir, ST_Vector3 imposedPosition, float imposedRadius, ST_RayTraceData* const pData)
+b32 sphereTraceColliderImposedSphereRayTrace(ST_Vector3 start, ST_Direction dir, ST_Vector3 imposedPosition, float imposedRadius, ST_RayTraceData* const pData)
 {
-	dir = sphereTraceVector3Normalize(dir);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	b32 hits = 0;
 	ST_Vector3 p0 = imposedPosition;
-	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir);
-	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(p0, start), negativeDir) / sphereTraceVector3Dot(dir, negativeDir);
+	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir.v);
+	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(p0, start), negativeDir) / sphereTraceVector3Dot(dir.v, negativeDir);
 
 	if (dist >= 0.0f)
 	{
-		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir, dist));
+		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir.v, dist));
 		ST_Vector3 intersectionMinusStart = sphereTraceVector3Subtract(intersection, p0);
 		float l2 = sphereTraceVector3Length2(intersectionMinusStart);
 		if (l2 <= imposedRadius * imposedRadius)
@@ -131,23 +131,23 @@ b32 sphereTraceColliderImposedSphereRayTrace(ST_Vector3 start, ST_Vector3 dir, S
 			ST_Vector3 dirComp = sphereTraceVector3Scale(negativeDir, length / tanf(theta));
 			if (length == 0.0f)
 				dirComp = sphereTraceVector3Scale(negativeDir, imposedRadius);
-			pData->normal = sphereTraceVector3Add(intersectionMinusStart, dirComp);
-			pData->hitPoint = sphereTraceVector3Add(pData->normal, p0);
+			pData->normal = sphereTraceDirectionConstruct(sphereTraceVector3Add(intersectionMinusStart, dirComp), 0);
+			pData->hitPoint = sphereTraceVector3Add(pData->normal.v, p0);
 			//stupid hack
 			if (sphereTraceVector3Nan(pData->hitPoint))
 				return 0;
 			pData->startPoint = start;
 			pData->distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->hitPoint, start));
-			pData->normal = sphereTraceVector3Normalize(pData->normal);
+			sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pData->normal);
 		}
 	}
 
 	return hits;
 }
 
-b32 sphereTraceColliderSphereSphereTrace(ST_Vector3 start, ST_Vector3 dir, float radius, const ST_SphereCollider* const pSphere, ST_SphereTraceData* const pData)
+b32 sphereTraceColliderSphereSphereTrace(ST_Vector3 start, ST_Direction dir, float radius, const ST_SphereCollider* const pSphere, ST_SphereTraceData* const pData)
 {
-	dir = sphereTraceVector3Normalize(dir);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	ST_Vector3 dp = sphereTraceVector3Subtract(start, pSphere->pRigidBody->position);
 	float sphereRadiusPlusSphereCastRadius = pSphere->radius + radius;
 	float dpDist = sphereTraceVector3Length(dp);
@@ -156,20 +156,20 @@ b32 sphereTraceColliderSphereSphereTrace(ST_Vector3 start, ST_Vector3 dir, float
 	{
 		pData->rayTraceData.startPoint = start;
 		pData->radius = radius;
-		pData->rayTraceData.normal = sphereTraceVector3Scale(dp, 1.0f / dpDist);
+		pData->rayTraceData.normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dp, 1.0f / dpDist), 1);
 		pData->sphereCenter = start;
-		pData->rayTraceData.hitPoint = sphereTraceVector3AddAndScale(pSphere->pRigidBody->position, pData->rayTraceData.normal, pSphere->radius);
+		pData->rayTraceData.hitPoint = sphereTraceVector3AddAndScale(pSphere->pRigidBody->position, pData->rayTraceData.normal.v, pSphere->radius);
 		pData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->rayTraceData.hitPoint, start));
 		pData->traceDistance = 0.0f;
 		return 1;
 	}
 	b32 hits = 0;
-	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir);
-	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphere->pRigidBody->position, start), negativeDir) / sphereTraceVector3Dot(dir, negativeDir);
+	ST_Vector3 negativeDir = sphereTraceVector3Negative(dir.v);
+	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphere->pRigidBody->position, start), negativeDir) / sphereTraceVector3Dot(dir.v, negativeDir);
 
 	if (dist >= 0.0f)
 	{
-		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir, dist));
+		ST_Vector3 intersection = sphereTraceVector3Add(start, sphereTraceVector3Scale(dir.v, dist));
 		ST_Vector3 intersectionMinusStart = sphereTraceVector3Subtract(intersection, pSphere->pRigidBody->position);
 		float l2 = sphereTraceVector3Length2(intersectionMinusStart);
 		if (l2 <= sphereRadiusPlusSphereCastRadius * sphereRadiusPlusSphereCastRadius)
@@ -180,10 +180,10 @@ b32 sphereTraceColliderSphereSphereTrace(ST_Vector3 start, ST_Vector3 dir, float
 			ST_Vector3 dirComp = sphereTraceVector3Scale(negativeDir, length / tanf(theta));
 			pData->rayTraceData.startPoint = start;
 			pData->radius = radius;
-			pData->rayTraceData.normal = sphereTraceVector3Add(intersectionMinusStart, dirComp);
-			pData->sphereCenter = sphereTraceVector3Add(pSphere->pRigidBody->position, pData->rayTraceData.normal);
-			pData->rayTraceData.normal = sphereTraceVector3Normalize(pData->rayTraceData.normal);
-			pData->rayTraceData.hitPoint = sphereTraceVector3AddAndScale(pSphere->pRigidBody->position, pData->rayTraceData.normal, pSphere->radius);
+			pData->rayTraceData.normal = sphereTraceDirectionConstruct(sphereTraceVector3Add(intersectionMinusStart, dirComp), 1);
+			pData->sphereCenter = sphereTraceVector3Add(pSphere->pRigidBody->position, pData->rayTraceData.normal.v);
+			sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pData->rayTraceData.normal);
+			pData->rayTraceData.hitPoint = sphereTraceVector3AddAndScale(pSphere->pRigidBody->position, pData->rayTraceData.normal.v, pSphere->radius);
 			pData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->rayTraceData.hitPoint, start));
 			pData->traceDistance = sphereTraceVector3Distance(pData->rayTraceData.startPoint, pData->sphereCenter);
 		}
@@ -199,7 +199,7 @@ b32 sphereTraceColliderPointImposedSphereCollisionTest(ST_Vector3 point, ST_Vect
 	{
 		pContact->penetrationDistance = imposedRadius - dist;
 		pContact->point = point;
-		pContact->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(imposedPosition, point));
+		pContact->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(imposedPosition, point));
 		return 1;
 	}
 
@@ -214,7 +214,7 @@ b32 sphereTraceColliderEdgeImposedSphereCollisionTest(const ST_Edge* const pEdge
 	ST_Vector3 up = sphereTraceVector3Normalize(sphereTraceVector3Cross(edgeDir, positionMinusFirstPoint));
 	if (sphereTraceVector3Nan(up))
 	{
-		pContact->normal = gVector3Zero;
+		pContact->normal = sphereTraceDirectionConstruct(gVector3Zero, 1);
 		pContact->penetrationDistance = 0.0f;
 		pContact->point = imposedPosition;
 		float edgeDist = sphereTraceVector3Dot(edgeDir, positionMinusFirstPoint);
@@ -234,7 +234,7 @@ b32 sphereTraceColliderEdgeImposedSphereCollisionTest(const ST_Edge* const pEdge
 	float dist = sphereTraceVector3Distance(cp, imposedPosition);
 	if (dist <= imposedRadius)
 	{
-		pContact->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(imposedPosition, cp));
+		pContact->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(imposedPosition, cp));
 		pContact->penetrationDistance = imposedRadius - dist;
 		pContact->point = cp;
 		float edgeDist = sphereTraceVector3Dot(edgeDir, positionMinusFirstPoint);
@@ -256,9 +256,9 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 {
 	ST_RayTraceData rcd;
 	b32 didHit;
-	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, pPlaneCollider->position), pPlaneCollider->normal);
+	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, pPlaneCollider->position), pPlaneCollider->normal.v);
 	if (dpDotNormal >= 0.0f)
-		didHit = sphereTraceColliderPlaneRayTrace(pSphereCollider->pRigidBody->position, sphereTraceVector3Negative(pPlaneCollider->normal), pPlaneCollider, &rcd);
+		didHit = sphereTraceColliderPlaneRayTrace(pSphereCollider->pRigidBody->position, sphereTraceDirectionNegative(pPlaneCollider->normal), pPlaneCollider, &rcd);
 	else
 		didHit = sphereTraceColliderPlaneRayTrace(pSphereCollider->pRigidBody->position, pPlaneCollider->normal, pPlaneCollider, &rcd);
 	if (rcd.distance <= pSphereCollider->radius)
@@ -285,7 +285,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		case PLANE_EDGE_RIGHT:
 		{
 			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, pPlaneCollider->forward, pSphereCollider, &rcd)
-				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pPlaneCollider->forward), pSphereCollider, &rcd2);
+				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pPlaneCollider->forward), pSphereCollider, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 			break;
@@ -293,7 +293,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		case PLANE_EDGE_FORWARD:
 		{
 			//printf("plane edge forwards\n");
-			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceVector3Negative(pPlaneCollider->right), pSphereCollider, &rcd)
+			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceDirectionNegative(pPlaneCollider->right), pSphereCollider, &rcd)
 				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, pPlaneCollider->right, pSphereCollider, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
@@ -301,7 +301,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		}
 		case PLANE_EDGE_LEFT:
 		{
-			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceVector3Negative(pPlaneCollider->forward), pSphereCollider, &rcd)
+			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceDirectionNegative(pPlaneCollider->forward), pSphereCollider, &rcd)
 				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, pPlaneCollider->forward, pSphereCollider, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
@@ -310,7 +310,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		case PLANE_EDGE_BACK:
 		{
 			didHit = sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, pPlaneCollider->right, pSphereCollider, &rcd)
-				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pPlaneCollider->right), pSphereCollider, &rcd2);
+				&& sphereTraceColliderSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pPlaneCollider->right), pSphereCollider, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 			break;
@@ -320,7 +320,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		if (didHit)
 		{
 			contactInfo->collisionType = COLLISION_FACE_EDGE;
-			contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
+			contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
 			//contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(contactPos, pSphereCollider->pRigidBody->position));
 			contactInfo->penetrationDistance = pSphereCollider->radius - sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
 			contactInfo->pSphereCollider = pSphereCollider;
@@ -337,7 +337,7 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		{
 			//printf("point collision\n");
 			contactInfo->collisionType = COLLISION_FACE_POINT;
-			contactInfo->normal = sphereTraceVector3Scale(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos), 1.0f / dist);
+			contactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos), 1.0f / dist), 1);
 			contactInfo->penetrationDistance = pSphereCollider->radius - dist;
 			contactInfo->pSphereCollider = pSphereCollider;
 			contactInfo->pPlaneCollider = pPlaneCollider;
@@ -355,9 +355,9 @@ b32 sphereTraceColliderTriangleSphereCollisionTest(ST_TriangleCollider* const pT
 {
 	ST_RayTraceData rcd;
 	b32 didHit;
-	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, pTriangleCollider->centroid), pTriangleCollider->normal);
+	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, pTriangleCollider->centroid), pTriangleCollider->normal.v);
 	if (dpDotNormal >= 0.0f)
-		didHit = sphereTraceColliderTriangleRayTrace(pSphereCollider->pRigidBody->position, sphereTraceVector3Negative(pTriangleCollider->normal), pTriangleCollider, &rcd);
+		didHit = sphereTraceColliderTriangleRayTrace(pSphereCollider->pRigidBody->position, sphereTraceDirectionNegative(pTriangleCollider->normal), pTriangleCollider, &rcd);
 	else
 		didHit = sphereTraceColliderTriangleRayTrace(pSphereCollider->pRigidBody->position, pTriangleCollider->normal, pTriangleCollider, &rcd);
 	if (rcd.distance <= pSphereCollider->radius)
@@ -379,14 +379,14 @@ b32 sphereTraceColliderTriangleSphereCollisionTest(ST_TriangleCollider* const pT
 		ST_Vector3 contactPos;
 		//otherwise we need to check the edges first
 		int closestEdge = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(pTriangleCollider, pSphereCollider->pRigidBody->position);
-		didHit = sphereTraceColliderSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point1, pTriangleCollider->edgeDirs[closestEdge], pSphereCollider, &rcd)
-			&& sphereTraceColliderSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pTriangleCollider->edgeDirs[closestEdge]), pSphereCollider, &rcd2);
+		didHit = sphereTraceColliderSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point1, pTriangleCollider->transformedEdges[closestEdge].dir, pSphereCollider, &rcd)
+			&& sphereTraceColliderSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pTriangleCollider->transformedEdges[closestEdge].dir), pSphereCollider, &rcd2);
 		if (didHit)
 			contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 		if (didHit)
 		{
 			contactInfo->collisionType = COLLISION_FACE_EDGE;
-			contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
+			contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
 			//contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(contactPos, pSphereCollider->pRigidBody->position));
 			contactInfo->penetrationDistance = pSphereCollider->radius - sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos));
 			contactInfo->pSphereCollider = pSphereCollider;
@@ -403,7 +403,7 @@ b32 sphereTraceColliderTriangleSphereCollisionTest(ST_TriangleCollider* const pT
 		{
 			//printf("point collision\n");
 			contactInfo->collisionType = COLLISION_FACE_POINT;
-			contactInfo->normal = sphereTraceVector3Scale(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos), 1.0f / dist);
+			contactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(sphereTraceVector3Subtract(pSphereCollider->pRigidBody->position, contactPos), 1.0f / dist), 1);
 			contactInfo->penetrationDistance = pSphereCollider->radius - dist;
 			contactInfo->pSphereCollider = pSphereCollider;
 			contactInfo->pTriangleCollider = pTriangleCollider;
@@ -421,9 +421,9 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 {
 	ST_RayTraceData rcd;
 	b32 didHit;
-	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(imposedPosition, pPlaneCollider->position), pPlaneCollider->normal);
+	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(imposedPosition, pPlaneCollider->position), pPlaneCollider->normal.v);
 	if (dpDotNormal >= 0.0f)
-		didHit = sphereTraceColliderPlaneRayTrace(imposedPosition, sphereTraceVector3Negative(pPlaneCollider->normal), pPlaneCollider, &rcd);
+		didHit = sphereTraceColliderPlaneRayTrace(imposedPosition, sphereTraceDirectionNegative(pPlaneCollider->normal), pPlaneCollider, &rcd);
 	else
 		didHit = sphereTraceColliderPlaneRayTrace(imposedPosition, pPlaneCollider->normal, pPlaneCollider, &rcd);
 	if (rcd.distance <= imposedRadius)
@@ -450,7 +450,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		case PLANE_EDGE_RIGHT:
 		{
 			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, pPlaneCollider->forward, imposedPosition, imposedRadius, &rcd)
-				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pPlaneCollider->forward), imposedPosition, imposedRadius, &rcd2);
+				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pPlaneCollider->forward), imposedPosition, imposedRadius, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 			break;
@@ -458,7 +458,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		case PLANE_EDGE_FORWARD:
 		{
 			//printf("plane edge forwards\n");
-			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceVector3Negative(pPlaneCollider->right), imposedPosition, imposedRadius, &rcd)
+			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceDirectionNegative(pPlaneCollider->right), imposedPosition, imposedRadius, &rcd)
 				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, pPlaneCollider->right, imposedPosition, imposedRadius, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
@@ -466,7 +466,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		}
 		case PLANE_EDGE_LEFT:
 		{
-			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceVector3Negative(pPlaneCollider->forward), imposedPosition, imposedRadius, &rcd)
+			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, sphereTraceDirectionNegative(pPlaneCollider->forward), imposedPosition, imposedRadius, &rcd)
 				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, pPlaneCollider->forward, imposedPosition, imposedRadius, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
@@ -475,7 +475,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		case PLANE_EDGE_BACK:
 		{
 			didHit = sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point1, pPlaneCollider->right, imposedPosition, imposedRadius, &rcd)
-				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pPlaneCollider->right), imposedPosition, imposedRadius, &rcd2);
+				&& sphereTraceColliderImposedSphereRayTrace(pPlaneCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pPlaneCollider->right), imposedPosition, imposedRadius, &rcd2);
 			if (didHit)
 				contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 			break;
@@ -485,7 +485,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		if (didHit)
 		{
 			contactInfo->collisionType = COLLISION_FACE_EDGE;
-			contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(imposedPosition, contactPos));
+			contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(imposedPosition, contactPos));
 			//contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(contactPos, pSphereCollider->pRigidBody->position));
 			contactInfo->penetrationDistance = imposedRadius - sphereTraceVector3Length(sphereTraceVector3Subtract(imposedPosition, contactPos));
 			contactInfo->pSphereCollider = NULL;
@@ -502,7 +502,7 @@ b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const p
 		{
 			//printf("point collision\n");
 			contactInfo->collisionType = COLLISION_FACE_POINT;
-			contactInfo->normal = sphereTraceVector3Scale(sphereTraceVector3Subtract(imposedPosition, contactPos), 1.0f / dist);
+			contactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(sphereTraceVector3Subtract(imposedPosition, contactPos), 1.0f / dist), 1);
 			contactInfo->penetrationDistance = imposedRadius - dist;
 			contactInfo->pSphereCollider = NULL;
 			contactInfo->pPlaneCollider = pPlaneCollider;
@@ -520,9 +520,9 @@ b32 sphereTraceColliderTriangleImposedSphereCollisionTest(ST_TriangleCollider* c
 {
 	ST_RayTraceData rcd;
 	b32 didHit;
-	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(imposedPosition, pTriangleCollider->centroid), pTriangleCollider->normal);
+	float dpDotNormal = sphereTraceVector3Dot(sphereTraceVector3Subtract(imposedPosition, pTriangleCollider->centroid), pTriangleCollider->normal.v);
 	if (dpDotNormal >= 0.0f)
-		didHit = sphereTraceColliderTriangleRayTrace(imposedPosition, sphereTraceVector3Negative(pTriangleCollider->normal), pTriangleCollider, &rcd);
+		didHit = sphereTraceColliderTriangleRayTrace(imposedPosition, sphereTraceDirectionNegative(pTriangleCollider->normal), pTriangleCollider, &rcd);
 	else
 		didHit = sphereTraceColliderTriangleRayTrace(imposedPosition, pTriangleCollider->normal, pTriangleCollider, &rcd);
 	if (rcd.distance <= imposedRadius)
@@ -544,14 +544,14 @@ b32 sphereTraceColliderTriangleImposedSphereCollisionTest(ST_TriangleCollider* c
 		ST_Vector3 contactPos;
 		//otherwise we need to check the edges first
 		int closestEdge = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(pTriangleCollider, imposedPosition);
-		didHit = sphereTraceColliderImposedSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point1, pTriangleCollider->edgeDirs[closestEdge], imposedPosition, imposedRadius, &rcd)
-			&& sphereTraceColliderImposedSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point2, sphereTraceVector3Negative(pTriangleCollider->edgeDirs[closestEdge]), imposedPosition, imposedRadius, &rcd2);
+		didHit = sphereTraceColliderImposedSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point1, pTriangleCollider->transformedEdges[closestEdge].dir, imposedPosition, imposedRadius, &rcd)
+			&& sphereTraceColliderImposedSphereRayTrace(pTriangleCollider->transformedEdges[closestEdge].point2, sphereTraceDirectionNegative(pTriangleCollider->transformedEdges[closestEdge].dir), imposedPosition, imposedRadius, &rcd2);
 		if (didHit)
 			contactPos = sphereTraceVector3Average(rcd.hitPoint, rcd2.hitPoint);
 		if (didHit)
 		{
 			contactInfo->collisionType = COLLISION_FACE_EDGE;
-			contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(imposedPosition, contactPos));
+			contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(imposedPosition, contactPos));
 			//contactInfo->normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(contactPos, pSphereCollider->pRigidBody->position));
 			contactInfo->penetrationDistance = imposedRadius - sphereTraceVector3Length(sphereTraceVector3Subtract(imposedPosition, contactPos));
 			contactInfo->pSphereCollider = NULL;
@@ -568,7 +568,7 @@ b32 sphereTraceColliderTriangleImposedSphereCollisionTest(ST_TriangleCollider* c
 		{
 			//printf("point collision\n");
 			contactInfo->collisionType = COLLISION_FACE_POINT;
-			contactInfo->normal = sphereTraceVector3Scale(sphereTraceVector3Subtract(imposedPosition, contactPos), 1.0f / dist);
+			contactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(sphereTraceVector3Subtract(imposedPosition, contactPos), 1.0f / dist), 1);
 			contactInfo->penetrationDistance = imposedRadius - dist;
 			contactInfo->pSphereCollider = NULL;
 			contactInfo->pTriangleCollider = pTriangleCollider;
@@ -589,12 +589,12 @@ b32 sphereTraceColliderSphereSphereCollisionTest(ST_SphereCollider* const pSpher
 	float rab = pSphereColliderA->radius + pSphereColliderB->radius;
 	if (dist <= rab)
 	{
-		pContactInfo->normal = sphereTraceVector3Scale(dp, 1.0f / dist);
+		pContactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dp, 1.0f / dist), 1);
 		pContactInfo->pA = pSphereColliderA;
 		pContactInfo->pB = pSphereColliderB;
 		pContactInfo->penetrationDistance = rab - dist;
-		ST_Vector3 pIntA = sphereTraceVector3AddAndScale(pSphereColliderA->pRigidBody->position, pContactInfo->normal, pSphereColliderA->radius);
-		ST_Vector3 pIntB = sphereTraceVector3AddAndScale(pSphereColliderB->pRigidBody->position, sphereTraceVector3Negative(pContactInfo->normal), pSphereColliderB->radius);
+		ST_Vector3 pIntA = sphereTraceVector3AddAndScale(pSphereColliderA->pRigidBody->position, pContactInfo->normal.v, pSphereColliderA->radius);
+		ST_Vector3 pIntB = sphereTraceVector3AddAndScale(pSphereColliderB->pRigidBody->position, sphereTraceVector3Negative(pContactInfo->normal.v), pSphereColliderB->radius);
 		pContactInfo->point = sphereTraceVector3Average(pIntA, pIntB);
 		return 1;
 	}

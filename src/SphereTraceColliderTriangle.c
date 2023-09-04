@@ -270,7 +270,7 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->transformedVertices[1] = v2;
 	pTriangleCollider->transformedVertices[2] = v3;
 	pTriangleCollider->centroid = sphereTraceVector3Construct((v1.x + v2.x + v3.x) / 3.0f, (v1.y + v2.y + v3.y) / 3.0f, (v1.z + v2.z + v3.z) / 3.0f);
-	pTriangleCollider->normal = sphereTraceVector3Normalize(sphereTraceVector3Cross(sphereTraceVector3Subtract(v3, v2), sphereTraceVector3Subtract(v1, v2)));
+	pTriangleCollider->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(sphereTraceVector3Subtract(v3, v2), sphereTraceVector3Subtract(v1, v2)));
 	pTriangleCollider->transformedEdges[0] = sphereTraceEdgeConstruct(v3, v1);
 	pTriangleCollider->transformedEdges[1] = sphereTraceEdgeConstruct(v1, v2);
 	pTriangleCollider->transformedEdges[2] = sphereTraceEdgeConstruct(v2, v3);
@@ -289,9 +289,9 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->edgeDists[0] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[0].point2, pTriangleCollider->transformedEdges[0].point1));
 	pTriangleCollider->edgeDists[1] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[1].point2, pTriangleCollider->transformedEdges[1].point1));
 	pTriangleCollider->edgeDists[2] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[2].point2, pTriangleCollider->transformedEdges[2].point1));
-	pTriangleCollider->edgeOrthogonalDirs[0] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[0], pTriangleCollider->normal));
-	pTriangleCollider->edgeOrthogonalDirs[1] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[1], pTriangleCollider->normal));
-	pTriangleCollider->edgeOrthogonalDirs[2] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[2], pTriangleCollider->normal));
+	pTriangleCollider->edgeOrthogonalDirs[0] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[0], pTriangleCollider->normal.v));
+	pTriangleCollider->edgeOrthogonalDirs[1] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[1], pTriangleCollider->normal.v));
+	pTriangleCollider->edgeOrthogonalDirs[2] = sphereTraceVector3Normalize(sphereTraceVector3Cross(pTriangleCollider->edgeDirs[2], pTriangleCollider->normal.v));
 	sphereTraceColliderTriangleSetAABB(pTriangleCollider);
 }
 
@@ -305,11 +305,11 @@ ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vecto
 
 b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_TriangleCollider* const pTriangleCollider)
 {
-	float dot1 = sphereTraceVector3Dot(pTriangleCollider->normal, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[0], pTriangleCollider->transformedVertices[2]),
+	float dot1 = sphereTraceVector3Dot(pTriangleCollider->normal.v, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[0], pTriangleCollider->transformedVertices[2]),
 		sphereTraceVector3Subtract(projectedPoint, pTriangleCollider->transformedVertices[2])));
-	float dot2 = sphereTraceVector3Dot(pTriangleCollider->normal, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[1], pTriangleCollider->transformedVertices[0]),
+	float dot2 = sphereTraceVector3Dot(pTriangleCollider->normal.v, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[1], pTriangleCollider->transformedVertices[0]),
 		sphereTraceVector3Subtract(projectedPoint, pTriangleCollider->transformedVertices[0])));
-	float dot3 = sphereTraceVector3Dot(pTriangleCollider->normal, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[2], pTriangleCollider->transformedVertices[1]),
+	float dot3 = sphereTraceVector3Dot(pTriangleCollider->normal.v, sphereTraceVector3Cross(sphereTraceVector3Subtract(pTriangleCollider->transformedVertices[2], pTriangleCollider->transformedVertices[1]),
 		sphereTraceVector3Subtract(projectedPoint, pTriangleCollider->transformedVertices[1])));
 	dot1 = copysignf(1.0f, dot1);
 	dot2 = copysignf(1.0f, dot2);
@@ -321,8 +321,9 @@ b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoi
 	return 0;
 }
 
-b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Vector3 dir, const ST_TriangleCollider* const pTriangleCollider, ST_RayTraceData* const pRaycastData)
+b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const ST_TriangleCollider* const pTriangleCollider, ST_RayTraceData* const pRaycastData)
 {
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	sphereTraceColliderInfinitePlaneRayTrace(from, dir, pTriangleCollider->normal, pTriangleCollider->centroid, pRaycastData);
 	//dir = sphereTraceVector3Normalize(dir);
 	//float dirDotNormal = sphereTraceVector3Dot(dir, pTriangleCollider->normal);
@@ -339,7 +340,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Vector3 dir, const S
 		if (fpclassify(pRaycastData->distance) == FP_INFINITE)
 			return 0;
 		pRaycastData->startPoint = from;
-		pRaycastData->hitPoint = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir, pRaycastData->distance));
+		pRaycastData->hitPoint = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 
 		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->hitPoint, pTriangleCollider);
 
@@ -347,7 +348,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Vector3 dir, const S
 	return 0;
 }
 
-b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData)
+b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData)
 {
 	ST_SphereTriangleContactInfo contactInfo;
 	if (sphereTraceColliderTriangleImposedSphereCollisionTest(pTriangleCollider, from, radius, &contactInfo))
@@ -364,8 +365,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 	else
 	{
 
-		dir = sphereTraceVector3Normalize(dir);
-		if (sphereTraceVector3Nan(dir))
+		sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+		if (sphereTraceVector3Nan(dir.v))
 			return 0;
 		sphereTraceColliderTriangleRayTrace(from, dir, pTriangleCollider, &pSphereCastData->rayTraceData);
 		//if (fpclassify(pSphereCastData->rayTraceData.distance) == -FP_INFINITE)
@@ -375,9 +376,9 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 		//	return 0;
 		float alpha;
 		b32 alphaInvalid = 0;
-		float dot = sphereTraceVector3Dot(dir, pSphereCastData->rayTraceData.normal);
+		float dot = sphereTraceVector3Dot(dir.v, pSphereCastData->rayTraceData.normal.v);
 		float hypotinus;
-		ST_Vector3 orthogonal = pSphereCastData->rayTraceData.normal;
+		ST_Vector3 orthogonal = pSphereCastData->rayTraceData.normal.v;
 		if (dot == -1.0f)
 		{
 			alpha = M_PI;
@@ -385,14 +386,14 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 		}
 		else
 		{
-			orthogonal = sphereTraceVector3Cross(pSphereCastData->rayTraceData.normal, dir);
-			orthogonal = sphereTraceVector3Cross(pSphereCastData->rayTraceData.normal, orthogonal);
+			orthogonal = sphereTraceVector3Cross(pSphereCastData->rayTraceData.normal.v, dir.v);
+			orthogonal = sphereTraceVector3Cross(pSphereCastData->rayTraceData.normal.v, orthogonal);
 			orthogonal = sphereTraceVector3Normalize(orthogonal);
-			if (sphereTraceVector3EpsilonEquals(dir, sphereTraceVector3Negative(orthogonal), COLLIDER_TOLERANCE))
+			if (sphereTraceVector3EpsilonEquals(dir.v, sphereTraceVector3Negative(orthogonal), COLLIDER_TOLERANCE))
 			{
 				alphaInvalid = 1;
 			}
-			alpha = acosf(sphereTraceVector3Dot(sphereTraceVector3Negative(dir), orthogonal));
+			alpha = acosf(sphereTraceVector3Dot(sphereTraceVector3Negative(dir.v), orthogonal));
 			hypotinus = radius / sinf(alpha);
 			if (alpha == 0.0f || fpclassify(alpha) == FP_INFINITE || fpclassify(alpha) == FP_NAN)
 			{
@@ -400,8 +401,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 			}
 		}
 
-		pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(from, dir, pSphereCastData->rayTraceData.distance - hypotinus);
-		ST_Vector3 testPoint = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, sphereTraceVector3Negative(pSphereCastData->rayTraceData.normal), radius);
+		pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(from, dir.v, pSphereCastData->rayTraceData.distance - hypotinus);
+		ST_Vector3 testPoint = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, sphereTraceVector3Negative(pSphereCastData->rayTraceData.normal.v), radius);
 
 		if (!alphaInvalid && sphereTraceColliderTriangleIsProjectedPointContained(testPoint, pTriangleCollider))
 		{
@@ -421,22 +422,22 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 				closestEdgeIndex = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(pTriangleCollider, testPoint);
 			else
 			{
-				closestEdgeIndex = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(pTriangleCollider, from, radius, dir, &closestPoint);
+				closestEdgeIndex = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(pTriangleCollider, from, radius, dir.v, &closestPoint);
 
 			}
 			ST_Vector3 edgeDir = pTriangleCollider->edgeDirs[closestEdgeIndex];
-			ST_Vector3 right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir, edgeDir));
-			ST_Vector3 sphereDir = sphereTraceVector3Negative(dir);
+			ST_Vector3 right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, edgeDir));
+			ST_Vector3 sphereDir = sphereTraceVector3Negative(dir.v);
 			if (!alphaInvalid)
 				sphereDir = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, edgeDir));
 			else
 			{
-				float d = fabsf(sphereTraceVector3Dot(edgeDir, dir));
+				float d = fabsf(sphereTraceVector3Dot(edgeDir, dir.v));
 				if (d > COLLIDER_TOLERANCE)
 					sphereDir = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, edgeDir));
 			}
-			ST_Vector3 fwd = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, dir));
-			float theta = acosf(sphereTraceVector3Dot(edgeDir, dir));
+			ST_Vector3 fwd = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, dir.v));
+			float theta = acosf(sphereTraceVector3Dot(edgeDir, dir.v));
 			float rightDist;
 			if (!alphaInvalid)
 				rightDist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereCastData->rayTraceData.hitPoint, pTriangleCollider->transformedEdges[closestEdgeIndex].point1), right);
@@ -446,17 +447,17 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 			{
 				float beta = acosf(rightDist / radius);
 				float fwdDist = sinf(beta) * radius;
-				ST_Vector3 pointOnEdgeClosestToCenterRaycast = sphereTraceClosestPointOnLineBetweenTwoLines(pTriangleCollider->transformedEdges[closestEdgeIndex].point1, edgeDir, from, dir);
-				if (sphereTraceVector3Dot(dir, sphereTraceVector3Subtract(pointOnEdgeClosestToCenterRaycast, from)) < 0.0f)
+				ST_Vector3 pointOnEdgeClosestToCenterRaycast = sphereTraceClosestPointOnLineBetweenTwoLines(pTriangleCollider->transformedEdges[closestEdgeIndex].point1, edgeDir, from, dir.v);
+				if (sphereTraceVector3Dot(dir.v, sphereTraceVector3Subtract(pointOnEdgeClosestToCenterRaycast, from)) < 0.0f)
 					return 0;
 				ST_Vector3 pointOnPlaneNearOriginClosestToEdge = sphereTraceClosestPointOnLineBetweenTwoLines(from, right, pTriangleCollider->transformedEdges[closestEdgeIndex].point1, edgeDir);
 				pointOnPlaneNearOriginClosestToEdge = sphereTraceVector3AddAndScale(pointOnPlaneNearOriginClosestToEdge, fwd, -fwdDist);
-				ST_Vector3 pointOnEdgeTracedFrompointOnPlaneNearOriginClosestToEdge = sphereTraceClosestPointOnLineBetweenTwoLines(pTriangleCollider->transformedEdges[closestEdgeIndex].point1, edgeDir, pointOnPlaneNearOriginClosestToEdge, dir);
+				ST_Vector3 pointOnEdgeTracedFrompointOnPlaneNearOriginClosestToEdge = sphereTraceClosestPointOnLineBetweenTwoLines(pTriangleCollider->transformedEdges[closestEdgeIndex].point1, edgeDir, pointOnPlaneNearOriginClosestToEdge, dir.v);
 				float distToPointOnEdgeOrthogonalWithSphereDirectionAndEdge = cosf(theta) * sphereTraceVector3Length(sphereTraceVector3Subtract(pointOnEdgeTracedFrompointOnPlaneNearOriginClosestToEdge, pointOnEdgeClosestToCenterRaycast));
 				ST_Vector3 intersection = sphereTraceVector3AddAndScale(pointOnEdgeClosestToCenterRaycast, edgeDir, -distToPointOnEdgeOrthogonalWithSphereDirectionAndEdge);
 
 				fwdDist = fabsf(tanf(theta) * sphereTraceVector3Length(sphereTraceVector3Subtract(pointOnEdgeClosestToCenterRaycast, intersection)));
-				ST_Vector3 testPoint2 = sphereTraceClosestPointOnLineBetweenTwoLines(intersection, sphereDir, pointOnEdgeClosestToCenterRaycast, dir);
+				ST_Vector3 testPoint2 = sphereTraceClosestPointOnLineBetweenTwoLines(intersection, sphereDir, pointOnEdgeClosestToCenterRaycast, dir.v);
 				if (sphereTraceVector3Nan(testPoint2))
 				{
 					fwdDist = sinf(beta) * radius;
@@ -471,7 +472,7 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 					pSphereCastData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereCastData->rayTraceData.startPoint, pSphereCastData->rayTraceData.hitPoint));
 					pSphereCastData->radius = radius;
 					pSphereCastData->sphereCenter = sphereTraceVector3Add(sphereTraceVector3AddAndScale(pointOnPlaneNearOriginClosestToEdge, right, rightDist), sphereTraceVector3Subtract(testPoint2, pointOnPlaneNearOriginClosestToEdge));
-					pSphereCastData->rayTraceData.normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, intersection));
+					pSphereCastData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, intersection));
 					pSphereCastData->traceDistance = sphereTraceVector3Distance(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.startPoint);
 					return 1;
 				}
@@ -494,11 +495,11 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 					//	closestPoint = pTriangleCollider->transformedEdges[closestEdgeIndex].point1;
 					//else
 					//	closestPoint = pTriangleCollider->transformedEdges[closestEdgeIndex].point2;
-					ST_Vector3 hitPoint = sphereTraceClosestPointOnLineBetweenTwoLines(from, dir, closestPoint, pTriangleCollider->normal);
+					ST_Vector3 hitPoint = sphereTraceClosestPointOnLineBetweenTwoLines(from, dir.v, closestPoint, pTriangleCollider->normal.v);
 					dp = sphereTraceVector3Subtract(hitPoint, closestPoint);
 				}
-				ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(sphereTraceVector3Normalize(dp), dir));
-				cross = sphereTraceVector3Cross(dir, cross);
+				ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(sphereTraceVector3Normalize(dp), dir.v));
+				cross = sphereTraceVector3Cross(dir.v, cross);
 				float distToCenterNormal = sphereTraceVector3Dot(dp, cross);
 				if (fpclassify(distToCenterNormal) == FP_NAN)
 				{
@@ -506,8 +507,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 					pSphereCastData->rayTraceData.hitPoint = closestPoint;
 					pSphereCastData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereCastData->rayTraceData.startPoint, pSphereCastData->rayTraceData.hitPoint));
 					pSphereCastData->radius = radius;
-					pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(closestPoint, dir, -radius);
-					pSphereCastData->rayTraceData.normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.hitPoint));
+					pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(closestPoint, dir.v, -radius);
+					pSphereCastData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.hitPoint));
 					pSphereCastData->traceDistance = sphereTraceVector3Distance(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.startPoint);
 					return 1;
 				}
@@ -519,8 +520,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Vector3 dir, floa
 					pSphereCastData->radius = radius;
 					float beta = acosf(distToCenterNormal / radius);
 					float opposite = sinf(beta) * radius;
-					pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(closestPoint, cross, distToCenterNormal), dir, -opposite);
-					pSphereCastData->rayTraceData.normal = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.hitPoint));
+					pSphereCastData->sphereCenter = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(closestPoint, cross, distToCenterNormal), dir.v, -opposite);
+					pSphereCastData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.hitPoint));
 					pSphereCastData->traceDistance = sphereTraceVector3Distance(pSphereCastData->sphereCenter, pSphereCastData->rayTraceData.startPoint);
 					return 1;
 				}

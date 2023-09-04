@@ -224,3 +224,7 @@ ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized);
 ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec);
 
 void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);
+
+ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir);
+
+ST_Direction sphereTraceDirectionNegative(ST_Direction dir);

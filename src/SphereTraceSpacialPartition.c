@@ -66,15 +66,24 @@ int sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(const ST_Spacial
 ST_IntList sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb)
 {
 	ST_IntList intList = sphereTraceIntListConstruct();
-	float xExtent = aabb->rightTopForwardsTransformedVertex.x + pSpacialPartitionContainer->partitionSize;
-	float yExtent = aabb->rightTopForwardsTransformedVertex.y + pSpacialPartitionContainer->partitionSize;
-	float zExtent = aabb->rightTopForwardsTransformedVertex.z + pSpacialPartitionContainer->partitionSize;
+	float xExtent = aabb->rightTopForwardsTransformedVertex.x;
+	float yExtent = aabb->rightTopForwardsTransformedVertex.y;
+	float zExtent = aabb->rightTopForwardsTransformedVertex.z;
+	float xIncrement = fminf(aabb->halfExtents.x, pSpacialPartitionContainer->partitionSize);
+	if (xIncrement == 0.0f)
+		xIncrement = pSpacialPartitionContainer->partitionSize;
+	float yIncrement = fminf(aabb->halfExtents.y, pSpacialPartitionContainer->partitionSize);
+	if (yIncrement == 0.0f)
+		yIncrement = pSpacialPartitionContainer->partitionSize;
+	float zIncrement = fminf(aabb->halfExtents.z, pSpacialPartitionContainer->partitionSize);
+	if (zIncrement == 0.0f)
+		zIncrement = pSpacialPartitionContainer->partitionSize;
 
-	for (float x = aabb->leftDownBackTransformedVertex.x; x < xExtent; x += pSpacialPartitionContainer->partitionSize)
+	for (float x = aabb->leftDownBackTransformedVertex.x; x <= xExtent; x += xIncrement)
 	{
-		for (float y = aabb->leftDownBackTransformedVertex.y; y < yExtent; y += pSpacialPartitionContainer->partitionSize)
+		for (float y = aabb->leftDownBackTransformedVertex.y; y <= yExtent; y += yIncrement)
 		{
-			for (float z = aabb->leftDownBackTransformedVertex.z; z < zExtent; z += pSpacialPartitionContainer->partitionSize)
+			for (float z = aabb->leftDownBackTransformedVertex.z; z <= zExtent; z += zIncrement)
 			{
 				sphereTraceIntListAddUnique(&intList, sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(x, y, z)));
 			}

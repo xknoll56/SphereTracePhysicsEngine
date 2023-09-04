@@ -20,6 +20,12 @@ const ST_Vector4 gVector4ColorBlack = { 0.0f, 0.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorYellow = { 1.0f, 1.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorMagenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 const ST_Vector4 gVector4ColorCyan = { 0.0f, 1.0f, 1.0f, 1.0f };
+const ST_Direction gDirectionRight = { 1.0f, 0.0f, 0.0f, 1 };
+const ST_Direction gDirectionLeft = { -1.0f, 0.0f, 0.0f, 1 };
+const ST_Direction gDirectionUp = { 0.0f, 1.0f, 0.0f, 1 };
+const ST_Direction gDirectionDown = { 0.0f, -1.0f, 0.0f, 1 };
+const ST_Direction gDirectionForward = { 0.0f, 0.0f, 1.0f, 1 };
+const ST_Direction gDirectionBack = { 0.0f, 0.0f, -1.0f, 1 };
 
 const ST_Matrix4 gMatrix4Identity = {
 	1.0f, 0.0f, 0.0f, 0.0f,
@@ -733,4 +739,24 @@ void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir)
 		sphereTraceVector3NormalizeByRef(&dir->v);
 		dir->normalized = 1;
 	}
+}
+
+ST_Direction sphereTraceDirectionNegative(ST_Direction dir)
+{
+	ST_Direction ret;
+	ret.v.x = -dir.v.x;
+	ret.v.y = -dir.v.y;
+	ret.v.z = -dir.v.z;
+	ret.normalized = dir.normalized;
+	return ret;
+}
+
+ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir)
+{
+	if (!dir.normalized)
+	{
+		sphereTraceVector3NormalizeByRef(&dir.v);
+		dir.normalized = 1;
+	}
+	return dir;
 }
