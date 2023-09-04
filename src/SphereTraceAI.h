@@ -1,21 +1,22 @@
 #pragma once
 #include "SphereTraceMath.h"
+#include "SphereTraceLists.h"
 
 typedef struct ST_StateConnection
 {
 	int stateIndex;
 	int nextStateIndex;
-	b32 (*conditionalFunction)();
+	b32 (*conditionalFunction)(void* machineContext);
 } ST_StateConnection;
 
 typedef struct ST_State
 {
-	void (*onUpdate)();
-	void (*onEnter)();
-	void (*onExit)();
+	void (*onUpdate)(void* machineContext);
+	void (*onEnter)(void* machineContext);
+	void (*onExit)(void* machineContext);
 	int stateIndex;
 	int numConnections;
-	struct ST_StateConnection* connections;
+	ST_StateConnection* connections;
 } ST_State;
 
 
@@ -25,10 +26,20 @@ typedef struct ST_StateMachine
 	int numStates;
 	int currentStateIndex;
 	int startStateIndex;
+	void* machineContext;
 } ST_StateMachine;
 
+ST_State sphereTraceStateMachineStateConstruct(int stateIndex, int numConnections);
 
-ST_StateMachine sphereTraceStateMachineConstruct(int numStates);
+ST_State sphereTraceStateMachineStateConstructWithStateFunctions(int stateIndex, int numConnections, void (*onUpdate)(void* machineContext), void (*onEnter)(void* machineContext), void (*onExit)(void* machineContext), ST_StateConnection* connections);
+
+void sphereTraceStateMachineStateSetConnection(ST_State* const pState, const ST_StateConnection* const pStateConnections);
+
+ST_StateConnection sphereTraceStateMachineStateConnectionConstruct(int stateIndex, int nextStateIndex, b32(*conditionalFunction)(void* machineContext));
+
+ST_StateConnection sphereTraceStateMachineStateConnectionConstructWithStates(const ST_State* pState, const ST_State* pNextState, b32(*conditionalFunction)(void* machineContext));
+
+ST_StateMachine sphereTraceStateMachineConstruct(int numStates, void* machineContext);
 
 void sphereTraceStateMachineInsertState(ST_StateMachine* const pStateMachine, const ST_State* const pState);
 
@@ -36,11 +47,29 @@ void sphereTraceStateMachineStart(ST_StateMachine* const pStateMachine);
 
 void sphereTraceStateMachineUpdate(ST_StateMachine* const pStateMachine);
 
-ST_State sphereTraceStateMachineStateConstruct(int stateIndex, int numConnections);
+typedef struct ST_StateMachineLinearWaypointFollower
+{
+	ST_Vector3List wayPoints;
+	ST_Vector3ListData currentWayPoint;
+	ST_Vector3ListData prevWayPoint;
+	ST_Vector3 currentPosition;
+	float speed;
+	float dt;
+	int wayPointIndex;
+	ST_StateMachine stateMachine;
+} ST_StateMachineLinearWaypointFollower;
 
-ST_State sphereTraceStateMachineStateConstructWithStateFunctions(int stateIndex, int numConnections, void (*onUpdate)(), void (*onEnter)(), void (*onExit)(), ST_StateConnection* connections);
 
+void moveStateStart(ST_StateMachineLinearWaypointFollower* context);
 
-ST_StateConnection sphereTraceStateMachineStateConnectionConstruct(int stateIndex, int nextStateIndex, b32(*conditionalFunction)());
+void moveStateEnd(ST_StateMachineLinearWaypointFollower* context);
 
-ST_StateConnection sphereTraceStateMachineStateConnectionConstructWithStates(const ST_State* pState, const ST_State* pNextState, b32(*conditionalFunction)());
+void moveStateUpdate(ST_StateMachineLinearWaypointFollower* context);
+
+b32 moveStateEndCond(ST_StateMachineLinearWaypointFollower* context);
+
+ST_StateMachineLinearWaypointFollower sphereTraceStateMachineLinearWaypointFollowerConstruct(ST_Vector3List waypoints,float speed);
+
+void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context);
+
+void sphereTraceStateMachineLinearWaypointFollowerUpdate(ST_StateMachineLinearWaypointFollower* context, float dt);

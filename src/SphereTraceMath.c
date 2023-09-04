@@ -15,6 +15,11 @@ const ST_Vector4 gVector4ColorRed = { 1.0f, 0.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorGreen = { 0.0f, 1.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorBlue = { 0.0f, 0.0f, 1.0f, 1.0f };
 const ST_Quaternion gQuaternionIdentity = { 1.0f, 0.0f, 0.0f, 0.0f };
+const ST_Vector4 gVector4ColorWhite = { 1.0f, 1.0f, 1.0f, 1.0f };
+const ST_Vector4 gVector4ColorBlack = { 0.0f, 0.0f, 0.0f, 1.0f };
+const ST_Vector4 gVector4ColorYellow = { 1.0f, 1.0f, 0.0f, 1.0f };
+const ST_Vector4 gVector4ColorMagenta = { 1.0f, 0.0f, 1.0f, 1.0f };
+const ST_Vector4 gVector4ColorCyan = { 0.0f, 1.0f, 1.0f, 1.0f };
 
 const ST_Matrix4 gMatrix4Identity = {
 	1.0f, 0.0f, 0.0f, 0.0f,
@@ -26,6 +31,12 @@ const ST_Matrix4 gMatrix4Identity = {
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	ST_Vector2 v = { x, y };
+	return v;
+}
+
+ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y)
+{
+	ST_Vector2Integer v = { x, y };
 	return v;
 }
 ST_Vector3 sphereTraceVector3Construct(float x, float y, float z)
@@ -95,6 +106,18 @@ ST_Vector2 sphereTraceVector2Add(ST_Vector2 v1, ST_Vector2 v2)
 ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2)
 {
 	return sphereTraceVector2Construct(v1.x - v2.x, v1.y - v2.y );
+}
+
+ST_Vector2Integer sphereTraceVector2IntegerAdd(ST_Vector2Integer v1, ST_Vector2Integer v2)
+{
+	ST_Vector2Integer v = { v1.x + v2.x, v1.y + v2.y };
+	return v;
+}
+
+ST_Vector2Integer sphereTraceVector2IntegerSubtract(ST_Vector2Integer v1, ST_Vector2Integer v2)
+{
+	ST_Vector2Integer v = { v1.x - v2.x, v1.y - v2.y };
+	return v;
 }
 
 
@@ -222,7 +245,12 @@ float sphereTraceVector3Length2(ST_Vector3 vec)
 
 ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toScale, float scale)
 {
-	return sphereTraceVector3Add(toAdd, sphereTraceVector3Construct(toScale.x* scale, toScale.y* scale, toScale.z* scale ));
+	//return sphereTraceVector3Add(toAdd, sphereTraceVector3Construct(toScale.x* scale, toScale.y* scale, toScale.z* scale ));
+	ST_Vector3 v;
+	v.x = fmaf(toScale.x, scale, toAdd.x);
+	v.y = fmaf(toScale.y, scale, toAdd.y);
+	v.z = fmaf(toScale.z, scale, toAdd.z);
+	return v;
 }
 
 void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale)
@@ -296,6 +324,25 @@ float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2)
 	dy = point2.y - point1.y;
 	dz = point2.z - point1.z;
 	return sqrtf(dx * dx + dy * dy + dz * dz);
+}
+
+ST_Vector3 sphereTraceVector3Lerp(ST_Vector3 point1, ST_Vector3 point2, float t)
+{
+	ST_Vector3 p;
+	p.x = fmaf((point2.x - point1.x), t, point1.x);
+	p.y = fmaf((point2.y - point1.y), t, point1.y);
+	p.z = fmaf((point2.z - point1.z), t, point1.z);
+	return p;
+}
+
+ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from)
+{
+	float dist = sphereTraceVector3Distance(from, to);
+	ST_Vector3 v;
+	v.x = (to.x - from.x) / dist;
+	v.y = (to.y - from.y) / dist;
+	v.z = (to.z - from.z) / dist;
+	return v;
 }
 
 ST_Matrix4 sphereTraceMatrixIdentity()
@@ -659,4 +706,31 @@ ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat)
 			qz = 0.25 * S;
 		}
 		return sphereTraceQuaternionConstruct( qw, qx, qy, qz );
+}
+
+
+ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized)
+{
+	ST_Direction dir;
+	dir.v = vec;
+	dir.normalized = 0;
+	return dir;
+}
+
+ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec)
+{
+	sphereTraceVector3NormalizeByRef(&vec);
+	ST_Direction dir;
+	dir.v = vec;
+	dir.normalized = 1;
+	return dir;
+}
+
+void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir)
+{
+	if (!dir->normalized)
+	{
+		sphereTraceVector3NormalizeByRef(&dir->v);
+		dir->normalized = 1;
+	}
 }

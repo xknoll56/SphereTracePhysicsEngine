@@ -13,6 +13,12 @@ typedef struct ST_Vector2
 	float y;
 } ST_Vector2;
 
+typedef struct ST_Vector2Integer
+{
+	int x;
+	int y;
+} ST_Vector2Integer;
+
 typedef struct ST_Vector3
 {
 	float x;
@@ -45,9 +51,17 @@ typedef struct ST_Quaternion
 	float z;
 } ST_Quaternion;
 
+typedef struct ST_Direction
+{
+	ST_Vector3 v;
+	b32 normalized;
+}ST_Direction;
+
 
 
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
+
+ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);
 
 ST_Vector3 sphereTraceVector3Construct(float x, float y, float z);
 
@@ -66,6 +80,10 @@ ST_Vector4 sphereTraceMatrixCol(ST_Matrix4 const matrix, int i);
 ST_Vector2 sphereTraceVector2Add(ST_Vector2 v1, ST_Vector2 v2);
 
 ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2);
+
+ST_Vector2Integer sphereTraceVector2IntegerAdd(ST_Vector2Integer v1, ST_Vector2Integer v2);
+
+ST_Vector2Integer sphereTraceVector2IntegerSubtract(ST_Vector2Integer v1, ST_Vector2Integer v2);
 
 
 float sphereTraceDegreesToRadians(float degs);
@@ -132,6 +150,10 @@ void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 point, ST_V
 
 float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2);
 
+ST_Vector3 sphereTraceVector3Lerp(ST_Vector3 point1, ST_Vector3 point2, float t);
+
+ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from);
+
 ST_Matrix4 sphereTraceMatrixIdentity();
 
 ST_Matrix4 sphereTraceMatrixRotateX(float rad);
@@ -196,3 +218,9 @@ ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotatio
 ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vector3 up, ST_Vector3 forward);
 
 ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat);
+
+ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized);
+
+ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec);
+
+void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);
