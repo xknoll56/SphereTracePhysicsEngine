@@ -44,9 +44,12 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 		{
 			int triangleIndex = 2 * x + 2 * z * pTerrainCollider->xCells;
 			ST_TriangleCollider* pTC = &pTerrainCollider->triangles[triangleIndex];
-			ST_Vector3 v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
-			ST_Vector3 v2 = sphereTraceVector3Subtract(pTC->transformedVertices[1], pTerrainCollider->position);
-			ST_Vector3 v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);
+			//ST_Vector3 v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
+			//ST_Vector3 v2 = sphereTraceVector3Subtract(pTC->transformedVertices[1], pTerrainCollider->position);
+			//ST_Vector3 v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);
+			ST_Vector3 v1 = pTC->transformedVertices[0];// = sphereTraceVector3Add(pTC->transformedVertices[0], position);
+			ST_Vector3 v2 = pTC->transformedVertices[1];// = sphereTraceVector3Add(pTC->transformedVertices[1], position);
+			ST_Vector3 v3 = pTC->transformedVertices[2];// = sphereTraceVector3Add(pTC->transformedVertices[2], position);
 			v1 = sphereTraceVector3Construct(cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y, -sinf(angle) * v1.x + cosf(angle) * v1.z);
 			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
 			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
@@ -56,9 +59,15 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 
 			triangleIndex++;
 			pTC = &pTerrainCollider->triangles[triangleIndex];
-			v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
+			/*v1 = sphereTraceVector3Subtract(pTC->transformedVertices[0], pTerrainCollider->position);
 			v2 = sphereTraceVector3Subtract(pTC->transformedVertices[1], pTerrainCollider->position);
-			v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);
+			v3 = sphereTraceVector3Subtract(pTC->transformedVertices[2], pTerrainCollider->position);*/
+			//v1 = sphereTraceVector3Add(pTC->transformedVertices[0], position);
+			//v2 = sphereTraceVector3Add(pTC->transformedVertices[1], position);
+			//v3 = sphereTraceVector3Add(pTC->transformedVertices[2], position);
+			v1 = pTC->transformedVertices[0];
+			v2 = pTC->transformedVertices[1];
+			v3 = pTC->transformedVertices[2];
 			v1 = sphereTraceVector3Construct(cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y, -sinf(angle) * v1.x + cosf(angle) * v1.z);
 			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
 			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
@@ -125,7 +134,7 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrai
 
 }
 
-void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float), b32(*conditionalFunc)(float (*fxz)(float, float), float, float))
+void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float, ST_UniformTerrainCollider* const terrainContext), b32(*conditionalFunc)(float (*fxz)(float, float), float, float, ST_UniformTerrainCollider* const terrainContext))
 {
 	for (int z = 0; z < terrainCollider->zCells; z++)
 	{
@@ -137,24 +146,24 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 			float x2 = (x + 1) * terrainCollider->cellSize;
 			float z1 = z * terrainCollider->cellSize;
 			float z2 = (z + 1) * terrainCollider->cellSize;
-			if (conditionalFunc(fxz, x1, z1))
+			if (conditionalFunc(fxz, x1, z1, terrainCollider))
 			{
-				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1), z1),
+				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x1, fxz(x1, z1, terrainCollider), z1),
 					sphereTraceVector3Construct(
-						x1, fxz(x1, z2), z2
+						x1, fxz(x1, z2, terrainCollider), z2
 					),
 					sphereTraceVector3Construct(
-						x2, fxz(x2, z1), z1
+						x2, fxz(x2, z1, terrainCollider), z1
 					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 				triangleIndex++;
 				//(1,0), (1,1), (0,1)
-				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1), z1),
+				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(sphereTraceVector3Construct(x2, fxz(x2, z1, terrainCollider), z1),
 					sphereTraceVector3Construct(
-						x1, fxz(x1, z2), z2
+						x1, fxz(x1, z2, terrainCollider), z2
 					),
 					sphereTraceVector3Construct(
-						x2, fxz(x2, z2), z2
+						x2, fxz(x2, z2, terrainCollider), z2
 					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->aabb, &terrainCollider->triangles[triangleIndex].aabb);
 			}
@@ -237,7 +246,8 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 	ST_IntList il = sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(pTerrainCollider, imposedPosition, imposedRadius);
 	pIl = il.pFirst;
 	//float maxPen = -FLT_MAX;
-	ST_IntList penetratingIndices = sphereTraceIntListConstruct();
+	ST_IntList upperPenetratingIndices = sphereTraceIntListConstruct();
+	ST_IntList lowerPenetratingIndices = sphereTraceIntListConstruct();
 	for (int i = 0; i < il.count; i++)
 	{
 
@@ -251,7 +261,10 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 					ST_SphereTriangleContactInfo ciTest;
 					if (sphereTraceColliderTriangleImposedSphereCollisionTest(&pTerrainCollider->triangles[index], imposedPosition, imposedRadius, &ciTest))
 					{
-						sphereTraceIntListAddFirst(&penetratingIndices, index);
+						if(ciTest.normal.v.y>=0.0f)
+							sphereTraceIntListAddFirst(&upperPenetratingIndices, index);
+						else
+							sphereTraceIntListAddFirst(&lowerPenetratingIndices, index);
 						//if (ciTest.penetrationDistance > maxPen)
 						//{
 						//	maxPen = ciTest.penetrationDistance;
@@ -264,25 +277,59 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 		pIl = pIl->pNext;
 	}
 	sphereTraceIntListFree(&il);
-	if (penetratingIndices.count > 0)
+	if (upperPenetratingIndices.count > 0 || lowerPenetratingIndices.count > 0)
 	{
 		//now find the point at which the triangle is contacted with the sphere on the y axis
-		pIl = penetratingIndices.pFirst;
+		pIl = upperPenetratingIndices.pFirst;
 		ST_Vector3 castPoint = sphereTraceVector3Construct(imposedPosition.x, pTerrainCollider->aabb.rightTopForwardsTransformedVertex.y + imposedRadius, imposedPosition.z);
 		float minDist = FLT_MAX;
+		float minUpperHeight = FLT_MAX;
+		float minLowerHeight = FLT_MAX;
 		int minIndex;
 		ST_SphereTraceData std;
-		for (int i = 0; i < penetratingIndices.count; i++)
+		for (int i = 0; i < upperPenetratingIndices.count; i++)
 		{
 			if (sphereTraceColliderTriangleSphereTrace(castPoint, gDirectionDown, imposedRadius, &pTerrainCollider->triangles[pIl->value], &std))
 			{
 				float height = castPoint.y - std.sphereCenter.y;
-				if (height < minDist)
+				if (height < minUpperHeight)
 				{
-					minDist = height;
-					minIndex = pIl->value;
-					pContactInfo->downSphereTraceData = std;
-					pContactInfo->downSphereTraceData.traceDistance = 0.0f;
+					minUpperHeight = height;
+					
+					float dist = sphereTraceVector3Distance(std.rayTraceData.hitPoint, imposedPosition);
+					if (dist < minDist)
+					{
+						minIndex = pIl->value;
+						minDist = dist;
+						pContactInfo->downSphereTraceData = std;
+						pContactInfo->downSphereTraceData.traceDistance = 0.0f;
+						//pContactInfo->downSphereTraceData.rayTraceData.distance = sphereTraceVector3Distance(std.rayTraceData.hitPoint, imposedPosition);
+					}
+				}
+			}
+
+			pIl = pIl->pNext;
+		}
+		pIl = lowerPenetratingIndices.pFirst;
+		castPoint = sphereTraceVector3Construct(imposedPosition.x, pTerrainCollider->aabb.leftDownBackTransformedVertex.y - imposedRadius, imposedPosition.z);
+		for (int i = 0; i < lowerPenetratingIndices.count; i++)
+		{
+			if (sphereTraceColliderTriangleSphereTrace(castPoint, gDirectionUp, imposedRadius, &pTerrainCollider->triangles[pIl->value], &std))
+			{
+				float height = std.sphereCenter.y- castPoint.y;
+				if (height < minLowerHeight)
+				{
+					minLowerHeight = height;
+					
+					float dist = sphereTraceVector3Distance(std.rayTraceData.hitPoint, imposedPosition);
+					if (dist < minDist)
+					{
+						minIndex = pIl->value;
+						minDist = dist;
+						pContactInfo->downSphereTraceData = std;
+						pContactInfo->downSphereTraceData.traceDistance = 0.0f;
+						//pContactInfo->downSphereTraceData.rayTraceData.distance = sphereTraceVector3Distance(std.rayTraceData.hitPoint, imposedPosition);
+					}
 				}
 			}
 
@@ -290,7 +337,10 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 		}
 		//now recollect the contact info for the sphere-triangle
 		sphereTraceColliderTriangleImposedSphereCollisionTest(&pTerrainCollider->triangles[minIndex], imposedPosition, imposedRadius, &pContactInfo->sphereTriangleContactInfo);
-		sphereTraceIntListFree(&penetratingIndices);
+		pContactInfo->downSphereTraceData.rayTraceData.hitPoint = pContactInfo->sphereTriangleContactInfo.point;
+		pContactInfo->downSphereTraceData.rayTraceData.distance = sphereTraceVector3Distance(pContactInfo->sphereTriangleContactInfo.point, imposedPosition);
+		sphereTraceIntListFree(&upperPenetratingIndices);
+		sphereTraceIntListFree(&lowerPenetratingIndices);
 		return 1;
 	}
 	else
@@ -708,6 +758,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceByStartEndPoint(const ST_Uniform
 	if (sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(pTerrainCollider, startPoint, radius, &sttci))
 	{
 		*pSphereTraceData = sttci.downSphereTraceData;
+		pSphereTraceData->rayTraceData.startPoint = startPoint;
 		return 1;
 	}
 	//if (sphereTraceVector3Equal(dir, gVector3Down))

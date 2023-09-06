@@ -13,6 +13,7 @@ typedef struct ST_SpacialPartitionBucket
 	//ST_VectorArrayPointers planeColliderPointers;
 	ST_IntList planeColliderIndices;
 	ST_IntList sphereColliderIndices;
+	ST_IntList uniformTerrainColliderIndices;
 	int containerIndex;
 } ST_SpacialPartitionBucket;
 
@@ -35,7 +36,6 @@ typedef struct ST_SpacialPartitionStaticContainer
 }ST_SpacialPartitionStaticContainer;
 
 ST_SpacialPartitiononDynamicContainer sphereTraceSpacialPartitionStaticHorizontalCreate(float partitionSize);
-
 
 ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(float partitionSize);
 

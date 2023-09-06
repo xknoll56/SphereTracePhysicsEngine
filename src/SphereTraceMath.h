@@ -57,6 +57,14 @@ typedef struct ST_Direction
 	b32 normalized;
 }ST_Direction;
 
+typedef struct ST_Color
+{
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+	unsigned char a;
+} ST_Color;
+
 
 
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
@@ -124,6 +132,8 @@ b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon)
 
 b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float epsilon);
 
+ST_Vector4 sphereTraceVector4ColorSetAlpha(ST_Vector4 color, float alpha);
+
 ST_Vector3 sphereTraceVector3CopySign(ST_Vector3 v, float f);
 
 float sphereTraceVector3Length2(ST_Vector3 vec);
@@ -186,6 +196,8 @@ void sphereTraceMatrixSetLocalYAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Ve
 
 void sphereTraceMatrixSetLocalZAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 zAxis);
 
+//ST_Vector3 sphereTrace
+
 ST_Quaternion sphereTraceQuaternionConstruct(float w, float x, float y, float z);
 
 
@@ -228,3 +240,7 @@ void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);
 ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir);
 
 ST_Direction sphereTraceDirectionNegative(ST_Direction dir);
+
+ST_Color sphereTraceColorConstruct(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+
+ST_Vector4 sphereTraceVector4FromColor(ST_Color color);

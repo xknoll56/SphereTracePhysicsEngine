@@ -714,6 +714,11 @@ ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat)
 		return sphereTraceQuaternionConstruct( qw, qx, qy, qz );
 }
 
+ST_Vector4 sphereTraceVector4ColorSetAlpha(ST_Vector4 color, float alpha)
+{
+	return sphereTraceVector4Construct(color.x, color.y, color.z, alpha);
+}
+
 
 ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized)
 {
@@ -759,4 +764,15 @@ ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir)
 		dir.normalized = 1;
 	}
 	return dir;
+}
+
+ST_Color sphereTraceColorConstruct(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+{
+	ST_Color color = { r, g, b, a };
+	return color;
+}
+
+ST_Vector4 sphereTraceVector4FromColor(ST_Color color)
+{
+	return sphereTraceVector4Construct(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
 }

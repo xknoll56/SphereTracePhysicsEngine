@@ -7,7 +7,7 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 
 void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float));
 
-void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float), b32(*conditionalFunc)(float (*fxz)(float, float), float, float));
+void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float, ST_UniformTerrainCollider* const terrainContext), b32(*conditionalFunc)(float (*fxz)(float, float), float, float, ST_UniformTerrainCollider* const terrainContext));
 
 int sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 samplePosition);
 

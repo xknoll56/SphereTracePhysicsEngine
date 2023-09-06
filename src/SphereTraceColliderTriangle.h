@@ -3,10 +3,6 @@
 
 int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point);
 //
-int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToLine(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point, ST_Vector3 dir);
-//
-int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToSphereTrace(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point, float radius, ST_Vector3 dir, ST_Vector3* const closestPoint);
-//
 int sphereTraceColliderTriangleGetClosestTransformedVertexIndexToPoint(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point);
 //
 void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleCollider);

@@ -123,31 +123,28 @@ void sphereTraceStateMachineUpdate(ST_StateMachine* const pStateMachine)
 	}
 }
 
+inline void setNextWayPoint(const ST_Vector3List* const pWayPoints, ST_Vector3ListData* const wayPointTracker)
+{
+	if (wayPointTracker->pNext != NULL)
+	{
+		*wayPointTracker = *wayPointTracker->pNext;
+	}
+	else
+	{
+		*wayPointTracker = *pWayPoints->pFirst;
+	}
+}
 
 void moveStateStart(ST_StateMachineLinearWaypointFollower* context)
 {
 	context->currentPosition = context->prevWayPoint.value;
 }
+
 void moveStateEnd(ST_StateMachineLinearWaypointFollower* context)
 {
 	context->wayPointIndex = (context->wayPointIndex + 1) % context->wayPoints.count;
-	if (context->prevWayPoint.pNext != NULL)
-	{
-		context->prevWayPoint = *context->prevWayPoint.pNext;
-	}
-	else
-	{
-		context->prevWayPoint = *context->wayPoints.pFirst;
-	}
-	if (context->currentWayPoint.pNext != NULL)
-	{
-		context->currentWayPoint = *context->currentWayPoint.pNext;
-	}
-	else
-	{
-		context->currentWayPoint = *context->wayPoints.pFirst;
-
-	}
+	setNextWayPoint(&context->wayPoints, &context->prevWayPoint);
+	setNextWayPoint(&context->wayPoints, &context->currentWayPoint);
 }
 
 void moveStateUpdate(ST_StateMachineLinearWaypointFollower* context)
@@ -185,9 +182,16 @@ ST_StateMachineLinearWaypointFollower sphereTraceStateMachineLinearWaypointFollo
 	return lwf;
 }
 
-void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context)
+void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context, int startIndex)
 {
 	context->stateMachine.machineContext = context;
+	context->wayPointIndex = startIndex % context->wayPoints.count;
+	for (int i = 0; i < context->wayPointIndex; i++)
+	{
+		setNextWayPoint(&context->wayPoints, &context->prevWayPoint);
+		setNextWayPoint(&context->wayPoints, &context->currentWayPoint);
+	}
+	context->currentPosition = context->prevWayPoint.value;
 }
 
 void sphereTraceStateMachineLinearWaypointFollowerUpdate(ST_StateMachineLinearWaypointFollower* context, float dt)

@@ -70,6 +70,6 @@ b32 moveStateEndCond(ST_StateMachineLinearWaypointFollower* context);
 
 ST_StateMachineLinearWaypointFollower sphereTraceStateMachineLinearWaypointFollowerConstruct(ST_Vector3List waypoints,float speed);
 
-void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context);
+void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context, int startIndex);
 
 void sphereTraceStateMachineLinearWaypointFollowerUpdate(ST_StateMachineLinearWaypointFollower* context, float dt);

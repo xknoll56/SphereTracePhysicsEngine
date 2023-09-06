@@ -33,6 +33,7 @@ ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(fl
 				bucket.containerIndex = z * SPACIAL_PARTITION_STATIC_DIMENSION * SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
 				bucket.planeColliderIndices = sphereTraceIntListConstruct();
 				bucket.sphereColliderIndices = sphereTraceIntListConstruct();
+				bucket.uniformTerrainColliderIndices = sphereTraceIntListConstruct();
 				bucket.aabb.halfExtents = sphereTraceVector3Construct(partitionSize * 0.5f, partitionSize * 0.5f, partitionSize * 0.5f);
 				bucket.aabb.leftDownBackTransformedVertex = sphereTraceVector3Subtract(bucket.centroid, bucket.aabb.halfExtents);
 				bucket.aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(bucket.centroid, bucket.aabb.halfExtents);
@@ -47,6 +48,7 @@ ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(fl
 	spacialPartitionContainer.capacity = SPACIAL_PARTITION_STATIC_SIZE;
 	spacialPartitionContainer.outsideBucket.planeColliderIndices = sphereTraceIntListConstruct();
 	spacialPartitionContainer.outsideBucket.sphereColliderIndices = sphereTraceIntListConstruct();
+	spacialPartitionContainer.outsideBucket.uniformTerrainColliderIndices = sphereTraceIntListConstruct();
 	return spacialPartitionContainer;
 }
 
@@ -57,7 +59,11 @@ int sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(const ST_Spacial
 		int z = (int)((position.z + pSpacialPartitionContainer->aabb.halfExtents.z) / pSpacialPartitionContainer->partitionSize);
 		int y = (int)((position.y + pSpacialPartitionContainer->aabb.halfExtents.y) / pSpacialPartitionContainer->partitionSize);
 		int x = (int)((position.x + pSpacialPartitionContainer->aabb.halfExtents.x) / pSpacialPartitionContainer->partitionSize);
-		return z * SPACIAL_PARTITION_STATIC_DIMENSION * SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
+		int index = z * SPACIAL_PARTITION_STATIC_DIMENSION * SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
+		if (index >= 0 && index < pSpacialPartitionContainer->count)
+			return index;
+		else
+			return -1;
 	}
 	else
 		return -1;

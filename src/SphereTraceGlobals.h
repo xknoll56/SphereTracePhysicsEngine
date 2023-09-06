@@ -28,3 +28,7 @@ extern const ST_Direction gDirectionUp;
 extern const ST_Direction gDirectionDown;
 extern const ST_Direction gDirectionForward;
 extern const ST_Direction gDirectionBack;
+
+#define ST_VECTOR3(x, y, z) sphereTraceVector3Construct(x,y,z)
+#define ST_VECTOR3(x) sphereTraceVector3Construct(x,x,x)
+#define ST_VECTOR3() gVector3Zero

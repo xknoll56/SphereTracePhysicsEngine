@@ -463,6 +463,7 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 	pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.hitPoint, from));
 	pSphereTraceData->radius = radius;
 	pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
+	//pSphereTraceData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.hitPoint));
 	return 1;
 
 
