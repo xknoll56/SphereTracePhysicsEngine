@@ -341,6 +341,16 @@ ST_Vector3 sphereTraceVector3Lerp(ST_Vector3 point1, ST_Vector3 point2, float t)
 	return p;
 }
 
+ST_Vector4 sphereTraceVector4Lerp(ST_Vector4 point1, ST_Vector4 point2, float t)
+{
+	ST_Vector4 p;
+	p.x = fmaf((point2.x - point1.x), t, point1.x);
+	p.y = fmaf((point2.y - point1.y), t, point1.y);
+	p.z = fmaf((point2.z - point1.z), t, point1.z);
+	p.w = fmaf((point2.w - point1.w), t, point1.w);
+	return p;
+}
+
 ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from)
 {
 	float dist = sphereTraceVector3Distance(from, to);
@@ -433,6 +443,16 @@ ST_Matrix4 sphereTraceMatrixRotate(ST_Vector3 eulerAngles)
 	);
 }
 
+ST_Matrix4 sphereTraceMatrixTranspose(ST_Matrix4 mat)
+{
+	return sphereTraceMatrixConstruct(
+		mat.m00, mat.m10, mat.m20, mat.m30,
+		mat.m01, mat.m11, mat.m21, mat.m31,
+		mat.m02, mat.m12, mat.m22, mat.m32,
+		mat.m03, mat.m13, mat.m23, mat.m33
+	);
+}
+
 ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, float zNear, float zFar)
 {
 	float yScale = tanf(0.5f * ((float)M_PI - fovYRadians));
@@ -445,6 +465,19 @@ ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, fl
 			0, yScale, 0, 0,
 			0, 0, zScale, zTranslation,
 			0, 0, -1, 0
+	);
+}
+
+ST_Matrix4 sphereTraceMatrixOrthographic(float left, float right, float top, float bottom, float nearf, float farf, float w)
+{
+	float rl = right - left;
+	float tb = top - bottom;
+	float fn = farf - nearf;
+	return sphereTraceMatrixConstruct(
+		2.0f/rl, 0, 0, -(right+left)/rl,
+		0, 2.0f/tb, 0, -(top+bottom)/tb,
+		0, 0, -2.0f/fn, -(farf+nearf)/fn,
+		0, 0, 0, w
 	);
 }
 
@@ -464,7 +497,7 @@ ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, fl
 
 ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
 {
-	ST_Vector3 zAxis = sphereTraceVector3Normalize(sphereTraceVector3Subtract(at, eye));
+	ST_Vector3 zAxis = sphereTraceVector3Normalize(sphereTraceVector3Subtract(eye, at));
 	ST_Vector3 xAxis = sphereTraceVector3Normalize(sphereTraceVector3Cross(up, zAxis));
 	ST_Vector3 yAxis = sphereTraceVector3Cross(zAxis, xAxis);
 

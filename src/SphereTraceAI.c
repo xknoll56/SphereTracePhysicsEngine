@@ -157,7 +157,7 @@ b32 moveStateEndCond(ST_StateMachineLinearWaypointFollower* context)
 {
 	ST_Vector3 dir = sphereTraceNormalizeBetweenPoints(context->currentWayPoint.value, context->prevWayPoint.value);
 	ST_Vector3 dp = sphereTraceNormalizeBetweenPoints(context->currentWayPoint.value, context->currentPosition);
-	if (sphereTraceVector3Dot(dir, dp) < 0.0f)
+	if (sphereTraceVector3Dot(dir, dp) < 0.0f || sphereTraceVector3Nan(dir))
 		return 1;
 	return 0;
 }

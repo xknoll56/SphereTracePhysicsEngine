@@ -65,3 +65,7 @@ b32 sphereTraceVector3ListContains(const ST_Vector3List* const pVector3List, ST_
 
 
 void sphereTraceVector3ListPrint(const ST_Vector3List* const pVector3List);
+
+ST_Vector3 sphereTraceVector3ListAverage(const ST_Vector3List* const pVector3List);
+
+void sphereTraceVector3ListMoveOffset(const ST_Vector3List* const pVector3List, ST_Vector3 offset);

@@ -162,6 +162,8 @@ float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2);
 
 ST_Vector3 sphereTraceVector3Lerp(ST_Vector3 point1, ST_Vector3 point2, float t);
 
+ST_Vector4 sphereTraceVector4Lerp(ST_Vector4 point1, ST_Vector4 point2, float t);
+
 ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from);
 
 ST_Matrix4 sphereTraceMatrixIdentity();
@@ -178,7 +180,11 @@ ST_Matrix4 sphereTraceMatrixScale(ST_Vector3 scale);
 
 ST_Matrix4 sphereTraceMatrixRotate(ST_Vector3 eulerAngles);
 
+ST_Matrix4 sphereTraceMatrixTranspose(ST_Matrix4 mat);
+
 ST_Matrix4 sphereTraceMatrixPerspective(float aspectRatio, float fovYRadians, float zNear, float zFar);
+
+ST_Matrix4 sphereTraceMatrixOrthographic(float left, float right, float top, float bottom, float nearf, float farf, float w);
 
 ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up);
 

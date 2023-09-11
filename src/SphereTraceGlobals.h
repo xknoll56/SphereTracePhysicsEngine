@@ -1,5 +1,6 @@
 #pragma once
 #include "SphereTraceMath.h"
+#include "SphereTraceLists.h"
 
 extern const ST_Vector3 gVector3Up;
 extern const ST_Vector3 gVector3Right;
@@ -30,5 +31,17 @@ extern const ST_Direction gDirectionForward;
 extern const ST_Direction gDirectionBack;
 
 #define ST_VECTOR3(x, y, z) sphereTraceVector3Construct(x,y,z)
-#define ST_VECTOR3(x) sphereTraceVector3Construct(x,x,x)
-#define ST_VECTOR3() gVector3Zero
+//#define ST_VECTOR3() gVector3Zero
+#define ST_VECTOR4(x, y, z, w) sphereTraceVector4Construct(x, y, z, w);
+
+#define ST_QUATERNION(v, alpha) sphereTraceQuaternionFromAngleAxis(v, alpha);
+
+#define ST_FOR_EACH_START(pld, l) \
+	pld = l.pFirst; \
+	for(int i = 0; i<l.count; i++) { 
+
+#define ST_FOR_EACH_END(pld) \
+	pld = pld->pNext;} \
+
+#define ST_VECTOR3LIST() sphereTraceVector3ListConstruct();
+#define ST_INTLIST() sphereTraceIntListConstruct();

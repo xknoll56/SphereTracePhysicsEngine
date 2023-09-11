@@ -2,6 +2,7 @@
 
 #include "SphereTraceLists.h"
 #include "SphereTraceMath.h"
+#include "SphereTraceGlobals.h"
 
 ST_IntList sphereTraceIntListConstruct()
 {
@@ -352,4 +353,26 @@ void sphereTraceVector3ListPrint(const ST_Vector3List* const pVector3List)
 		data = data->pNext;
 	}
 	printf("\n");
+}
+
+ST_Vector3 sphereTraceVector3ListAverage(const ST_Vector3List* const pVector3List)
+{
+	ST_Vector3 avg = gVector3Zero;
+	ST_Vector3ListData* pild = pVector3List->pFirst;
+	for (int i = 0; i < pVector3List->count; i++)
+	{
+		avg = sphereTraceVector3Add(avg, pild->value);
+		pild = pild->pNext;
+	}
+	return sphereTraceVector3Scale(avg, 1.0f/pVector3List->count);
+}
+
+void sphereTraceVector3ListMoveOffset(const ST_Vector3List* const pVector3List, ST_Vector3 offset)
+{
+	ST_Vector3ListData* pild = pVector3List->pFirst;
+	for (int i = 0; i < pVector3List->count; i++)
+	{
+		sphereTraceVector3AddByRef(&pild->value, offset);
+		pild = pild->pNext;
+	}
 }
