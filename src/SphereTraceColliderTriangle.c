@@ -87,6 +87,47 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->edgeOrthogonalDirs[1] = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(pTriangleCollider->transformedEdges[1].dir.v, pTriangleCollider->normal.v));
 	pTriangleCollider->edgeOrthogonalDirs[2] = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(pTriangleCollider->transformedEdges[2].dir.v, pTriangleCollider->normal.v));
 	sphereTraceColliderTriangleSetAABB(pTriangleCollider);
+	if (v1.y <= v2.y)
+	{
+		if (v1.y <= v3.y)
+		{
+			pTriangleCollider->lowestVertIndex = 0;
+			if(v2.y>=v3.y)
+				pTriangleCollider->highestVertIndex = 1;
+			else
+				pTriangleCollider->highestVertIndex = 2;
+		}
+		else
+		{
+			pTriangleCollider->lowestVertIndex = 2;
+			if (v1.y >= v2.y)
+				pTriangleCollider->highestVertIndex = 0;
+			else
+				pTriangleCollider->highestVertIndex = 1;
+		}
+	}
+	else
+	{
+		if (v2.y <= v3.y)
+		{
+			pTriangleCollider->lowestVertIndex = 1;
+			if (v1.y >= v3.y)
+				pTriangleCollider->highestVertIndex = 0;
+			else
+				pTriangleCollider->highestVertIndex = 2;
+		}
+		else
+		{
+			pTriangleCollider->lowestVertIndex = 2;
+			if (v1.y >= v2.y)
+				pTriangleCollider->highestVertIndex = 0;
+			else
+				pTriangleCollider->highestVertIndex = 1;
+		}
+	}
+	pTriangleCollider->circularRadius = sphereTraceVector3HorizontalDistance(v1, pTriangleCollider->centroid);
+	pTriangleCollider->circularRadius = fmaxf(pTriangleCollider->circularRadius, sphereTraceVector3HorizontalDistance(v2, pTriangleCollider->centroid));
+	pTriangleCollider->circularRadius = fmaxf(pTriangleCollider->circularRadius, sphereTraceVector3HorizontalDistance(v3, pTriangleCollider->centroid));
 }
 
 ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3)
@@ -94,6 +135,7 @@ ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vecto
 	ST_TriangleCollider triangleCollider;
 	sphereTraceColliderTriangleSetVertexAndEdgeData(&triangleCollider, v1, v2, v3);
 	triangleCollider.ignoreCollisions = 0;
+	triangleCollider.collider.colliderType = COLLIDER_TRIANGLE;
 	return triangleCollider;
 }
 
@@ -124,9 +166,9 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const
 		if (fpclassify(pRaycastData->distance) == FP_INFINITE)
 			return 0;
 		pRaycastData->startPoint = from;
-		pRaycastData->hitPoint = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+		pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 
-		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->hitPoint, pTriangleCollider);
+		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->contact.point, pTriangleCollider);
 
 	}
 	return 0;
@@ -137,35 +179,57 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	if (sphereTraceColliderInfinitePlaneSphereTrace(from, dir, radius, pTriangleCollider->centroid, pTriangleCollider->normal, pSphereTraceData))
 	{
-		if (sphereTraceColliderTriangleIsProjectedPointContained(pSphereTraceData->rayTraceData.hitPoint, pTriangleCollider))
+		if (sphereTraceColliderTriangleIsProjectedPointContained(pSphereTraceData->rayTraceData.contact.point, pTriangleCollider))
 		{
+			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 	}
-	float closestEdgePointDist = FLT_MAX;
 	ST_SphereTraceData datTest;
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[0], &datTest))
+	float dot = sphereTraceVector3Dot(dir.v, pTriangleCollider->normal.v);
+	if (dot<COLLIDER_TOLERANCE)
 	{
-		closestEdgePointDist = datTest.traceDistance;
-		*pSphereTraceData = datTest;
+		int edgeInd = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(pTriangleCollider, pSphereTraceData->rayTraceData.contact.point);
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[edgeInd], &datTest))
+		{
+			*pSphereTraceData = datTest;
+			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
+			return 1;
+		}
+		return 0;
 	}
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[1], &datTest))
+	else
 	{
-		if (datTest.traceDistance < closestEdgePointDist)
+		float closestEdgePointDist = FLT_MAX;
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[0], &datTest))
 		{
 			closestEdgePointDist = datTest.traceDistance;
 			*pSphereTraceData = datTest;
 		}
-	}
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[2], &datTest))
-	{
-		if (datTest.traceDistance < closestEdgePointDist)
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[1], &datTest))
 		{
-			closestEdgePointDist = datTest.traceDistance;
-			*pSphereTraceData = datTest;
+			if (datTest.traceDistance < closestEdgePointDist)
+			{
+				closestEdgePointDist = datTest.traceDistance;
+				*pSphereTraceData = datTest;
+			}
+		}
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[2], &datTest))
+		{
+			if (datTest.traceDistance < closestEdgePointDist)
+			{
+				closestEdgePointDist = datTest.traceDistance;
+				*pSphereTraceData = datTest;
+			}
+		}
+		if (closestEdgePointDist < FLT_MAX)
+		{
+			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
+			return 1;
 		}
 	}
-	if (closestEdgePointDist < FLT_MAX)
-		return 1;
 	return 0;
 }

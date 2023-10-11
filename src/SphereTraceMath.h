@@ -66,6 +66,7 @@ typedef struct ST_Color
 } ST_Color;
 
 
+float sphereTraceLerp(float x0, float x1, float t);
 
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
 
@@ -74,6 +75,8 @@ ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);
 ST_Vector3 sphereTraceVector3Construct(float x, float y, float z);
 
 ST_Vector4 sphereTraceVector4Construct(float x, float y, float z, float w);
+
+ST_Vector4 sphereTraceVector4ConstructWithVector3(ST_Vector3 v, float w);
 
 ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
@@ -88,6 +91,12 @@ ST_Vector4 sphereTraceMatrixCol(ST_Matrix4 const matrix, int i);
 ST_Vector2 sphereTraceVector2Add(ST_Vector2 v1, ST_Vector2 v2);
 
 ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2);
+
+float sphereTraceVector2Dot(ST_Vector2 v1, ST_Vector2 v2);
+
+ST_Vector2 sphereTraceVector2Lerp(ST_Vector2 v1, ST_Vector2 v2, float t);
+
+
 
 ST_Vector2Integer sphereTraceVector2IntegerAdd(ST_Vector2Integer v1, ST_Vector2Integer v2);
 
@@ -128,6 +137,10 @@ void sphereTraceVector3NegativeByRef(ST_Vector3* pRef);
 
 void sphereTraceVector3Print(ST_Vector3 v);
 
+void sphereTraceVector2Print(ST_Vector2 v);
+
+b32 sphereTraceEpsilonEqual(float f1, float f2, float epsilon);
+
 b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon);
 
 b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float epsilon);
@@ -140,7 +153,11 @@ float sphereTraceVector3Length2(ST_Vector3 vec);
 
 ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toScale, float scale);
 
+ST_Vector3 sphereTraceVector3AddAndScale2(ST_Vector3 toAdd, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2);
+
 void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale);
+
+void sphereTraceVector3AddAndScale2ByRef(ST_Vector3* const pRef, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2);
 
 ST_Vector3 sphereTraceVector3Average(ST_Vector3 v1, ST_Vector3 v2);
 
@@ -152,7 +169,17 @@ ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vec
 
 b32 sphereTraceVector3ClosestPointOnLineBetweenTwoLinesIsGreaterThanZeroAndLessThanMaxDist(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float maxDist);
 
-float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistanceOnLine(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir);
+ST_Vector3 sphereTraceMathClosestPointOnLineNearestToPoint(ST_Vector3 linePoint, ST_Vector3 lineDir, ST_Vector3 point);
+
+void sphereTraceMathClosestPointOnLineNearestToPointExtractData(ST_Vector3 linePoint, ST_Vector3 lineDir, ST_Vector3 point, ST_Vector3* pPoint, ST_Vector3* pDir, float* pLineDist, float* pClosestDist);
+
+float sphereTraceMathCircleIntersectLine(float circleRadius, float slope, float xIntersept);
+
+float sphereTraceMathCircleIntersectPoint(float circleRadius, float pointDistance, float pointHeight);
+
+float sphereTraceMathCircleIntersectLineWithPoints(float circleRadius, float yIntersect, float x1, float y1, float x2, float y2);
+
+float sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistance(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir);
 
 void sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(ST_Vector3 point, ST_Vector3 normalizedLineDir, ST_Vector3 otherPoint, ST_Vector3 otherNormalizedLineDir, float* dist1, float* dist2);
 
@@ -160,7 +187,11 @@ void sphereTraceVector3ClosestPointsOnLineBetweenTwoLines(ST_Vector3 point, ST_V
 
 float sphereTraceVector3Distance(ST_Vector3 point1, ST_Vector3 point2);
 
+float sphereTraceVector3HorizontalDistance(ST_Vector3 point1, ST_Vector3 point2);
+
 ST_Vector3 sphereTraceVector3Lerp(ST_Vector3 point1, ST_Vector3 point2, float t);
+
+ST_Vector3 sphereTraceVector3UniformSize(float size);
 
 ST_Vector4 sphereTraceVector4Lerp(ST_Vector4 point1, ST_Vector4 point2, float t);
 
@@ -173,6 +204,8 @@ ST_Matrix4 sphereTraceMatrixRotateX(float rad);
 ST_Matrix4 sphereTraceMatrixRotateY(float rad);
 
 ST_Matrix4 sphereTraceMatrixRotateZ(float rad);
+
+ST_Matrix4 sphereTraceMatrixTranspose(ST_Matrix4 mat);
 
 ST_Matrix4 sphereTraceMatrixTranslation(ST_Vector3 trans);
 
@@ -229,6 +262,8 @@ ST_Quaternion sphereTraceQuaternionSubtract(ST_Quaternion a, ST_Quaternion b);
 
 ST_Quaternion sphereTraceQuaternionScale(float f, ST_Quaternion a);
 
+ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up);
+
 void sphereTraceQuaternionPrint(ST_Quaternion quat);
 
 ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotation);
@@ -246,6 +281,10 @@ void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);
 ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir);
 
 ST_Direction sphereTraceDirectionNegative(ST_Direction dir);
+
+float sphereTraceDirectionGetDistanceInDirection(ST_Direction dir, ST_Vector3 from, ST_Vector3 to);
+
+float sphereTraceDirectionGetMagnitudeInDirection(ST_Direction dir, ST_Vector3 v);
 
 ST_Color sphereTraceColorConstruct(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 

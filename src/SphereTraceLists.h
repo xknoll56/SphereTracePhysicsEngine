@@ -2,35 +2,37 @@
 #include <stdlib.h>
 #include "SphereTraceMath.h"
 
-typedef struct ST_IntListData
+typedef uintptr_t ST_Index;
+
+typedef struct ST_IndexListData
 {
-	int value;
-	struct ST_IntListData* pNext;
-} ST_IntListData;
+	ST_Index value;
+	struct ST_IndexListData* pNext;
+} ST_IndexListData;
 
-typedef struct ST_IntList
+typedef struct ST_IndexList
 {
-	int count;
-	ST_IntListData* pFirst;
-} ST_IntList;
+	ST_Index count;
+	ST_IndexListData* pFirst;
+} ST_IndexList;
 
-ST_IntList sphereTraceIntListConstruct();
+ST_IndexList sphereTraceIndexListConstruct();
 
-void sphereTraceIntListAddFirst(ST_IntList* const pIntList, int value);
+void sphereTraceIndexListAddFirst(ST_IndexList* const pIntList, ST_Index value);
 
-void sphereTraceIntListAddLast(ST_IntList* const pIntList, int value);
+void sphereTraceIndexListAddLast(ST_IndexList* const pIntList, ST_Index value);
 
-b32 sphereTraceIntListAddUnique(ST_IntList* const pIntList, int value);
+b32 sphereTraceIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
 
-void sphereTraceIntListRemoveFirstInstance(ST_IntList* const pIntList, int value);
+void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_Index value);
 
-void sphereTraceIntListFree(ST_IntList* const pIntList);
+void sphereTraceIndexListFree(ST_IndexList* const pIntList);
 
-b32 sphereTraceIntListContains(const ST_IntList* const pIntList, int value);
+b32 sphereTraceIndexListContains(const ST_IndexList* const pIntList, ST_Index value);
 
-ST_IntList sphereTraceIntListConstructForDeletedValues(const ST_IntList* const pOldIntList, const ST_IntList* const pNewIntList);
+ST_IndexList sphereTraceIndexListConstructForDeletedValues(const ST_IndexList* const pOldIntList, const ST_IndexList* const pNewIntList);
 
-void sphereTraceIntListPrint(const ST_IntList* const pIntList);
+void sphereTraceIndexListPrint(const ST_IndexList* const pIntList);
 
 
 typedef struct ST_Vector3ListData

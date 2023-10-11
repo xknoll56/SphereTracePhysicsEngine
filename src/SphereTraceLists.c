@@ -3,53 +3,54 @@
 #include "SphereTraceLists.h"
 #include "SphereTraceMath.h"
 #include "SphereTraceGlobals.h"
+#include "SphereTraceAllocator.h"
 
-ST_IntList sphereTraceIntListConstruct()
+ST_IndexList sphereTraceIndexListConstruct()
 {
-	ST_IntList intList;
+	ST_IndexList intList;
 	intList.count = 0;
 	intList.pFirst = NULL;
 	return intList;
 }
 
-void sphereTraceIntListAddFirst(ST_IntList* const pIntList, int value)
+void sphereTraceIndexListAddFirst(ST_IndexList* const pIntList, ST_Index value)
 {
-	ST_IntListData* pFirst = pIntList->pFirst;
-	pIntList->pFirst = (ST_IntListData*)malloc(sizeof(ST_IntListData));
+	ST_IndexListData* pFirst = pIntList->pFirst;
+	pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
 	pIntList->pFirst->value = value;
 	pIntList->pFirst->pNext = pFirst;
 	pIntList->count++;
 
 }
 
-void sphereTraceIntListAddLast(ST_IntList* const pIntList, int value)
+void sphereTraceIndexListAddLast(ST_IndexList* const pIntList, ST_Index value)
 {
 	if (pIntList->pFirst == NULL)
 	{
-		pIntList->pFirst = (ST_IntListData*)malloc(sizeof(ST_IntListData));
+		pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
 		pIntList->pFirst->value = value;
 		pIntList->pFirst->pNext = NULL;
 		pIntList->count++;
 	}
 	else
 	{
-		ST_IntListData* pData = pIntList->pFirst;
+		ST_IndexListData* pData = pIntList->pFirst;
 		for (int i = 0; i < pIntList->count - 1; i++)
 		{
 			pData = pData->pNext;
 		}
-		pData->pNext = (ST_IntListData*)malloc(sizeof(ST_IntListData));
+		pData->pNext = sphereTraceAllocatorAllocateIndexListData();
 		pData->pNext->value = value;
 		pData->pNext->pNext = NULL;
 		pIntList->count++;
 	}
 }
 
-b32 sphereTraceIntListAddUnique(ST_IntList* const pIntList, int value)
+b32 sphereTraceIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value)
 {
 	if (pIntList->pFirst == NULL)
 	{
-		pIntList->pFirst = (ST_IntListData*)malloc(sizeof(ST_IntListData));
+		pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
 		pIntList->pFirst->value = value;
 		pIntList->pFirst->pNext = NULL;
 		pIntList->count++;
@@ -57,7 +58,7 @@ b32 sphereTraceIntListAddUnique(ST_IntList* const pIntList, int value)
 	}
 	else
 	{
-		ST_IntListData* pData = pIntList->pFirst;
+		ST_IndexListData* pData = pIntList->pFirst;
 		for (int i = 0; i < pIntList->count - 1; i++)
 		{
 			if (pData != NULL)
@@ -72,7 +73,7 @@ b32 sphereTraceIntListAddUnique(ST_IntList* const pIntList, int value)
 			if (pData->value == value)
 				return 0;
 		}
-		pData->pNext = (ST_IntListData*)malloc(sizeof(ST_IntListData));
+		pData->pNext = sphereTraceAllocatorAllocateIndexListData();
 		pData->pNext->value = value;
 		pData->pNext->pNext = NULL;
 		pIntList->count++;
@@ -80,22 +81,22 @@ b32 sphereTraceIntListAddUnique(ST_IntList* const pIntList, int value)
 	}
 }
 
-void sphereTraceIntListRemoveFirstInstance(ST_IntList* const pIntList, int value)
+void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_Index value)
 {
 	if (pIntList->count == 1)
 	{
 		if (pIntList->pFirst->value == value)
-			free(pIntList->pFirst);
+			sphereTraceAllocatorFreeIndexListData(pIntList->pFirst);
 		pIntList->pFirst = NULL;
 		pIntList->count--;
 	}
 	else if (pIntList->count > 1)
 	{
-		ST_IntListData* pData = pIntList->pFirst;
-		ST_IntListData* pNext = pIntList->pFirst->pNext;
+		ST_IndexListData* pData = pIntList->pFirst;
+		ST_IndexListData* pNext = pIntList->pFirst->pNext;
 		if (pIntList->pFirst->value == value)
 		{
-			free(pIntList->pFirst);
+			sphereTraceAllocatorFreeIndexListData(pIntList->pFirst);
 			pIntList->pFirst = pNext;
 			pIntList->count--;
 			return;
@@ -105,7 +106,7 @@ void sphereTraceIntListRemoveFirstInstance(ST_IntList* const pIntList, int value
 			if (pNext->value == value)
 			{
 				pData->pNext = pNext->pNext;
-				free(pNext);
+				sphereTraceAllocatorFreeIndexListData(pNext);
 				pIntList->count--;
 				return;
 			}
@@ -115,16 +116,16 @@ void sphereTraceIntListRemoveFirstInstance(ST_IntList* const pIntList, int value
 	}
 }
 
-void sphereTraceIntListFree(ST_IntList* const pIntList)
+void sphereTraceIndexListFree(ST_IndexList* const pIntList)
 {
-	ST_IntListData* pData = pIntList->pFirst;
-	ST_IntListData* pNext;
+	ST_IndexListData* pData = pIntList->pFirst;
+	ST_IndexListData* pNext;
 	for (int i = 0; i < pIntList->count; i++)
 	{
 		if (pData != NULL)
 		{
 			pNext = pData->pNext;
-			free(pData);
+			sphereTraceAllocatorFreeIndexListData(pData);
 			pData = pNext;
 		}
 	}
@@ -132,9 +133,9 @@ void sphereTraceIntListFree(ST_IntList* const pIntList)
 	pIntList->count = 0;
 }
 
-b32 sphereTraceIntListContains(const ST_IntList* const pIntList, int value)
+b32 sphereTraceIndexListContains(const ST_IndexList* const pIntList, ST_Index value)
 {
-	ST_IntListData* data = pIntList->pFirst;
+	ST_IndexListData* data = pIntList->pFirst;
 	for (int i = 0; i < pIntList->count; i++)
 	{
 		if (data != NULL)
@@ -147,25 +148,25 @@ b32 sphereTraceIntListContains(const ST_IntList* const pIntList, int value)
 	return 0;
 }
 
-ST_IntList sphereTraceIntListConstructForDeletedValues(const ST_IntList* const pOldIntList, const ST_IntList* const pNewIntList)
+ST_IndexList sphereTraceIndexListConstructForDeletedValues(const ST_IndexList* const pOldIntList, const ST_IndexList* const pNewIntList)
 {
-	ST_IntList deletedIntList = sphereTraceIntListConstruct();
-	ST_IntListData* data = pOldIntList->pFirst;
+	ST_IndexList deletedIntList = sphereTraceIndexListConstruct();
+	ST_IndexListData* data = pOldIntList->pFirst;
 	for (int i = 0; i < pOldIntList->count; i++)
 	{
 		if (data != NULL)
 		{
-			if (!sphereTraceIntListContains(pNewIntList, data->value))
-				sphereTraceIntListAddUnique(&deletedIntList, data->value);
+			if (!sphereTraceIndexListContains(pNewIntList, data->value))
+				sphereTraceIndexListAddUnique(&deletedIntList, data->value);
 			data = data->pNext;
 		}
 	}
 	return deletedIntList;
 }
 
-void sphereTraceIntListPrint(const ST_IntList* const pIntList)
+void sphereTraceIndexListPrint(const ST_IndexList* const pIntList)
 {
-	ST_IntListData* data = pIntList->pFirst;
+	ST_IndexListData* data = pIntList->pFirst;
 	for (int i = 0; i < pIntList->count; i++)
 	{
 		printf("%i:%i,", i, data->value);
@@ -187,7 +188,7 @@ void sphereTraceVector3ListAddLast(ST_Vector3List* const pVector3List, ST_Vector
 {
 	if (pVector3List->pFirst == NULL)
 	{
-		pVector3List->pFirst = (ST_Vector3ListData*)malloc(sizeof(ST_Vector3ListData));
+		pVector3List->pFirst = sphereTraceAllocatorAllocateVector3ListData();
 		pVector3List->pFirst->value = value;
 		pVector3List->pFirst->pNext = NULL;
 		pVector3List->count++;
@@ -199,7 +200,7 @@ void sphereTraceVector3ListAddLast(ST_Vector3List* const pVector3List, ST_Vector
 		{
 			pData = pData->pNext;
 		}
-		pData->pNext = (ST_Vector3ListData*)malloc(sizeof(ST_Vector3ListData));
+		pData->pNext = sphereTraceAllocatorAllocateVector3ListData();
 		pData->pNext->value = value;
 		pData->pNext->pNext = NULL;
 		pVector3List->count++;
@@ -209,7 +210,7 @@ void sphereTraceVector3ListAddLast(ST_Vector3List* const pVector3List, ST_Vector
 void sphereTraceVector3ListAddFirst(ST_Vector3List* const pVector3List, ST_Vector3 value)
 {
 	ST_Vector3ListData* pFirst = pVector3List->pFirst;
-	pVector3List->pFirst = (ST_Vector3ListData*)malloc(sizeof(ST_Vector3ListData));
+	pVector3List->pFirst = sphereTraceAllocatorAllocateVector3ListData();
 	pVector3List->pFirst->value = value;
 	pVector3List->pFirst->pNext = pFirst;
 	pVector3List->count++;
@@ -220,7 +221,7 @@ void sphereTraceVector3ListRemoveFirst(ST_Vector3List* const pVector3List)
 	if (pVector3List->pFirst != NULL)
 	{
 		ST_Vector3ListData* pNext = pVector3List->pFirst->pNext;
-		free(pVector3List->pFirst);
+		sphereTraceAllocatorFreeVector3ListData(pVector3List->pFirst);
 		pVector3List->pFirst = pNext;
 		pVector3List->count--;
 	}
@@ -235,7 +236,7 @@ void sphereTraceVector3ListRemoveLast(ST_Vector3List* const pVector3List)
 		{
 			pLast = pLast->pNext;
 		}
-		free(pLast);
+		sphereTraceAllocatorFreeVector3ListData(pLast);
 		pLast = NULL;
 		pVector3List->count--;
 	}
@@ -245,7 +246,7 @@ b32 sphereTraceVector3ListAddUnique(ST_Vector3List* const pVector3List, ST_Vecto
 {
 	if (pVector3List->pFirst == NULL)
 	{
-		pVector3List->pFirst = (ST_Vector3ListData*)malloc(sizeof(ST_Vector3ListData));
+		pVector3List->pFirst = sphereTraceAllocatorAllocateVector3ListData();
 		pVector3List->pFirst->value = value;
 		pVector3List->pFirst->pNext = NULL;
 		pVector3List->count++;
@@ -268,7 +269,7 @@ b32 sphereTraceVector3ListAddUnique(ST_Vector3List* const pVector3List, ST_Vecto
 			if (sphereTraceVector3Equal(pData->value, value))
 				return 0;
 		}
-		pData->pNext = (ST_Vector3ListData*)malloc(sizeof(ST_Vector3ListData));
+		pData->pNext = sphereTraceAllocatorAllocateVector3ListData();
 		pData->pNext->value = value;
 		pData->pNext->pNext = NULL;
 		pVector3List->count++;
@@ -281,7 +282,7 @@ void sphereTraceVector3ListRemoveFirstInstance(ST_Vector3List* const pVector3Lis
 	if (pVector3List->count == 1)
 	{
 		if (sphereTraceVector3Equal(pVector3List->pFirst->value, value))
-			free(pVector3List->pFirst);
+			sphereTraceAllocatorFreeVector3ListData(pVector3List->pFirst);
 		pVector3List->pFirst = NULL;
 		pVector3List->count--;
 	}
@@ -291,7 +292,7 @@ void sphereTraceVector3ListRemoveFirstInstance(ST_Vector3List* const pVector3Lis
 		ST_Vector3ListData* pNext = pVector3List->pFirst->pNext;
 		if (sphereTraceVector3Equal(pVector3List->pFirst->value, value))
 		{
-			free(pVector3List->pFirst);
+			sphereTraceAllocatorFreeVector3ListData(pVector3List->pFirst);
 			pVector3List->pFirst = pNext;
 			pVector3List->count--;
 			return;
@@ -301,7 +302,7 @@ void sphereTraceVector3ListRemoveFirstInstance(ST_Vector3List* const pVector3Lis
 			if (sphereTraceVector3Equal(pNext->value, value))
 			{
 				pData->pNext = pNext->pNext;
-				free(pNext);
+				sphereTraceAllocatorFreeVector3ListData(pNext);
 				pVector3List->count--;
 				return;
 			}
@@ -320,7 +321,7 @@ void sphereTraceVector3ListFree(ST_Vector3List* const pVector3List)
 		if (pData != NULL)
 		{
 			pNext = pData->pNext;
-			free(pData);
+			sphereTraceAllocatorFreeVector3ListData(pData);
 			pData = pNext;
 		}
 	}

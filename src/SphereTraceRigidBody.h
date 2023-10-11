@@ -26,6 +26,8 @@ typedef struct ST_RigidBody
     ST_Vector3List appliedDeltaMomentums;
     ST_Vector3List appliedTorques;
     ST_Vector3List appliedDeltaAngularMomentums;
+
+    b32 isAsleep;
 } ST_RigidBody;
 
 ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia);

@@ -332,7 +332,7 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float a
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
 	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
 	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-
+	planeCollider.collider.colliderType = COLLIDER_PLANE;
 	return planeCollider;
 }
 
@@ -349,7 +349,7 @@ ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
 	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
 	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-
+	planeCollider.collider.colliderType = COLLIDER_PLANE;
 	return planeCollider;
 }
 
@@ -359,21 +359,21 @@ void sphereTraceColliderInfinitePlaneRayTrace(ST_Vector3 from, ST_Direction dir,
 	pRaycastData->startPoint = from;
 	if (sphereTraceVector3Equal(from, pointOnPlane))
 	{
-		pRaycastData->normal = planeNormal;
+		pRaycastData->contact.normal = planeNormal;
 		pRaycastData->distance = 0.0f;
-		pRaycastData->hitPoint = pointOnPlane;
+		pRaycastData->contact.point = pointOnPlane;
 		return;
 	}
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	ST_Vector3 dp = sphereTraceVector3Subtract(pointOnPlane, from);
-	pRaycastData->normal = planeNormal;
+	pRaycastData->contact.normal = planeNormal;
 	float dirDotNormal = sphereTraceVector3Dot(dir.v, planeNormal.v);
-	pRaycastData->distance = sphereTraceVector3Dot(dp, pRaycastData->normal.v) / dirDotNormal;
-	pRaycastData->hitPoint = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+	pRaycastData->distance = sphereTraceVector3Dot(dp, pRaycastData->contact.normal.v) / dirDotNormal;
+	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	//sphereTraceVector3NormalizeByRef(&dp);
-	if (sphereTraceVector3Dot(sphereTraceVector3Subtract(pRaycastData->hitPoint, from), pRaycastData->normal.v) > 0.0f)
+	if (sphereTraceVector3Dot(sphereTraceVector3Subtract(pRaycastData->contact.point, from), pRaycastData->contact.normal.v) > 0.0f)
 	{
-		pRaycastData->normal = sphereTraceDirectionNegative(planeNormal);
+		pRaycastData->contact.normal = sphereTraceDirectionNegative(planeNormal);
 	}
 }
 
@@ -386,7 +386,7 @@ b32 sphereTraceColliderPlaneRayTrace(ST_Vector3 from, ST_Direction dir, const ST
 		if (fpclassify(pRaycastData->distance) == FP_INFINITE)
 			return 0;
 		pRaycastData->startPoint = from;
-		ST_Vector3 vectorFromCenter = sphereTraceVector3Subtract(pRaycastData->hitPoint, pPlaneCollider->position);
+		ST_Vector3 vectorFromCenter = sphereTraceVector3Subtract(pRaycastData->contact.point, pPlaneCollider->position);
 		float xDist = sphereTraceVector3Dot(vectorFromCenter, pPlaneCollider->right.v);
 		if (fabsf(xDist) > pPlaneCollider->xHalfExtent)
 			return 0;
@@ -423,8 +423,8 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 		pSphereTraceData->sphereCenter = from;
 		pSphereTraceData->traceDistance = 0.0f;
 		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(from, contact.point);
-		pSphereTraceData->rayTraceData.hitPoint = contact.point;
-		pSphereTraceData->rayTraceData.normal = contact.normal;
+		pSphereTraceData->rayTraceData.contact.point = contact.point;
+		pSphereTraceData->rayTraceData.contact.normal = contact.normal;
 		pSphereTraceData->rayTraceData.startPoint = from;
 		return 1;
 	}
@@ -433,9 +433,9 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 	if (pSphereTraceData->rayTraceData.distance < 0.0f || isinf(pSphereTraceData->rayTraceData.distance))
 		return 0;
 	float alpha;
-	float dot = sphereTraceVector3Dot(dir.v, pSphereTraceData->rayTraceData.normal.v);
+	float dot = sphereTraceVector3Dot(dir.v, pSphereTraceData->rayTraceData.contact.normal.v);
 	float hypotinus;
-	ST_Vector3 orthogonal = pSphereTraceData->rayTraceData.normal.v;
+	ST_Vector3 orthogonal = pSphereTraceData->rayTraceData.contact.normal.v;
 	if (fabsf(fabsf(dot) - 1) < COLLIDER_TOLERANCE)
 	{
 		alpha = 0.0f;
@@ -443,8 +443,8 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 	}
 	else
 	{
-		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.normal.v, dir.v);
-		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.normal.v, orthogonal);
+		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, dir.v);
+		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, orthogonal);
 		sphereTraceVector3NormalizeByRef(&orthogonal);
 		alpha = acosf(sphereTraceVector3Dot(sphereTraceVector3Negative(dir.v), orthogonal));
 		hypotinus = radius / sinf(alpha);
@@ -458,9 +458,9 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 
 	pSphereTraceData->sphereCenter = sphereTraceVector3AddAndScale(from, dir.v, pSphereTraceData->rayTraceData.distance - hypotinus);
 
-	pSphereTraceData->rayTraceData.hitPoint = sphereTraceVector3AddAndScale(pSphereTraceData->sphereCenter, sphereTraceVector3Negative(pSphereTraceData->rayTraceData.normal.v), radius);
+	pSphereTraceData->rayTraceData.contact.point = sphereTraceVector3AddAndScale(pSphereTraceData->sphereCenter, sphereTraceVector3Negative(pSphereTraceData->rayTraceData.contact.normal.v), radius);
 	pSphereTraceData->rayTraceData.startPoint = from;
-	pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.hitPoint, from));
+	pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, from));
 	pSphereTraceData->radius = radius;
 	pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
 	//pSphereTraceData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.hitPoint));
@@ -474,7 +474,7 @@ b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	if (sphereTraceColliderInfinitePlaneSphereTrace(from, dir, radius, pPlaneCollider->position, pPlaneCollider->normal, pSphereTraceData))
 	{
-		if (sphereTraceColliderPlaneIsProjectedPointContained(pSphereTraceData->rayTraceData.hitPoint, pPlaneCollider))
+		if (sphereTraceColliderPlaneIsProjectedPointContained(pSphereTraceData->rayTraceData.contact.point, pPlaneCollider))
 		{
 			return 1;
 		}

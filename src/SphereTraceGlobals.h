@@ -2,6 +2,12 @@
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 
+extern const ST_Vector2 gVector2Zero;
+extern const ST_Vector2 gVector2One;
+extern const ST_Vector2 gVector2Right;
+extern const ST_Vector2 gVector2Left;
+extern const ST_Vector2 gVector2Up;
+extern const ST_Vector2 gVector2Down;
 extern const ST_Vector3 gVector3Up;
 extern const ST_Vector3 gVector3Right;
 extern const ST_Vector3 gVector3Forward;
@@ -44,4 +50,7 @@ extern const ST_Direction gDirectionBack;
 	pld = pld->pNext;} \
 
 #define ST_VECTOR3LIST() sphereTraceVector3ListConstruct();
-#define ST_INTLIST() sphereTraceIntListConstruct();
+#define ST_INTLIST() sphereTraceIndexListConstruct();
+
+#define ST_TRUE 1
+#define ST_FALSE 0

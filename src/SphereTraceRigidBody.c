@@ -1,6 +1,7 @@
 #include "SphereTraceLists.h"
 #include "SphereTraceRigidBody.h"
 #include "SphereTraceMath.h"
+#include "SphereTraceGlobals.h"
 
 ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
 {
@@ -21,11 +22,13 @@ ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
     rigidBody.appliedDeltaMomentums = sphereTraceVector3ListConstruct();
     rigidBody.appliedTorques = sphereTraceVector3ListConstruct();
     rigidBody.appliedDeltaAngularMomentums = sphereTraceVector3ListConstruct();
+    rigidBody.isAsleep = ST_FALSE;
     return rigidBody;
 }
 
 void sphereTraceRigidBodyAddForce(ST_RigidBody* const pRigidBody, const ST_Vector3 force)
 {
+    pRigidBody->isAsleep = ST_FALSE;
     sphereTraceVector3ListAddFirst(&pRigidBody->appliedForces, force);
 }
 
@@ -42,6 +45,7 @@ void sphereTraceRigidBodyApplyForces(ST_RigidBody* const pRigidBody, float dt)
 
 void sphereTraceRigidBodyAddDeltaMomentum(ST_RigidBody* const pRigidBody, const ST_Vector3 dp)
 {
+    pRigidBody->isAsleep = ST_FALSE;
     sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaMomentums, dp);
 }
 
@@ -58,6 +62,7 @@ void sphereTraceRigidBodyApplyDeltaMomentums(ST_RigidBody* const pRigidBody)
 
 void sphereTraceRigidBodyAddTorque(ST_RigidBody* const pRigidBody, const ST_Vector3 torque)
 {
+    pRigidBody->isAsleep = ST_FALSE;
     sphereTraceVector3ListAddFirst(&pRigidBody->appliedTorques, torque);
 }
 void sphereTraceRigidBodyApplyTorques(ST_RigidBody* const pRigidBody, float dt)
@@ -73,6 +78,7 @@ void sphereTraceRigidBodyApplyTorques(ST_RigidBody* const pRigidBody, float dt)
 
 void sphereTraceRigidBodyAddDeltaAngularMomentum(ST_RigidBody* const pRigidBody, const ST_Vector3 dl)
 {
+    pRigidBody->isAsleep = ST_FALSE;
     sphereTraceVector3ListAddFirst(&pRigidBody->appliedDeltaAngularMomentums, dl);
 }
 
