@@ -2,13 +2,19 @@
 
 #include "SphereTraceAllocator.h"
 #include "SphereTraceLists.h"
+#include "SphereTraceCollider.h"
+
+
 
 #define ST_INDEX_POOL_DEFAULT_SIZE 1000
+#define ST_FUNCTION_POOL_DEFAULT_SIZE 20
 #define ST_INDEX_ALLOCATOR_DEFAULT_SIZE 5
 
 static ST_Allocator indexListAllocator;
 static ST_Allocator vector3ListAllocator;
 static ST_Allocator vector3Allocator;
+static ST_Allocator callbackFunctionAllocator;
+static ST_Allocator contactEntryAllocator;
 
 ST_FreeStack sphereTraceAllocatorFreeStackConstruct(ST_Index capacity, void* pArr, ST_Index objectSize)
 {
@@ -136,6 +142,8 @@ void sphereTraceAllocatorInitialize()
 	indexListAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_IndexListData), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	vector3ListAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_Vector3ListData), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	vector3Allocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_Vector3), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	callbackFunctionAllocator = sphereTraceAllocatorConstruct(ST_FUNCTION_POOL_DEFAULT_SIZE, sizeof(ST_CallbackFunction), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	contactEntryAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_SphereContactEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 }
 
 ST_IndexListData* sphereTraceAllocatorAllocateIndexListData()
@@ -167,12 +175,25 @@ void sphereTraceAllocatorFreeVector3(void* pIndex)
 {
 	sphereTraceAllocatorFreeObject(&vector3Allocator, pIndex);
 }
-//void* sphereTraceAllocatorMallocPointer()
-//{
-//	return sphereTraceAllocatorObjectPoolAllocateObject(&gPointerPool);
-//}
-//
-//void sphereTraceAllocatorFreePointer(void* pointer)
-//{
-//	sphereTraceAllocatorObjectPoolFreeObject(&gPointerPool, pointer);
-//}
+
+
+ST_CallbackFunction* sphereTraceAllocatorAllocateCallbackFunction()
+{
+	return sphereTraceAllocatorAllocateObject(&callbackFunctionAllocator);
+}
+
+void sphereTraceAllocatorFreeCallbackFunction(void* pIndex)
+{
+	sphereTraceAllocatorFreeObject(&callbackFunctionAllocator, pIndex);
+}
+
+ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry()
+{
+	return sphereTraceAllocatorAllocateObject(&contactEntryAllocator);
+}
+
+
+void sphereTraceAllocatorFreeContactEntry(void* pIndex)
+{
+	sphereTraceAllocatorFreeObject(&contactEntryAllocator, pIndex);
+}

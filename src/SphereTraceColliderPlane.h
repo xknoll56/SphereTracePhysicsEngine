@@ -27,4 +27,5 @@ b32 sphereTraceColliderPlaneIsProjectedPointContained(ST_Vector3 projectedPoint,
 b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 pointOnPlane, ST_Direction planeNormal, ST_SphereTraceData* const pSphereTraceData);
 //
 b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereCastData);
-
+//
+b32 sphereTraceColliderPlaneSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereCastData);

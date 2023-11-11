@@ -197,6 +197,8 @@ ST_Vector4 sphereTraceVector4Lerp(ST_Vector4 point1, ST_Vector4 point2, float t)
 
 ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from);
 
+ST_Vector3 sphereTraceVector3ProjectVector3OntoPlane(ST_Vector3 vec, ST_Direction planeNormal);
+
 ST_Matrix4 sphereTraceMatrixIdentity();
 
 ST_Matrix4 sphereTraceMatrixRotateX(float rad);
@@ -222,6 +224,10 @@ ST_Matrix4 sphereTraceMatrixOrthographic(float left, float right, float top, flo
 ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up);
 
 ST_Matrix4 sphereTraceMatrixMult(ST_Matrix4 mat1, ST_Matrix4 mat2);
+
+ST_Matrix4 sphereTraceMatrixMultByRef(const ST_Matrix4* pMat1, const ST_Matrix4* pMat2);
+
+void sphereTraceMatrixPrint(ST_Matrix4 mat);
 
 ST_Vector3 sphereTraceVector3GetLocalXAxisFromRotationMatrix(ST_Matrix4 mat);
 
@@ -281,6 +287,8 @@ void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);
 ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir);
 
 ST_Direction sphereTraceDirectionNegative(ST_Direction dir);
+
+ST_Direction sphereTraceDirectionProjectDirectionOntoPlane(ST_Direction dir, ST_Direction planeNormal);
 
 float sphereTraceDirectionGetDistanceInDirection(ST_Direction dir, ST_Vector3 from, ST_Vector3 to);
 

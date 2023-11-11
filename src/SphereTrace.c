@@ -2,25 +2,70 @@
 #include "SphereTrace.h"
 #include "SphereTraceGlobals.h"
 
-ST_SimulationSpace sphereTraceSimulationConstruct(float eta, float friction, ST_Vector3 gravitationalAcceleration)
+void sphereTraceSubscriberListAddOnCollisionEnterCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider, 
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext)
+{
+	ST_CallbackFunction* pcf = sphereTraceAllocatorAllocateCallbackFunction();
+	pcf->callback = callback;
+	sphereTraceIndexListAddFirst(&pCollider->subscriberList.onCollisionEnterCallbacks, pcf);
+	pCollider->subscriberList.hasSubscriber = 1;
+	sphereTraceIndexListAddUnique(&pSimSpace->callbackColliders, pCollider);
+	pCollider->subscriberList.pSubscriberContext = pContext;
+}
+void sphereTraceSubscriberListAddOnCollisionStayCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider, 
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext)
+{
+	ST_CallbackFunction* pcf = sphereTraceAllocatorAllocateCallbackFunction();
+	pcf->callback = callback;
+	sphereTraceIndexListAddFirst(&pCollider->subscriberList.onCollisionStayCallbacks, pcf);
+	pCollider->subscriberList.hasSubscriber = 1;
+	sphereTraceIndexListAddUnique(&pSimSpace->callbackColliders, pCollider);
+	pCollider->subscriberList.pSubscriberContext = pContext;
+}
+void sphereTraceSubscriberListAddOnCollisionExitCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider, 
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext)
+{
+	ST_CallbackFunction* pcf = sphereTraceAllocatorAllocateCallbackFunction();
+	pcf->callback = callback;
+	sphereTraceIndexListAddFirst(&pCollider->subscriberList.onCollisionExitCallbacks, pcf);
+	pCollider->subscriberList.hasSubscriber = 1;
+	sphereTraceIndexListAddUnique(&pSimSpace->callbackColliders, pCollider);
+	pCollider->subscriberList.pSubscriberContext = pContext;
+}
+
+ST_SimulationSpace sphereTraceSimulationConstruct()
 {
 	ST_SimulationSpace simulationSpace;
-	simulationSpace.eta = eta;
-	simulationSpace.friction = friction;
-	simulationSpace.gravitationalAcceleration = gravitationalAcceleration;
 	simulationSpace.sphereColliders = sphereTraceIndexListConstruct();
 	simulationSpace.planeColliders = sphereTraceIndexListConstruct();
 	simulationSpace.triangleColliders = sphereTraceIndexListConstruct();
 	simulationSpace.uniformTerrainColliders = sphereTraceIndexListConstruct();
 	simulationSpace.bowlColliders = sphereTraceIndexListConstruct();
 	simulationSpace.pipeColliders = sphereTraceIndexListConstruct();
-	simulationSpace.spherePlaneContactInfos = sphereTraceVectorArrayContactInfoConstruct(0, CONTACT_SPHERE_PLANE);
-	simulationSpace.sphereSphereContactInfos = sphereTraceVectorArrayContactInfoConstruct(0, CONTACT_SPHERE_SPHERE);
-	simulationSpace.sphereTriangleContactInfos = sphereTraceVectorArrayContactInfoConstruct(0, CONTACT_SPHERE_TRIANGLE);
-	simulationSpace.sphereTerrainTriangleContactInfos = sphereTraceVectorArrayContactInfoConstruct(0, CONTACT_SPHERE_TERRAIN_TRIANGLE);
+	simulationSpace.callbackColliders = sphereTraceIndexListConstruct();
 	simulationSpace.spacialPartitionContainer = sphereTraceSpacialPartitionStaticConstruct(20.0f);
 	simulationSpace.minDeltaTime = 1.0f / 60.0f;
+	simulationSpace.gravitationalAcceleration = sphereTraceVector3Construct(0.0f, -9.81f, 0.0f);
+	simulationSpace.defaultMaterial = sphereTraceMaterialConstruct(0.2f, 0.8f, 0.4f);
 	return simulationSpace;
+}
+
+void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace)
+{
+	sphereTraceIndexListFree(&pSimulationSpace->sphereColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->planeColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->triangleColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->bowlColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->pipeColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->callbackColliders);
+	ST_IndexListData* pild = pSimulationSpace->uniformTerrainColliders.pFirst;
+	ST_UniformTerrainCollider* pTerrainCollider = NULL;
+	for (int i = 0; i < pSimulationSpace->uniformTerrainColliders.count; i++)
+	{
+		pTerrainCollider = pild->value;
+		sphereTraceColliderUniformTerrainFree(pTerrainCollider);
+		pild = pild->pNext;
+	}
 }
 
 void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulationSpace, ST_PlaneCollider* const pPlaneCollider)
@@ -40,6 +85,28 @@ void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulat
 		else
 		{
 			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.outsideBucket.planeColliderIndices, pPlaneCollider);
+		}
+		ild = ild->pNext;
+	}
+}
+
+void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimulationSpace, ST_TriangleCollider* const pTriangleCollider)
+{
+	//ST_ColliderIndex index = pSimulationSpace->planeColliders.count;
+	pTriangleCollider->collider.colliderIndex = pTriangleCollider;
+	sphereTraceIndexListAddFirst(&pSimulationSpace->triangleColliders, pTriangleCollider);
+	pTriangleCollider->collider.bucketIndices = sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(&pSimulationSpace->spacialPartitionContainer, &pTriangleCollider->aabb);
+	ST_IndexListData* ild = pTriangleCollider->collider.bucketIndices.pFirst;
+	for (int i = 0; i < pTriangleCollider->collider.bucketIndices.count; i++)
+	{
+		if (ild->value != -1)
+		{
+			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.buckets[ild->value].triangleColliderIndices, pTriangleCollider);
+
+		}
+		else
+		{
+			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.outsideBucket.triangleColliderIndices, pTriangleCollider);
 		}
 		ild = ild->pNext;
 	}
@@ -196,6 +263,7 @@ void sphereTraceSimulationStepQuantity(const ST_SimulationSpace* const pSimulati
 	pRigidBody->rotation = sphereTraceQuaternionNormalize(pRigidBody->rotation);
 	pRigidBody->rotationMatrix = sphereTraceMatrixFromQuaternion(pRigidBody->rotation);
 
+	pRigidBody->prevPosition = pRigidBody->position;
 	pRigidBody->position = sphereTraceVector3Add(pRigidBody->position, sphereTraceVector3Scale(pRigidBody->velocity, dt));
 }
 
@@ -239,7 +307,7 @@ void sphereTraceSimulationStepQuantities(const ST_SimulationSpace* const pSimula
 	}
 }
 
-void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt)
+void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt)
 {
 	ST_SphereCollider* pSphereCollider = sphereTraceColliderSphereGetFromContact(pContactInfo);
 	ST_PlaneCollider* pPlaneCollider = sphereTraceColliderPlaneGetFromContact(pContactInfo);
@@ -248,7 +316,7 @@ void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pS
 	float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
 	ST_Vector3 vn = sphereTraceVector3Scale(pContactInfo->normal.v, vnMag);
 	ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
-	float j = -(1.0f + pSimulationSpace->eta) * vnMag * pSphereCollider->rigidBody.mass;
+	float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
 	ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
 	float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
 
@@ -268,11 +336,12 @@ void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pS
 			pSphereCollider->restingContact = ST_TRUE;
 		pSphereCollider->rigidBody.linearMomentum = sphereTraceVector3Cross(sphereTraceVector3Cross(pContactInfo->normal.v, pSphereCollider->rigidBody.linearMomentum), pContactInfo->normal.v);
 		sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, sphereTraceVector3Cross(pContactInfo->normal.v, sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 1.0f / pSphereCollider->radius)));
-		sphereTraceRigidBodyAddForce(&pSphereCollider->rigidBody, sphereTraceVector3Scale(sphereTraceVector3Normalize(sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v))), pSimulationSpace->friction));
+		sphereTraceRigidBodyAddForce(&pSphereCollider->rigidBody, sphereTraceVector3Scale(sphereTraceVector3Normalize(sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 
+			sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v))), pSimulationSpace->defaultMaterial.staticFriction));
 	}
 }
 
-void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt)
+void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt)
 {
 	ST_SphereCollider* pSphereCollider = sphereTraceColliderSphereGetFromContact(pContactInfo);;
 	ST_TriangleCollider* pTriangleCollider = sphereTraceColliderTriangleGetFromContact(pContactInfo);;
@@ -281,7 +350,7 @@ void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const
 	float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
 	ST_Vector3 vn = sphereTraceVector3Scale(pContactInfo->normal.v, vnMag);
 	ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
-	float j = -(1.0f + pSimulationSpace->eta) * vnMag * pSphereCollider->rigidBody.mass;
+	float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
 	ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
 	float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
 
@@ -301,58 +370,73 @@ void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const
 			pSphereCollider->restingContact = ST_TRUE;
 		pSphereCollider->rigidBody.linearMomentum = sphereTraceVector3Cross(sphereTraceVector3Cross(pContactInfo->normal.v, pSphereCollider->rigidBody.linearMomentum), pContactInfo->normal.v);
 		sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, sphereTraceVector3Cross(pContactInfo->normal.v, sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 1.0f / pSphereCollider->radius)));
-		ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Normalize(sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v))), pSimulationSpace->friction);
+		ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Normalize(sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 
+			sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v))), pSimulationSpace->defaultMaterial.staticFriction);
 		if (!sphereTraceVector3Nan(f))
 			sphereTraceRigidBodyAddForce(&pSphereCollider->rigidBody, f);
 	}
 }
 
-void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt)
+b32 sphereTraceSimulationSphereContactIsRestingCheck(const ST_SphereContact* const pContactInfo)
 {
 	ST_SphereCollider* pSphereCollider = sphereTraceColliderSphereGetFromContact(pContactInfo);
+	float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
+	return fabsf(vnMag) < ST_VELOCITY_THRESHOLD;
+}
+
+void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt)
+{
+	//ST_SphereCollider* pSphereCollider = sphereTraceColliderSphereGetFromContact(pContactInfo);
+	ST_SphereCollider* pSphereCollider = pContactInfo->pSphereCollider;
 	pSphereCollider->rigidBody.position = sphereTraceVector3Add(pSphereCollider->rigidBody.position, sphereTraceVector3Scale(pContactInfo->normal.v, pContactInfo->penetrationDistance));
 	ST_Vector3 r = sphereTraceVector3Subtract(pContactInfo->point, pSphereCollider->rigidBody.position);
 	float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
 	ST_Vector3 vn = sphereTraceVector3Scale(pContactInfo->normal.v, vnMag);
 	ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
-	float j = -(1.0f + pSimulationSpace->eta) * vnMag * pSphereCollider->rigidBody.mass;
+	float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
 	//float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
 	b32 restingContactCondition = (fabsf(vnMag) < ST_VELOCITY_THRESHOLD);
-	if (pContactInfo->collisionType == COLLISION_FACE_INWARD_CIRCULAR)
+	float accelNormal = fabsf(vnMag);
+	if (pContactInfo->collisionType == ST_COLLISION_INWARD_CIRCULAR)
 	{
 		ST_Vector3 circularTangent = sphereTraceVector3Cross(pContactInfo->normal.v, pContactInfo->bitangent.v);
-		float at = sphereTraceVector3Dot(pSphereCollider->rigidBody.velocity, circularTangent);
-		if (fabsf(at) / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
+		float centripitalAccel = sphereTraceVector3Dot(pSphereCollider->rigidBody.velocity, circularTangent);
+		if (fabsf(centripitalAccel) / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
 		{
-			at = at * at / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
-			if (at < 0.0f)
+			centripitalAccel = centripitalAccel * centripitalAccel / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
+			if (centripitalAccel < 0.0f)
 				restingContactCondition = 0;
 			else
+			{
 				restingContactCondition = 1;
+				accelNormal += centripitalAccel;
+			}
 		}
 	}
-	else if (pContactInfo->collisionType == COLLISION_FACE_INWARD_SPHEREICAL)
+	else if (pContactInfo->collisionType == ST_COLLISION_INWARD_SPHEREICAL)
 	{
-		float at = sphereTraceVector3Length(vt);
-		if (at / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
+		float centripitalAccel = sphereTraceVector3Length(vt);
+		if (centripitalAccel / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
 		{
-			at = at * at / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
-			if (at < 0.0f)
+			centripitalAccel = centripitalAccel * centripitalAccel / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
+			if (centripitalAccel < 0.0f)
 				restingContactCondition = 0;
 			else
+			{
 				restingContactCondition = 1;
+				accelNormal += centripitalAccel;
+			}
 		}
-		else
-			printf("bounce");
 	}
 	if (!restingContactCondition)
 	{
 		pSphereCollider->restingContact = ST_FALSE;
 		ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
-		sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
+		if(vnMag<0.0f)
+			sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
 		ST_Vector3 ft = sphereTraceVector3Scale(sphereTraceVector3Normalize(vt), 
 			j*sphereTraceVector3Length(vt)/sphereTraceVector3Length(pSphereCollider->rigidBody.velocity));
-		ST_Vector3 dl = sphereTraceVector3Cross(r, sphereTraceVector3Scale(ft, -pSphereCollider->radius));
+		ST_Vector3 dl = sphereTraceVector3Cross(r, sphereTraceVector3Scale(ft, -pSimulationSpace->defaultMaterial.kineticFriction*pSphereCollider->radius));
 		if (!sphereTraceVector3NanAny(dl))
 			sphereTraceRigidBodyAddDeltaAngularMomentum(&pSphereCollider->rigidBody, dl);
 	}
@@ -361,17 +445,31 @@ void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const 
 		//if ((1.0f - slope) < ST_SPHERE_RESTING_SLOPE)
 		pSphereCollider->restingContact = ST_TRUE;
 		pSphereCollider->rigidBody.linearMomentum = sphereTraceVector3Scale(vt, pSphereCollider->rigidBody.mass);
+		ST_Vector3 rollingWithoutSlipAngularVelocity = sphereTraceVector3Cross(pContactInfo->normal.v, sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 1.0f / pSphereCollider->radius));
+		float dav = sphereTraceVector3Distance(pSphereCollider->rigidBody.angularVelocity, rollingWithoutSlipAngularVelocity);
 
-		sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, sphereTraceVector3Cross(pContactInfo->normal.v, sphereTraceVector3Scale(pSphereCollider->rigidBody.velocity, 1.0f / pSphereCollider->radius)));
-		ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Scale(sphereTraceVector3Normalize(pSphereCollider->rigidBody.velocity), 
-			sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v)), 
-			pSphereCollider->rigidBody.mass*pSimulationSpace->friction*ST_FRICTION_MODIFIER);
+		//if (dav < 0.)
+		{
+			sphereTraceRigidBodyAddDeltaAngularMomentum(&pSphereCollider->rigidBody, sphereTraceVector3Scale(sphereTraceVector3Subtract(
+				rollingWithoutSlipAngularVelocity, pSphereCollider->rigidBody.angularVelocity),
+				(1.0f+accelNormal)*pSimulationSpace->defaultMaterial.kineticFriction*ST_KINETIC_FRICTION_MODIFIER*dt));
+			//sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, rollingWithoutSlipAngularVelocity);
+		}
+		//else
+		{
+			//sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, rollingWithoutSlipAngularVelocity);
+		}
+		//ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Scale(sphereTraceVector3Normalize(pSphereCollider->rigidBody.velocity), 
+		//	sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v)), 
+		//	(pSphereCollider->rigidBody.mass-j)*pSimulationSpace->defaultMaterial.staticFriction *ST_FRICTION_MODIFIER);
+		ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Normalize(pSphereCollider->rigidBody.velocity),
+			(-accelNormal+pSimulationSpace->gravitationalAcceleration.y) * pSphereCollider->rigidBody.mass * pSimulationSpace->defaultMaterial.staticFriction * ST_FRICTION_MODIFIER);
 		if (!sphereTraceVector3NanAny(f))
 			sphereTraceRigidBodyAddForce(&pSphereCollider->rigidBody, f);
 	}
 }
 
-void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt)
+void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt)
 {
 	//ST_SphereCollider* pSphereCollider = pContactInfo->sphereTriangleContactInfo.pSphereCollider;
 	//ST_TriangleCollider* pTriangleCollider = pContactInfo->sphereTriangleContactInfo.pTriangleCollider;
@@ -404,31 +502,505 @@ void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace
 	//}
 }
 
-void sphereTraceSimulationSphereSphereResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt)
+void sphereTraceSimulationSphereSphereResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt)
 {
-	ST_SphereCollider* pA = pContactInfo->contactA;
-	ST_SphereCollider* pB = pContactInfo->contactB;
+	ST_SphereCollider* pA = pContactInfo->pSphereCollider;
+	ST_SphereCollider* pB = pContactInfo->pOtherCollider;
 	pA->rigidBody.position = sphereTraceVector3AddAndScale(pA->rigidBody.position, pContactInfo->normal.v, -pContactInfo->penetrationDistance * 0.5f);
 	pB->rigidBody.position = sphereTraceVector3AddAndScale(pB->rigidBody.position, pContactInfo->normal.v, pContactInfo->penetrationDistance * 0.5f);
 	ST_Vector3 relativeMomentum = sphereTraceVector3Subtract(pB->rigidBody.linearMomentum, pA->rigidBody.linearMomentum);
-	ST_Vector3 jdt = sphereTraceVector3Scale(pContactInfo->normal.v, -(1.0f + pSimulationSpace->eta) * sphereTraceVector3Dot(relativeMomentum, pContactInfo->normal.v) / ((1.0f / pA->rigidBody.mass) + (1.0f / pB->rigidBody.mass)));
+	ST_Vector3 jdt = sphereTraceVector3Scale(pContactInfo->normal.v, -(1.0f + pSimulationSpace->defaultMaterial.restitution) * sphereTraceVector3Dot(relativeMomentum, pContactInfo->normal.v) / ((1.0f / pA->rigidBody.mass) + (1.0f / pB->rigidBody.mass)));
 	sphereTraceRigidBodyAddDeltaMomentum(&pB->rigidBody, jdt);
 	sphereTraceRigidBodyAddDeltaMomentum(&pA->rigidBody, sphereTraceVector3Negative(jdt));
 }
 
-void sphereTraceSimulationGlobalSolveBruteForce(ST_SimulationSpace* const pSimulationSpace, float dt)
+void sphereTraceSimulationAddCurFrameContactEntry(ST_SphereContact* const pContact)
+{
+	ST_Collider* pColliderA = pContact->pSphereCollider;
+	ST_Collider* pColliderB = pContact->pOtherCollider;
+
+	if (pColliderA->subscriberList.hasSubscriber)
+	{
+		ST_SphereContactEntry* pContactEntryA = sphereTraceAllocatorAllocateContactEntry();
+		pContactEntryA->pOtherCollider = pColliderB;
+		pContactEntryA->contact = *pContact;
+		sphereTraceIndexListAddUnique(&pColliderA->subscriberList.curFrameContactEntries, pContactEntryA);
+		//sphereTraceIndexListAddUnique(pCollidersThatHaveSubscribers, pColliderA);
+	}
+
+	if (pColliderB->subscriberList.hasSubscriber)
+	{
+		ST_SphereContactEntry* pContactEntryB = sphereTraceAllocatorAllocateContactEntry();
+		pContactEntryB->pOtherCollider = pColliderA;
+		pContactEntryB->contact = *pContact;
+		sphereTraceIndexListAddUnique(&pColliderB->subscriberList.curFrameContactEntries, pContactEntryB);
+		//sphereTraceIndexListAddUnique(pCollidersThatHaveSubscribers, pColliderB);
+	}
+}
+
+void sphereTraceSimulationExecuteCallbacksOnCollider(ST_Collider* const pCollider)
+{
+	ST_IndexListData* pildCur;
+	ST_IndexListData* pildPrev;
+	ST_IndexListData* pNext;
+	ST_IndexListData* pCallbackListData;
+	ST_SphereContactEntry* pCurContactEntry;
+	ST_SphereContactEntry* pPrevContactEntry;
+	
+
+	pildCur = pCollider->subscriberList.curFrameContactEntries.pFirst;
+	for (int i = 0; i < pCollider->subscriberList.curFrameContactEntries.count; i++)
+	{
+		pCurContactEntry = pildCur->value;
+		pildPrev = pCollider->subscriberList.contactEntries.pFirst;
+		b32 foundEntry = 0;
+		for (int j = 0; j < pCollider->subscriberList.contactEntries.count; j++)
+		{
+			pPrevContactEntry = pildPrev->value;
+			if (pCurContactEntry->pOtherCollider == pPrevContactEntry->pOtherCollider)
+			{
+				foundEntry = 1;
+				break;
+			}
+			pildPrev = pildPrev->pNext;
+		}
+
+		//if the entry isnt found, then execute the on trigger enters
+		if (!foundEntry)
+		{
+			ST_CallbackFunction* pCallback;
+			pCallbackListData = pCollider->subscriberList.onCollisionEnterCallbacks.pFirst;
+			for (int j = 0; j < pCollider->subscriberList.onCollisionEnterCallbacks.count; j++)
+			{
+				pCallback = pCallbackListData->value;
+				pCallback->callback(&pCurContactEntry->contact, pCurContactEntry->pOtherCollider, pCollider->subscriberList.pSubscriberContext);
+				pCallbackListData = pCallbackListData->pNext;
+			}
+
+			//we can also call the collision stay for this collider as needed
+			pCallbackListData = pCollider->subscriberList.onCollisionStayCallbacks.pFirst;
+			for (int j = 0; j < pCollider->subscriberList.onCollisionStayCallbacks.count; j++)
+			{
+				pCallback = pCallbackListData->value;
+				pCallback->callback(&pCurContactEntry->contact, pCurContactEntry->pOtherCollider, pCollider->subscriberList.pSubscriberContext);
+				pCallbackListData = pCallbackListData->pNext;
+			}
+		}
+		else
+		{
+			//the entry was found again, call collision stay callback
+			ST_CallbackFunction* pCallback;
+			pCallbackListData = pCollider->subscriberList.onCollisionStayCallbacks.pFirst;
+			for (int j = 0; j < pCollider->subscriberList.onCollisionStayCallbacks.count; j++)
+			{
+				pCallback = pCallbackListData->value;
+				pCallback->callback(&pCurContactEntry->contact, pCurContactEntry->pOtherCollider, pCollider->subscriberList.pSubscriberContext);
+				pCallbackListData = pCallbackListData->pNext;
+			}
+		}
+		pildCur = pildCur->pNext;
+	}
+
+	//now to find all collisions that have left
+	pildPrev = pCollider->subscriberList.contactEntries.pFirst;
+	for (int i = 0; i < pCollider->subscriberList.contactEntries.count; i++)
+	{
+		pPrevContactEntry = pildPrev->value;
+		pildCur = pCollider->subscriberList.curFrameContactEntries.pFirst;
+		b32 foundEntry = 0;
+		for (int j = 0; j < pCollider->subscriberList.curFrameContactEntries.count; j++)
+		{
+			pCurContactEntry = pildCur->value;
+			if (pCurContactEntry->pOtherCollider == pPrevContactEntry->pOtherCollider)
+			{
+				foundEntry = 1;
+				break;
+			}
+			pildCur = pildCur->pNext;
+		}
+
+		//if the entry on the previous frame is no longer found, then call on collision exit
+		if (!foundEntry)
+		{
+			ST_CallbackFunction* pCallback;
+			pCallbackListData = pCollider->subscriberList.onCollisionExitCallbacks.pFirst;
+			for (int j = 0; j < pCollider->subscriberList.onCollisionExitCallbacks.count; j++)
+			{
+				pCallback = pCallbackListData->value;
+				pCallback->callback(&pPrevContactEntry->contact, pPrevContactEntry->pOtherCollider, pCollider->subscriberList.pSubscriberContext);
+				pCallbackListData = pCallbackListData->pNext;
+			}
+		}
+		pildPrev = pildPrev->pNext;
+	}
+
+	pildPrev = pCollider->subscriberList.contactEntries.pFirst;
+	for (int i = 0; i < pCollider->subscriberList.contactEntries.count; i++)
+	{
+		pNext = pildPrev->pNext;
+		sphereTraceAllocatorFreeContactEntry(pildPrev->value);
+		sphereTraceAllocatorFreeIndexListData(pildPrev);
+		pildPrev = pNext;
+	}
+
+	pCollider->subscriberList.contactEntries = pCollider->subscriberList.curFrameContactEntries;
+	pCollider->subscriberList.curFrameContactEntries.count = 0;
+	pCollider->subscriberList.curFrameContactEntries.pFirst = NULL;
+}
+
+
+void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt, ST_Index iterations)
 {
 	dt = fminf(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
 		dt = pSimulationSpace->minDeltaTime;
+	//clear cur frame colliders
+	//sphereTraceSimulationClearAllCurFrameContacts(pSimulationSpace);
+
 	//update all sphere aabb's 
 	ST_IndexListData* pSphereIndexData;
-	ST_IndexListData* pOtherSphereIndexData;
-	ST_IndexListData* pPlaneIndexData;
-	ST_IndexListData* pTerrainIndexData;
-	ST_IndexListData* pTriangleIndexData;
-	ST_IndexListData* pBowlIndexData;
-	ST_IndexListData* pPipeIndexData;
+	ST_IndexListData* pOtherIndexData;
+
+	
+
+	float substepDt = dt / (float)iterations;
+	for (ST_Index iters = 0; iters < iterations; iters++)
+	{
+		pSphereIndexData = pSimulationSpace->sphereColliders.pFirst;
+		for (int sphereColliderIndex = 0; sphereColliderIndex < pSimulationSpace->sphereColliders.count; sphereColliderIndex++)
+		{
+			ST_SphereCollider* pSphereCollider = (ST_SphereCollider*)pSphereIndexData->value;
+			sphereTraceColliderSphereAABBSetTransformedVertices(pSphereCollider);
+			if(iters == 0)
+				sphereTraceSimulationApplyForcesAndTorques(pSimulationSpace, &pSphereCollider->rigidBody, dt, 0);
+			pSphereIndexData = pSphereIndexData->pNext;
+		}
+
+		sphereTraceSimulationStepQuantities(pSimulationSpace, substepDt);
+
+		//ST_IndexList collidersThatHaveSubscribers = sphereTraceIndexListConstruct();
+
+		//check for all sphere plane collisions
+		pSphereIndexData = pSimulationSpace->sphereColliders.pFirst;
+		for (int sphereColliderIndex = 0; sphereColliderIndex < pSimulationSpace->sphereColliders.count; sphereColliderIndex++)
+		{
+			ST_SphereCollider* pSphereCollider = (ST_SphereCollider*)pSphereIndexData->value;
+			pOtherIndexData = pSimulationSpace->planeColliders.pFirst;
+			for (int planeColliderIndex = 0; planeColliderIndex < pSimulationSpace->planeColliders.count; planeColliderIndex++)
+			{
+				ST_PlaneCollider* pPlaneCollider = (ST_PlaneCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderPlaneSphereCollisionTest(pPlaneCollider, pSphereCollider, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+
+			pOtherIndexData = pSimulationSpace->triangleColliders.pFirst;
+			for (int triangleColliderIndex = 0; triangleColliderIndex < pSimulationSpace->triangleColliders.count; triangleColliderIndex++)
+			{
+				ST_TriangleCollider* pTriangleCollider = (ST_TriangleCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderTriangleSphereCollisionTest(pTriangleCollider, pSphereCollider, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+
+			pOtherIndexData = pSimulationSpace->uniformTerrainColliders.pFirst;
+			for (int terrainColliderIndex = 0; terrainColliderIndex < pSimulationSpace->uniformTerrainColliders.count; terrainColliderIndex++)
+			{
+				ST_UniformTerrainCollider* pTerrainCollider = (ST_UniformTerrainCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(pTerrainCollider, pSphereCollider, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+
+			pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
+			for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
+			{
+				ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+
+			pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
+			for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
+			{
+				ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+
+			//check for all sphere sphere collisions
+			pOtherIndexData = pSimulationSpace->sphereColliders.pFirst->pNext;
+			for (int sphereColliderBIndex = sphereColliderIndex + 1; sphereColliderBIndex < pSimulationSpace->sphereColliders.count; sphereColliderBIndex++)
+			{
+				ST_SphereCollider* pSphereColliderB = (ST_SphereCollider*)pOtherIndexData->value;
+				ST_SphereContact contactInfo;
+				if (sphereTraceColliderSphereSphereCollisionTest(pSphereCollider, pSphereColliderB, &contactInfo))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationSphereSphereResponse(pSimulationSpace, &contactInfo, substepDt);
+				}
+				pOtherIndexData = pOtherIndexData->pNext;
+			}
+			pSphereIndexData = pSphereIndexData->pNext;
+		}
+
+		//execute all the callback
+		pOtherIndexData = pSimulationSpace->callbackColliders.pFirst;
+		for (int i = 0; i < pSimulationSpace->callbackColliders.count; i++)
+		{
+			sphereTraceSimulationExecuteCallbacksOnCollider(pOtherIndexData->value);
+			pOtherIndexData = pOtherIndexData->pNext;
+		}
+	}
+}
+
+b32 sphereTraceColliderSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_Collider* pCollider, ST_SphereTraceData* const pSphereCastData)
+{
+	switch (pCollider->colliderType)
+	{
+	case COLLIDER_SPHERE:;
+		ST_SphereCollider* pSphere = (ST_SphereCollider*)pCollider;
+		return sphereTraceColliderSphereSphereTraceOut(spherePos, sphereRadius, clipoutDir, pSphere->rigidBody.position, pSphere->radius, pSphereCastData);
+		break;
+	case COLLIDER_PLANE:
+		return sphereTraceColliderPlaneSphereTraceOut(spherePos, sphereRadius, clipoutDir, pCollider, pSphereCastData);
+		break;
+	case COLLIDER_TRIANGLE:
+		return sphereTraceColliderTriangleSphereTraceOut(spherePos, sphereRadius, clipoutDir, pCollider, pSphereCastData);
+		break;
+	}
+}
+
+void sphereTraceSimulationResolvePenetration(ST_SphereCollider* pSphereCollider, ST_SphereContact* pContact, PenetrationRestriction* pPenetrationRestriction)
+{
+	switch (pPenetrationRestriction->penetrationRestrictionType)
+	{
+	case ST_PENETRATION_RESTRICTION_NONE:
+	{
+		pSphereCollider->rigidBody.position = sphereTraceVector3Add(pSphereCollider->rigidBody.position, sphereTraceVector3Scale(pContact->normal.v, pContact->penetrationDistance));
+		pPenetrationRestriction->positionOnNormal = pSphereCollider->rigidBody.position;
+		pPenetrationRestriction->planeNormal = pContact->normal;
+		pPenetrationRestriction->penetrationRestrictionType = ST_PENETRATION_RESTRICTION_PLANE;
+	}
+	break;
+	case ST_PENETRATION_RESTRICTION_PLANE:
+	{
+		pPenetrationRestriction->tangent = sphereTraceDirectionProjectDirectionOntoPlane(pContact->normal, pPenetrationRestriction->planeNormal);
+		ST_SphereTraceData std;
+		sphereTraceColliderSphereTraceOut(pSphereCollider->rigidBody.position, pSphereCollider->radius,
+			pPenetrationRestriction->tangent, pContact->pOtherCollider, &std);
+		pSphereCollider->rigidBody.position = std.sphereCenter;
+		pPenetrationRestriction->penetrationRestrictionType = ST_PENETRATION_RESTRICTION_DIRECTION;
+		pContact->normal = std.rayTraceData.contact.normal;
+		pContact->penetrationDistance = 0.0f;
+		pContact->point = std.rayTraceData.contact.point;
+	}
+	break;
+	case ST_PENETRATION_RESTRICTION_DIRECTION:
+	{
+		if (!pPenetrationRestriction->restrictionDirectionSet)
+		{
+			ST_Vector3 cross = sphereTraceVector3Cross(pPenetrationRestriction->tangent.v, pPenetrationRestriction->planeNormal.v);
+			float d = sphereTraceVector3Dot(cross, pContact->normal.v);
+			float mul = 1.0f;
+			if (d < 0.0f)
+				mul = -1.0f;
+			pPenetrationRestriction->restrictedDir = sphereTraceDirectionConstruct(sphereTraceVector3Scale(cross, mul), 1);
+			pPenetrationRestriction->restrictionDirectionSet = 1;
+		}
+		ST_SphereTraceData std;
+		sphereTraceColliderSphereTraceOut(pSphereCollider->rigidBody.position, pSphereCollider->radius,
+			pPenetrationRestriction->restrictedDir, pContact->pOtherCollider, &std);
+		pSphereCollider->rigidBody.position = std.sphereCenter;
+		pContact->normal = std.rayTraceData.contact.normal;
+		pContact->penetrationDistance = 0.0f;
+		pContact->point = std.rayTraceData.contact.point;
+	}
+	break;
+	}
+}
+
+
+void sphereTraceColliderPushSphereOutNormal(ST_SphereCollider* pSphereCollider, ST_Collider* pCollider)
+{
+	ST_SphereContact contact;
+	switch (pCollider->colliderType)
+	{
+	case COLLIDER_PLANE:
+		if (sphereTraceColliderPlaneSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		{
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		}
+		break;
+	case COLLIDER_TRIANGLE:
+		if (sphereTraceColliderTriangleSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		{
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		}
+		break;
+	case COLLIDER_TERRAIN:
+		//if (sphereTraceColliderTerrainSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		//{
+		//	sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		//}
+		break;
+	case COLLIDER_SPHERE:
+		if (sphereTraceColliderSphereSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		{
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		}
+		break;
+	case COLLIDER_BOWL:
+		if (sphereTraceColliderBowlSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		{
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		}
+		break;
+	case COLLIDER_PIPE:
+		if (sphereTraceColliderPipeSphereCollisionTest(pCollider, pSphereCollider, &contact))
+		{
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, contact.normal.v, contact.penetrationDistance);
+		}
+		break;
+
+	}
+}
+
+
+void sphereTraceSimulationSphereMultipleContactResponse(const ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* pSphereCollider,
+	const ST_SphereContact* const pContactInfos, ST_Index numContacts, float dt)
+{
+	ST_SphereContact* pRestingContactWithMaxForce = NULL;
+	float maxAccel = 0.0f;
+	ST_Vector3List impulses = sphereTraceVector3ListConstruct();
+	ST_Vector3List restingContactNormals = sphereTraceVector3ListConstruct();
+	ST_Vector3List restingContactPoints = sphereTraceVector3ListConstruct();
+	for (ST_Index contactIndex = 0; contactIndex < numContacts; contactIndex++)
+	{
+		ST_SphereContact* pContactInfo = &pContactInfos[contactIndex];
+		ST_Vector3 r = sphereTraceVector3Subtract(pContactInfo->point, pSphereCollider->rigidBody.position);
+		float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
+		ST_Vector3 vn = sphereTraceVector3Scale(pContactInfo->normal.v, vnMag);
+		ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
+		float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * (pSphereCollider->rigidBody.mass / (float)numContacts);
+		b32 restingContactCondition = (fabsf(vnMag) < ST_VELOCITY_THRESHOLD && pContactInfo->normal.v.y>0.0f);
+		float accelNormal = fabsf(vnMag);
+		if (!restingContactCondition)
+		{
+			//pSphereCollider->restingContact = ST_FALSE;
+			//sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
+			if (vnMag < 0.0f)
+			{
+				ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
+				sphereTraceVector3ListAddFirst(&impulses, dp);
+				ST_Vector3 ft = sphereTraceVector3Scale(sphereTraceVector3Normalize(vt),
+					j * sphereTraceVector3Length(vt) / sphereTraceVector3Length(pSphereCollider->rigidBody.velocity));
+				ST_Vector3 dl = sphereTraceVector3Cross(r, sphereTraceVector3Scale(ft, -pSimulationSpace->defaultMaterial.kineticFriction * pSphereCollider->radius));
+				if (!sphereTraceVector3NanAny(dl))
+					sphereTraceRigidBodyAddDeltaAngularMomentum(&pSphereCollider->rigidBody, dl);
+			}
+		}
+		else
+		{
+			if (accelNormal > maxAccel)
+			{
+				pRestingContactWithMaxForce = pContactInfo;
+				maxAccel = accelNormal;
+			}
+			sphereTraceVector3ListAddFirst(&restingContactNormals, pContactInfo->normal.v);
+			sphereTraceVector3ListAddFirst(&restingContactPoints, pContactInfo->point);
+
+
+		}
+	}
+
+	if (pRestingContactWithMaxForce)
+	{
+		ST_Vector3 r = sphereTraceVector3Subtract(pRestingContactWithMaxForce->point, pSphereCollider->rigidBody.position);
+		float vnMag = sphereTraceVector3Dot(pRestingContactWithMaxForce->normal.v, pSphereCollider->rigidBody.velocity);
+		ST_Vector3 vn = sphereTraceVector3Scale(pRestingContactWithMaxForce->normal.v, vnMag);
+		ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
+		float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
+		float accelNormal = fabsf(vnMag);
+		//pSphereCollider->restingContact = ST_TRUE;
+		pSphereCollider->rigidBody.linearMomentum = sphereTraceVector3Scale(vt, pSphereCollider->rigidBody.mass);
+		ST_Vector3 actualVelocity = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, pSphereCollider->rigidBody.prevPosition);
+		sphereTraceVector3ScaleByRef(&actualVelocity, 1.0f / dt);
+		ST_Vector3 rollingWithoutSlipAngularVelocity = sphereTraceVector3Cross(pRestingContactWithMaxForce->normal.v, sphereTraceVector3Scale(actualVelocity, 1.0f / pSphereCollider->radius));
+		sphereTraceRigidBodySetAngularVelocity(&pSphereCollider->rigidBody, rollingWithoutSlipAngularVelocity);
+		//float dav = sphereTraceVector3Distance(pSphereCollider->rigidBody.angularVelocity, rollingWithoutSlipAngularVelocity);
+		//sphereTraceRigidBodyAddDeltaAngularMomentum(&pSphereCollider->rigidBody, sphereTraceVector3Scale(sphereTraceVector3Subtract(
+		//	rollingWithoutSlipAngularVelocity, pSphereCollider->rigidBody.angularVelocity),
+		//	(1.0f + accelNormal) * pSimulationSpace->defaultMaterial.kineticFriction * ST_KINETIC_FRICTION_MODIFIER * dt));
+		ST_Vector3 f = sphereTraceVector3Scale(sphereTraceVector3Normalize(pSphereCollider->rigidBody.velocity),
+			(-accelNormal + pSimulationSpace->gravitationalAcceleration.y) * pSphereCollider->rigidBody.mass * pSimulationSpace->defaultMaterial.staticFriction * ST_FRICTION_MODIFIER);
+		if (!sphereTraceVector3NanAny(f))
+			sphereTraceRigidBodyAddForce(&pSphereCollider->rigidBody, f);
+	}
+
+	
+	ST_Vector3ListData* pvld = impulses.pFirst;
+	ST_Vector3 forceSum = gVector3Zero;
+	for (int i = 0; i < impulses.count; i++)
+	{
+
+		ST_Vector3 modifiedForce = pvld->value;
+		ST_Vector3ListData* pRestingContactNormalsData = restingContactNormals.pFirst;
+		for (int j = 0; j < restingContactNormals.count; j++)
+		{
+			float fnm = sphereTraceVector3Dot(modifiedForce, pRestingContactNormalsData->value);
+			if (fnm < 0.0f)
+			{
+				ST_Vector3 fn = sphereTraceVector3Scale(pRestingContactNormalsData->value, fnm);
+				modifiedForce = sphereTraceVector3Subtract(modifiedForce, fn);
+			}
+			pRestingContactNormalsData = pRestingContactNormalsData->pNext;
+		}
+
+		//sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, modifiedForce);
+		sphereTraceVector3AddByRef(&forceSum, modifiedForce);
+		pvld = pvld->pNext;
+	}
+	sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, forceSum);
+	sphereTraceVector3ListFree(&impulses);
+	sphereTraceVector3ListFree(&restingContactNormals);
+
+}
+
+void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt)
+{
+	dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	if (dt < 0.0f)
+		dt = pSimulationSpace->minDeltaTime;
+
+	//step all quantities
+	sphereTraceSimulationStepQuantities(pSimulationSpace, dt);
+
+	//update all sphere aabb's 
+	ST_IndexListData* pSphereIndexData;
+	ST_IndexListData* pOtherIndexData;
 	pSphereIndexData = pSimulationSpace->sphereColliders.pFirst;
 	for (int sphereColliderIndex = 0; sphereColliderIndex < pSimulationSpace->sphereColliders.count; sphereColliderIndex++)
 	{
@@ -437,156 +1009,164 @@ void sphereTraceSimulationGlobalSolveBruteForce(ST_SimulationSpace* const pSimul
 		pSphereIndexData = pSphereIndexData->pNext;
 	}
 
-	sphereTraceSimulationStepQuantities(pSimulationSpace, dt);
 
-	////clear the contact infos (if not empty)
-	//sphereTraceVectorArrayContactInfoFree(&pSimulationSpace->spherePlaneContactInfos);
-
-	////allocate the contact infos for as many sphere colliders we have
-	//pSimulationSpace->spherePlaneContactInfos = sphereTraceVectorArrayContactInfoConstruct(pSimulationSpace->sphereColliders.count, CONTACT_SPHERE_PLANE);
-
-	////clear the contact infos (if not empty)
-	//sphereTraceVectorArrayContactInfoFree(&pSimulationSpace->sphereSphereContactInfos);
-
-	////allocate the contact infos for as many sphere colliders we have
-	//pSimulationSpace->sphereSphereContactInfos = sphereTraceVectorArrayContactInfoConstruct(pSimulationSpace->sphereColliders.count, CONTACT_SPHERE_SPHERE);
-
-	////clear the contact infos (if not empty)
-	//sphereTraceVectorArrayContactInfoFree(&pSimulationSpace->sphereTriangleContactInfos);
-
-	////allocate the contact infos for as many sphere colliders we have
-	//pSimulationSpace->sphereTriangleContactInfos = sphereTraceVectorArrayContactInfoConstruct(pSimulationSpace->sphereColliders.count, CONTACT_SPHERE_TRIANGLE);
-
-	////clear the contact infos (if not empty)
-	//sphereTraceVectorArrayContactInfoFree(&pSimulationSpace->sphereTerrainTriangleContactInfos);
-
-	////allocate the contact infos for as many sphere colliders we have
-	//pSimulationSpace->sphereTerrainTriangleContactInfos = sphereTraceVectorArrayContactInfoConstruct(pSimulationSpace->sphereColliders.count, CONTACT_SPHERE_TERRAIN_TRIANGLE);
-
-
-	////clear the contact infos (if not empty)
-	//sphereTraceVectorArrayContactInfoFree(&pSimulationSpace->sphereBowlContactInfos);
-
-	////allocate the contact infos for as many sphere colliders we have
-	//pSimulationSpace->sphereBowlContactInfos = sphereTraceVectorArrayContactInfoConstruct(pSimulationSpace->sphereColliders.count, CONTACT_SPHERE_TERRAIN_TRIANGLE);
+	PenetrationRestriction penetrationRestriction;
+	
+	ST_SphereContact contacts[ST_CONTACT_MAX];
+	ST_Index contactsCount;
 
 	//check for all sphere plane collisions
 	pSphereIndexData = pSimulationSpace->sphereColliders.pFirst;
 	for (int sphereColliderIndex = 0; sphereColliderIndex < pSimulationSpace->sphereColliders.count; sphereColliderIndex++)
 	{
 		ST_SphereCollider* pSphereCollider = (ST_SphereCollider*)pSphereIndexData->value;
-		pPlaneIndexData = pSimulationSpace->planeColliders.pFirst;
+		penetrationRestriction.penetrationRestrictionType = ST_PENETRATION_RESTRICTION_NONE;
+		penetrationRestriction.restrictionDirectionSet = 0;
+		contactsCount = 0;
+
+		pOtherIndexData = pSimulationSpace->planeColliders.pFirst;
 		for (int planeColliderIndex = 0; planeColliderIndex < pSimulationSpace->planeColliders.count; planeColliderIndex++)
 		{
-			ST_PlaneCollider* pPlaneCollider = (ST_PlaneCollider*)pPlaneIndexData->value;
-			ST_Contact contactInfo;
+			ST_PlaneCollider* pPlaneCollider = (ST_PlaneCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderPlaneSphereCollisionTest(pPlaneCollider, pSphereCollider, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->spherePlaneContactInfos, &contactInfo);
-				sphereTraceSimulationSpherePlaneResponse(pSimulationSpace, &contactInfo, dt);
+				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pPlaneCollider))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+					if (contactsCount < ST_CONTACT_MAX)
+					{
+						contacts[contactsCount++] = contactInfo;
+					}
+				}
 			}
-			pPlaneIndexData = pPlaneIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
-		pTriangleIndexData = pSimulationSpace->triangleColliders.pFirst;
+
+
+		pOtherIndexData = pSimulationSpace->triangleColliders.pFirst;
 		for (int triangleColliderIndex = 0; triangleColliderIndex < pSimulationSpace->triangleColliders.count; triangleColliderIndex++)
 		{
-			ST_TriangleCollider* pTriangleCollider = (ST_TriangleCollider*)pTriangleIndexData->value;
-			ST_Contact contactInfo;
+			ST_TriangleCollider* pTriangleCollider = (ST_TriangleCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderTriangleSphereCollisionTest(pTriangleCollider, pSphereCollider, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->sphereTriangleContactInfos, &contactInfo);
-				sphereTraceSimulationSphereTriangleResponse(pSimulationSpace, &contactInfo, dt);
+				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pTriangleCollider))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+					if (contactsCount < ST_CONTACT_MAX)
+					{
+						contacts[contactsCount++] = contactInfo;
+					}
+				}
 			}
-			pTriangleIndexData = pTriangleIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
-		pTerrainIndexData = pSimulationSpace->uniformTerrainColliders.pFirst;
+		pOtherIndexData = pSimulationSpace->uniformTerrainColliders.pFirst;
 		for (int terrainColliderIndex = 0; terrainColliderIndex < pSimulationSpace->uniformTerrainColliders.count; terrainColliderIndex++)
 		{
-			ST_UniformTerrainCollider* pTerrainCollider = (ST_UniformTerrainCollider*)pTerrainIndexData->value;
-			ST_Contact contactInfo;
+			ST_UniformTerrainCollider* pTerrainCollider = (ST_UniformTerrainCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(pTerrainCollider, pSphereCollider, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->sphereTerrainTriangleContactInfos, &contactInfo);
-				sphereTraceSimulationSphereTriangleResponse(pSimulationSpace, &contactInfo, dt);
+				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pTerrainCollider))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+					if (contactsCount < ST_CONTACT_MAX)
+					{
+						contacts[contactsCount++] = contactInfo;
+					}
+				}
 			}
-			pTerrainIndexData = pTerrainIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
-		pBowlIndexData = pSimulationSpace->bowlColliders.pFirst;
+		pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
 		for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
 		{
-			ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pBowlIndexData->value;
-			ST_Contact contactInfo;
+			ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->sphereTerrainTriangleContactInfos, &contactInfo);
-				sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
+				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pBowlCollider))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+					if (contactsCount < ST_CONTACT_MAX)
+					{
+						contacts[contactsCount++] = contactInfo;
+					}
+				}
 			}
-			pBowlIndexData = pBowlIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
-		pPipeIndexData = pSimulationSpace->pipeColliders.pFirst;
+		pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
 		for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
 		{
-			ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pPipeIndexData->value;
-			ST_Contact contactInfo;
+			ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->sphereTerrainTriangleContactInfos, &contactInfo);
-				sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
+				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pPipeCollider))
+				{
+					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+					if (contactsCount < ST_CONTACT_MAX)
+					{
+						contacts[contactsCount++] = contactInfo;
+					}
+				}
 			}
-			pPipeIndexData = pPipeIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
 		//check for all sphere sphere collisions
-		pOtherSphereIndexData = pSimulationSpace->sphereColliders.pFirst->pNext;
+		pOtherIndexData = pSimulationSpace->sphereColliders.pFirst->pNext;
 		for (int sphereColliderBIndex = sphereColliderIndex + 1; sphereColliderBIndex < pSimulationSpace->sphereColliders.count; sphereColliderBIndex++)
 		{
-			ST_SphereCollider* pSphereColliderB = (ST_SphereCollider*)pOtherSphereIndexData->value;
-			ST_Contact contactInfo;
+			ST_SphereCollider* pSphereColliderB = (ST_SphereCollider*)pOtherIndexData->value;
+			ST_SphereContact contactInfo;
 			if (sphereTraceColliderSphereSphereCollisionTest(pSphereCollider, pSphereColliderB, &contactInfo))
 			{
-				//sphereTraceVectorArrayContactInfoPushBack(&pSimulationSpace->sphereSphereContactInfos, &contactInfo);
+				sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 				sphereTraceSimulationSphereSphereResponse(pSimulationSpace, &contactInfo, dt);
 			}
-			pOtherSphereIndexData = pOtherSphereIndexData->pNext;
+			pOtherIndexData = pOtherIndexData->pNext;
 		}
+
+		ST_Vector3 dp = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, pSphereCollider->rigidBody.prevPosition);
+		float actualSpeed = sqrtf(sphereTraceVector3Dot(dp, dp)) / dt;
+		float rbSpeed = sphereTraceRigidBodyGetSpeed(&pSphereCollider->rigidBody);
+		//if the actual position speed calculation is greater than the rigidbody speed
+		//some sort of teleportation is taking place due to the penetration constraints
+		//and we need to cap the teleportation
+		if (actualSpeed > rbSpeed)
+		{
+			//printf("speed: %f, actual speed: %f\n", actualSpeed, rbSpeed);
+			ST_Vector3 dir = sphereTraceVector3Normalize(dp);
+			sphereTraceVector3AddAndScaleByRef(&pSphereCollider->rigidBody.position, dir, rbSpeed* dt);
+		}
+		sphereTraceSimulationSphereMultipleContactResponse(pSimulationSpace, pSphereCollider, contacts, contactsCount, dt);
+
 		pSphereIndexData = pSphereIndexData->pNext;
 	}
 
-
-	////resolve all sphere plane collisions
-	//for (int i = 0; i < pSimulationSpace->spherePlaneContactInfos.count; i++)
-	//{
-	//	ST_Contact* contactInfo = sphereTraceVectorArrayContactInfoGet(&pSimulationSpace->spherePlaneContactInfos, i);
-	//	sphereTraceSimulationSpherePlaneResponse(pSimulationSpace, contactInfo, dt);
-	//}
-
-	////resolve all sphere plane collisions
-	//for (int i = 0; i < pSimulationSpace->sphereTriangleContactInfos.count; i++)
-	//{
-	//	ST_Contact* contactInfo = sphereTraceVectorArrayContactInfoGet(&pSimulationSpace->sphereTriangleContactInfos, i);
-	//	sphereTraceSimulationSphereTriangleResponse(pSimulationSpace, contactInfo, dt);
-	//}
-
-	////resolve all sphere triangle collisions
-	//for (int i = 0; i < pSimulationSpace->sphereTerrainTriangleContactInfos.count; i++)
-	//{
-	//	ST_Contact* contactInfo = sphereTraceVectorArrayContactInfoGet(&pSimulationSpace->sphereTerrainTriangleContactInfos, i);
-	//	sphereTraceSimulationSphereTriangleResponse(pSimulationSpace, contactInfo, dt);
-	//}
-
-	////resolve all sphere plane collisions
-	//for (int i = 0; i < pSimulationSpace->sphereSphereContactInfos.count; i++)
-	//{
-	//	ST_Contact* contactInfo = sphereTraceVectorArrayContactInfoGet(&pSimulationSpace->sphereSphereContactInfos, i);
-	//	sphereTraceSimulationSphereSphereResponse(pSimulationSpace, contactInfo, dt);
-	//}
+	//execute all the callback
+	pOtherIndexData = pSimulationSpace->callbackColliders.pFirst;
+	for (int i = 0; i < pSimulationSpace->callbackColliders.count; i++)
+	{
+		sphereTraceSimulationExecuteCallbacksOnCollider(pOtherIndexData->value);
+		pOtherIndexData = pOtherIndexData->pNext;
+	}
 }
 
-void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationSpace* const pSimulationSpace, float dt)
+void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt)
 {
 	dt = fminf(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
@@ -632,9 +1212,10 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 					ST_SphereCollider* pSphereColliderB = (ST_SphereCollider*)pOtherIndexData->value;
 					if (sphereTraceIndexListAddUnique(&checkedSphereColliders, pSphereColliderB))
 					{
-						ST_Contact contactInfo;
+						ST_SphereContact contactInfo;
 						if (sphereTraceColliderSphereSphereCollisionTest(pSphereCollider, pSphereColliderB, &contactInfo))
 						{
+							sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 							sphereTraceSimulationSphereSphereResponse(pSimulationSpace, &contactInfo, dt);
 						}
 					}
@@ -649,9 +1230,10 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 					ST_PlaneCollider* pCollider = (ST_PlaneCollider*)pOtherIndexData->value;
 					if (sphereTraceIndexListAddUnique(&checkedPlaneColliders, pCollider))
 					{
-						ST_Contact contactInfo;
+						ST_SphereContact contactInfo;
 						if (sphereTraceColliderPlaneSphereCollisionTest(pCollider, pSphereCollider, &contactInfo))
 						{
+							sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 							sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
 						}
 					}
@@ -666,9 +1248,10 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 					ST_UniformTerrainCollider* pCollider = (ST_UniformTerrainCollider*)pOtherIndexData->value;
 					if (sphereTraceIndexListAddUnique(&checkedTerrainColliders, pCollider))
 					{
-						ST_Contact contactInfo;
+						ST_SphereContact contactInfo;
 						if (sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(pCollider, pSphereCollider, &contactInfo))
 						{
+							sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 							sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
 						}
 					}
@@ -683,9 +1266,10 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 					ST_PipeCollider* pCollider = (ST_PipeCollider*)pOtherIndexData->value;
 					if (sphereTraceIndexListAddUnique(&checkedPipeColliders, pCollider))
 					{
-						ST_Contact contactInfo;
+						ST_SphereContact contactInfo;
 						if (sphereTraceColliderPipeSphereCollisionTest(pCollider, pSphereCollider, &contactInfo))
 						{
+							sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 							sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
 						}
 					}
@@ -700,9 +1284,10 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 					ST_BowlCollider* pCollider = (ST_BowlCollider*)pOtherIndexData->value;
 					if (sphereTraceIndexListAddUnique(&checkedBowlColliders, pCollider))
 					{
-						ST_Contact contactInfo;
+						ST_SphereContact contactInfo;
 						if (sphereTraceColliderBowlSphereCollisionTest(pCollider, pSphereCollider, &contactInfo))
 						{
+							sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
 							sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, dt);
 						}
 					}
@@ -717,6 +1302,14 @@ void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationS
 		sphereTraceIndexListFree(&checkedPlaneColliders);
 		sphereTraceIndexListFree(&checkedSphereColliders);
 		pSphereIndexData = pSphereIndexData->pNext;
+	}
+
+	//execute all the callback
+	pOtherIndexData = pSimulationSpace->callbackColliders.pFirst;
+	for (int i = 0; i < pSimulationSpace->callbackColliders.count; i++)
+	{
+		sphereTraceSimulationExecuteCallbacksOnCollider(pOtherIndexData->value);
+		pOtherIndexData = pOtherIndexData->pNext;
 	}
 }
 
@@ -873,7 +1466,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 					//sphereTraceVector3Print(pSphereCollider->pRigidBody->linearMomentum);
 
 					//resolve the collisions if any
-					ST_Contact contactInfo;
+					ST_SphereContact contactInfo;
 					if (sphereTraceColliderPlaneSphereCollisionTest(pClosestPlane, pSphereCollider, &contactInfo))
 					{
 						sphereTraceSimulationSpherePlaneResponse(pSimulationSpace, &contactInfo, adjustedDt);
@@ -891,7 +1484,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 					//step the simulation
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
 
-					ST_Contact contactInfo;
+					ST_SphereContact contactInfo;
 					if (sphereTraceColliderSphereSphereCollisionTest(pSphereCollider, pClosestSphere, &contactInfo))
 					{
 						sphereTraceSimulationSphereSphereResponse(pSimulationSpace, &contactInfo, adjustedDt);
@@ -907,7 +1500,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 					//step the simulation
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
 
-					ST_Contact contactInfo;
+					ST_SphereContact contactInfo;
 					if (sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(pClosestTerrain, pSphereCollider, &contactInfo))
 					{
 						//if (!overrideTerrainBehaviour)
@@ -1195,7 +1788,7 @@ void sphereTraceSimulationSolveImposedPositionStaticSpacialPartition(ST_Simulati
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
 
 					//resolve the collisions if any
-					ST_Contact contactInfo;
+					ST_SphereContact contactInfo;
 					switch (pClosestCollider->colliderType)
 					{
 					case COLLIDER_PLANE:

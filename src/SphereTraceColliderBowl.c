@@ -7,13 +7,14 @@ ST_BowlCollider sphereTraceColliderBowlConstruct(ST_Vector3 position, float radi
 	bowlCollider.position = position;
 	bowlCollider.radius = radius;
 	bowlCollider.normal = normal;
-	bowlCollider.collider.colliderType = COLLIDER_BOWL;
-	bowlCollider.collider.bucketIndices = sphereTraceIndexListConstruct();
+	bowlCollider.collider = sphereTraceColliderConstruct(COLLIDER_BOWL, radius);
+	//bowlCollider.collider.colliderType = COLLIDER_BOWL;
+	//bowlCollider.collider.bucketIndices = sphereTraceIndexListConstruct();
 	sphereTraceColliderBowlsSetAABB(&bowlCollider);
 	return bowlCollider;
 }
 
-b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBowlCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_Contact* pContact)
+b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBowlCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* pContact)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(imposedPosition, pBowlCollider->position);
 	float dist = sphereTraceVector3Length(dp);
@@ -23,11 +24,9 @@ b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBo
 		if (dist > pBowlCollider->radius && dist <= (pBowlCollider->radius + imposedRadius))
 		{
 			//outside of bowl
-			pContact->collisionType = COLLISION_FACE_OUTWARD_SPHEREICAL;
-			pContact->contactA = pBowlCollider;
-			pContact->contactAType = COLLIDER_BOWL;
-			pContact->contactB = NULL;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_OUTWARD_SPHEREICAL;
+			pContact->pOtherCollider = pBowlCollider;
+			pContact->otherColliderType = COLLIDER_BOWL;
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dp, 1.0f / dist), 1);
 			pContact->point = sphereTraceVector3AddAndScale(pBowlCollider->position, pContact->normal.v, pBowlCollider->radius);
 			pContact->penetrationDistance = pBowlCollider->radius + imposedRadius - dist;
@@ -37,11 +36,9 @@ b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBo
 		else if (dist < pBowlCollider->radius && dist >= (pBowlCollider->radius - imposedRadius))
 		{
 			//inside of bowl
-			pContact->collisionType = COLLISION_FACE_INWARD_SPHEREICAL;
-			pContact->contactA = pBowlCollider;
-			pContact->contactAType = COLLIDER_BOWL;
-			pContact->contactB = NULL;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_INWARD_SPHEREICAL;
+			pContact->pOtherCollider = pBowlCollider;
+			pContact->otherColliderType = COLLIDER_BOWL;
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dp, -1.0f / dist), 1);
 			pContact->point = sphereTraceVector3AddAndScale(pBowlCollider->position, sphereTraceVector3Negative(pContact->normal.v), pBowlCollider->radius);
 			pContact->penetrationDistance = -pBowlCollider->radius + imposedRadius + dist;
@@ -61,11 +58,9 @@ b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBo
 		float dist = sphereTraceVector3Length(dEdge);
 		if (dist <= imposedRadius)
 		{
-			pContact->collisionType = COLLISION_EDGE_FACE;
-			pContact->contactA = pBowlCollider;
-			pContact->contactAType = COLLIDER_BOWL;
-			pContact->contactB = NULL;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_EDGE;
+			pContact->pOtherCollider = pBowlCollider;
+			pContact->otherColliderType = COLLIDER_BOWL;
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dEdge, 1.0f / dist), 1);
 			pContact->point = closestPointOnCircle;
 			pContact->penetrationDistance = imposedRadius - dist;
@@ -77,11 +72,11 @@ b32 sphereTraceColliderBowlImposedSphereCollisionTest(ST_BowlCollider* const pBo
 }
 
 
-b32 sphereTraceColliderBowlSphereCollisionTest(ST_BowlCollider* const pBowlCollider, ST_SphereCollider* const pSphere, ST_Contact* pContact)
+b32 sphereTraceColliderBowlSphereCollisionTest(ST_BowlCollider* const pBowlCollider, ST_SphereCollider* const pSphere, ST_SphereContact* pContact)
 {
 	if (sphereTraceColliderBowlImposedSphereCollisionTest(pBowlCollider, pSphere->rigidBody.position, pSphere->radius, pContact))
 	{
-		pContact->contactB = pSphere;
+		pContact->pSphereCollider = pSphere;
 		return 1;
 	}
 	return 0;

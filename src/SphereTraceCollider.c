@@ -1,6 +1,41 @@
 #include "SphereTraceCollider.h"
 #include "SphereTraceColliderPlane.h"
 #include "SphereTraceGlobals.h"
+#include "SphereTraceAllocator.h"
+
+const char* ST_ColliderStrings[] =
+{
+	"Sphere",
+	"Plane",
+	"Terrain",
+	"Triangle",
+	"Bowl",
+	"Pipe"
+};
+
+ST_SubscriberList sphereTraceSubscriberListConstruct()
+{
+	ST_SubscriberList sl;
+	sl.curFrameContactEntries = sphereTraceIndexListConstruct();
+	sl.contactEntries = sphereTraceIndexListConstruct();
+	sl.onCollisionStayCallbacks = sphereTraceIndexListConstruct();
+	sl.onCollisionExitCallbacks = sphereTraceIndexListConstruct();
+	sl.onCollisionEnterCallbacks = sphereTraceIndexListConstruct();
+	sl.hasSubscriber = 0;
+	return sl;
+}
+
+ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float boundingRadius)
+{
+	ST_Collider collider;
+	collider.colliderType = colliderType;
+	collider.bucketIndices = sphereTraceIndexListConstruct();
+	//default, will be set later when the derrived collider is created
+	collider.colliderIndex = 0;
+	collider.subscriberList = sphereTraceSubscriberListConstruct();
+	collider.boundingRadius = boundingRadius;
+	return collider;
+}
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
@@ -363,7 +398,7 @@ b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float 
 
 b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
 {
-	ST_Contact contact;
+	ST_SphereContact contact;
 	//dir = sphereTraceVector3Normalize(dir);
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	if (sphereTraceColliderEdgeImposedSphereCollisionTest(pEdge, from, radius, &contact))
@@ -486,7 +521,7 @@ b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float
 			pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
 			pSphereTraceData->rayTraceData.contact.point = lineEnd;
 			pSphereTraceData->rayTraceData.contact.normal = sphereTraceDirectionNegative(rtd.contact.normal);
-			pSphereTraceData->rayTraceData.contact.collisionType = COLLISION_FACE_EDGE;
+			pSphereTraceData->rayTraceData.contact.collisionType = ST_COLLISION_EDGE;
 			pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(pSphereTraceData->rayTraceData.contact.point, pSphereTraceData->rayTraceData.startPoint);
 			return 1;
 		}
@@ -496,37 +531,27 @@ b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float
 
 b32 sphereTraceColliderRingSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Ring* const pRing, ST_SphereTraceData* const pSphereTraceData);
 
-ST_SphereCollider* sphereTraceColliderSphereGetFromContact(const ST_Contact* const pContact)
+ST_SphereCollider* sphereTraceColliderSphereGetFromContact(const ST_SphereContact* const pContact)
 {
-	if (pContact->contactAType == COLLIDER_SPHERE)
+	return pContact->pSphereCollider;
+}
+ST_PlaneCollider* sphereTraceColliderPlaneGetFromContact(const ST_SphereContact* const pContact)
+{
+	if (pContact->otherColliderType == COLLIDER_PLANE)
 	{
-		return pContact->contactA;
-	}
-	else if (pContact->contactBType == COLLIDER_SPHERE)
-	{
-		return pContact->contactB;
+		return pContact->pOtherCollider;
 	}
 }
-ST_PlaneCollider* sphereTraceColliderPlaneGetFromContact(const ST_Contact* const pContact)
+ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_SphereContact* const pContact)
 {
-	if (pContact->contactAType == COLLIDER_PLANE)
+	if (pContact->otherColliderType == COLLIDER_TRIANGLE)
 	{
-		return pContact->contactA;
-	}
-	else if (pContact->contactBType == COLLIDER_PLANE)
-	{
-		return pContact->contactB;
+		return pContact->pOtherCollider;
 	}
 }
-ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_Contact* const pContact)
+
+const char* sphereTraceColliderGetColliderString(const ST_Collider* const pCollider)
 {
-	if (pContact->contactAType == COLLIDER_TRIANGLE)
-	{
-		return pContact->contactA;
-	}
-	else if (pContact->contactBType == COLLIDER_TRIANGLE)
-	{
-		return pContact->contactB;
-	}
+	return ST_ColliderStrings[pCollider->colliderType];
 }
-//ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_Contact* const pContact);
+//ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_SphereContact* const pContact);

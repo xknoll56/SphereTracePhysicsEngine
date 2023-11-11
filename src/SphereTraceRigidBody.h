@@ -8,10 +8,10 @@ typedef struct ST_RigidBody
     float inertia;
     float massInv;
     float inertiaInv;
-    float elasticity;
 
     //state variables
     ST_Vector3 position;
+    ST_Vector3 prevPosition;
     ST_Quaternion rotation;
     ST_Matrix4 rotationMatrix;
     ST_Vector3 linearMomentum;
@@ -52,4 +52,6 @@ void sphereTraceRigidBodyApplyDeltaAngularMomentums(ST_RigidBody* const pRigidBo
 void sphereTraceRigidBodySetVelocity(ST_RigidBody* const pRigidBody, const ST_Vector3 velocity);
 
 void sphereTraceRigidBodySetAngularVelocity(ST_RigidBody* const pRigidBody, const ST_Vector3 angularVelocity);
+
+float sphereTraceRigidBodyGetSpeed(ST_RigidBody* const pRigidBody);
 

@@ -34,6 +34,7 @@ ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(fl
 				bucket.centroid = sphereTraceVector3Construct(centroidX, centroidY, centroidZ);
 				bucket.containerIndex = z * SPACIAL_PARTITION_STATIC_DIMENSION * SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
 				bucket.planeColliderIndices = sphereTraceIndexListConstruct();
+				bucket.triangleColliderIndices = sphereTraceIndexListConstruct();
 				bucket.sphereColliderIndices = sphereTraceIndexListConstruct();
 				bucket.bowlColliderIndices = sphereTraceIndexListConstruct();
 				bucket.pipeColliderIndices = sphereTraceIndexListConstruct();
@@ -51,6 +52,7 @@ ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(fl
 	spacialPartitionContainer.count = SPACIAL_PARTITION_STATIC_SIZE;
 	spacialPartitionContainer.capacity = SPACIAL_PARTITION_STATIC_SIZE;
 	spacialPartitionContainer.outsideBucket.planeColliderIndices = sphereTraceIndexListConstruct();
+	spacialPartitionContainer.outsideBucket.triangleColliderIndices = sphereTraceIndexListConstruct();
 	spacialPartitionContainer.outsideBucket.sphereColliderIndices = sphereTraceIndexListConstruct();
 	spacialPartitionContainer.outsideBucket.uniformTerrainColliderIndices = sphereTraceIndexListConstruct();
 	spacialPartitionContainer.outsideBucket.bowlColliderIndices = sphereTraceIndexListConstruct();

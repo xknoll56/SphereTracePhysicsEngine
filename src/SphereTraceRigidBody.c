@@ -10,8 +10,8 @@ ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
     rigidBody.inertia = inertia;
     rigidBody.massInv = 1.0f / mass;
     rigidBody.inertiaInv = 1.0f / inertia;
-    rigidBody.elasticity = 0.25f;
     rigidBody.position = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
+    rigidBody.prevPosition = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
     rigidBody.rotation = sphereTraceQuaternionFromEulerAngles(sphereTraceVector3Construct(0.0f, 0.0f, 0.0f));
     rigidBody.rotationMatrix = sphereTraceMatrixFromQuaternion(rigidBody.rotation);
     rigidBody.linearMomentum = sphereTraceVector3Construct(0.0f, 0.0f, 0.0f);
@@ -103,4 +103,9 @@ void sphereTraceRigidBodySetAngularVelocity(ST_RigidBody* const pRigidBody, cons
 {
     pRigidBody->angularMomentum = sphereTraceVector3Scale(angularVelocity, pRigidBody->inertia);
     pRigidBody->angularVelocity = angularVelocity;
+}
+
+float sphereTraceRigidBodyGetSpeed(ST_RigidBody* const pRigidBody)
+{
+    return sqrtf(sphereTraceVector3Dot(pRigidBody->velocity, pRigidBody->velocity));
 }

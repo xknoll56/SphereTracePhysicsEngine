@@ -4,6 +4,8 @@
 
 ST_UniformTerrainCollider sphereTraceColliderUniformTerrainConstruct(int xCells, int zCells, float cellSize);
 
+void sphereTraceColliderUniformTerrainFree(ST_UniformTerrainCollider* const pTerrainCollider);
+
 void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* const pTerrainCollider, float angle, ST_Vector3 position);
 
 void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrainCollider* const terrainCollider, float (*fxz)(float, float));
@@ -17,9 +19,9 @@ int sphereTraceColliderUniformTerrainSampleTriangleIndex(const ST_UniformTerrain
 ST_IndexList sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 spherePosition, float radius);
 
 
-b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_Contact* const pContactInfo);
+b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const pContactInfo);
 
-b32 sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_SphereCollider* const pSphereCollider, ST_Contact* const pContactInfo);
+b32 sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const pContactInfo);
 
 
 
@@ -37,6 +39,6 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 
 ST_UniformTerrainSpherePrecomputedSampler sphereTraceColliderUniformTerrainSpherePrecomputedSamplerConstruct(ST_UniformTerrainCollider* pTerrainCollider, float sphereRadius, ST_Index subIncrements);
 
-b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, ST_SphereCollider* const pSphereCollider, ST_Contact* const pContact);
+b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const pContact);
 
 void sphereTraceColliderUniformTerrainSpherePrecomputedSamplerWriteToFile(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, const char* path);

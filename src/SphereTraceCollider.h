@@ -2,9 +2,14 @@
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceRigidBody.h"
+#include "SphereTraceTag.h"
 
 
 #define COLLIDER_TOLERANCE 1e-6
+#define ST_COLLIDER_SKIN 0.05f
+#define ST_SPHERE_RESTING_CONTACTS_COUNT 4
+#define ST_CONTACT_MAX 6
+
 
 typedef enum ST_ColliderType
 {
@@ -16,55 +21,38 @@ typedef enum ST_ColliderType
 	COLLIDER_PIPE = 5
 } ST_ColliderType;
 
+const char* ST_ColliderStrings[];
 
 //for simplicity dynamic spheres will be considered
 //a face.
 typedef enum ST_CollisionType
 {
-	COLLISION_FACE_FACE = 0,
-	COLLISION_FACE_EDGE = 1,
-	COLLISION_FACE_POINT = 2,
-	COLLISION_EDGE_FACE = 3,
-	COLLISION_EDGE_EDGE = 4,
-	COLLISION_EDGE_POINT = 5,
-	COLLISION_POINT_FACE = 6,
-	COLLISION_POINT_EDGE = 7,
-	COLLISION_POINT_POINT = 8,
-	COLLISION_FACE_INWARD_SPHEREICAL = 9,
-	COLLISION_FACE_OUTWARD_SPHEREICAL = 10,
-	COLLISION_FACE_INWARD_CIRCULAR = 11,
-	COLLISION_FACE_OUTWARD_CIRCULAR = 12
+	ST_COLLISION_FACE = 0,
+	ST_COLLISION_EDGE = 1,
+	ST_COLLISION_POINT = 2,
+	ST_COLLISION_INWARD_SPHEREICAL = 3,
+	ST_COLLISION_OUTWARD_SPHEREICAL = 4,
+	ST_COLLISION_INWARD_CIRCULAR = 5,
+	ST_COLLISION_OUTWARD_CIRCULAR = 6
 } ST_CollisionType;
 
-typedef struct ST_Contact
+typedef struct ST_SphereCollider ST_SphereCollider;
+
+typedef struct ST_SphereContact
 {
 	float penetrationDistance;
 	ST_Direction normal;
 	ST_Vector3 point;
 	enum ST_CollisionType collisionType;
-	enum ST_ColliderType contactAType;
-	void* contactA;
-	enum ST_ColliderType contactBType;
-	void* contactB;
+	ST_SphereCollider* pSphereCollider;
+	enum ST_ColliderType otherColliderType;
+	void* pOtherCollider;
 	float radiusOfCurvature;
 	ST_Direction bitangent;
-} ST_Contact;
+} ST_SphereContact;
 
 
 typedef int ST_ColliderIndex;
-
-typedef struct ST_Subscriber
-{
-	void (*callback)();
-	struct ST_Subscriber* pNext;
-
-} ST_Subscriber;
-
-typedef struct ST_SubscriberList
-{
-	int count;
-	ST_Subscriber pFirst;
-} ST_SubscriberList;
 
 typedef struct ST_AABB
 {
@@ -93,12 +81,43 @@ typedef struct ST_Ring
 	float radius;
 } ST_Ring;
 
+typedef struct ST_SubscriberList
+{
+	b32 hasSubscriber;
+	ST_IndexList curFrameContactEntries;
+	ST_IndexList contactEntries;
+	ST_IndexList onCollisionEnterCallbacks;
+	ST_IndexList onCollisionStayCallbacks;
+	ST_IndexList onCollisionExitCallbacks;
+	void* pSubscriberContext;
+} ST_SubscriberList;
+
 typedef struct ST_Collider
 {
 	ST_ColliderType colliderType;
 	ST_IndexList bucketIndices;
 	ST_Index colliderIndex;
+	ST_SubscriberList subscriberList;
+	float boundingRadius;
+	ST_Tag tag;
 } ST_Collider;
+
+typedef struct ST_CallbackFunction
+{
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext);
+}ST_CallbackFunction;
+
+typedef struct ST_SphereContactEntry
+{
+	ST_Collider* pOtherCollider;
+	ST_SphereContact contact;
+} ST_SphereContactEntry;
+
+
+
+ST_SubscriberList sphereTraceSubscriberListConstruct();
+
+ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float boundingRadius);
 
 typedef struct ST_PlaneCollider
 {
@@ -144,14 +163,12 @@ typedef struct ST_TriangleCollider
 typedef struct ST_SphereCollider
 {
 	ST_Collider collider;
-	//ST_ColliderType colliderType;
 	b32 restingContact;
 	float radius;
 	ST_RigidBody rigidBody;
 	ST_AABB aabb;
-	//ST_IndexList bucketIndices;
-	//ST_Index sphereColliderIndex;
 	b32 ignoreCollisions;
+	ST_IndexList prevFrameContacts;
 } ST_SphereCollider;
 
 typedef struct ST_BowlCollider
@@ -196,7 +213,7 @@ typedef enum ST_PlaneVertexDirection
 
 typedef struct ST_RayTraceData
 {
-	ST_Contact contact;
+	ST_SphereContact contact;
 	ST_Vector3 startPoint;
 	float distance;
 } ST_RayTraceData;
@@ -287,10 +304,12 @@ b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float 
 
 b32 sphereTraceColliderRingSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Ring* const pRing, ST_SphereTraceData* const pSphereTraceData);
 
-ST_SphereCollider* sphereTraceColliderSphereGetFromContact(const ST_Contact* const pContact);
-ST_PlaneCollider* sphereTraceColliderPlaneGetFromContact(const ST_Contact* const pContact);
-ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_Contact* const pContact);
-//ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_Contact* const pContact);
+ST_SphereCollider* sphereTraceColliderSphereGetFromContact(const ST_SphereContact* const pContact);
+ST_PlaneCollider* sphereTraceColliderPlaneGetFromContact(const ST_SphereContact* const pContact);
+ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_SphereContact* const pContact);
+
+const char* sphereTraceColliderGetColliderString(const ST_Collider* const pCollider);
+//ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_SphereContact* const pContact);
 
 typedef struct ST_UniformTerrainCollider
 {

@@ -4,8 +4,10 @@
 
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
-#include "SphereTraceAllocator.h"
+#include "SphereTraceHashTable.h"
+#include "SphereTraceMaterial.h"
 #include "SphereTraceRigidBody.h"
+#include "SphereTraceAllocator.h"
 #include "SphereTraceCollider.h"
 #include "SphereTraceColliderPlane.h"
 #include "SphereTraceColliderTerrain.h"
@@ -13,7 +15,6 @@
 #include "SphereTraceColliderTriangle.h"
 #include "SphereTraceColliderBowl.h"
 #include "SphereTraceColliderPipe.h"
-#include "SphereTraceDynamicArray.h"
 #include "SphereTraceSpacialPartition.h"
 #include "SphereTraceAI.h"
 
@@ -26,6 +27,7 @@
 #define ST_SPHERE_RESTING_SLOPE 0.005f
 #define ST_SLIP_THRESHOLD 0.5f;
 #define ST_FRICTION_MODIFIER 1.0f/5.0f
+#define ST_KINETIC_FRICTION_MODIFIER 1/2.0f
 
 
 typedef struct ST_SimulationSpace
@@ -36,21 +38,54 @@ typedef struct ST_SimulationSpace
 	ST_IndexList uniformTerrainColliders;
 	ST_IndexList bowlColliders;
 	ST_IndexList pipeColliders;
-	ST_VectorArrayContact spherePlaneContactInfos;
-	ST_VectorArrayContact sphereSphereContactInfos;
-	ST_VectorArrayContact sphereTriangleContactInfos;
-	ST_VectorArrayContact sphereTerrainTriangleContactInfos;
-	ST_VectorArrayContact sphereBowlContactInfos;
-	float eta;
+	ST_IndexList callbackColliders;
 	ST_Vector3 gravitationalAcceleration;
-	float friction;
 	float minDeltaTime;
+	ST_Material defaultMaterial;
 	ST_SpacialPartitionStaticContainer spacialPartitionContainer;
 } ST_SimulationSpace;
 
-ST_SimulationSpace sphereTraceSimulationConstruct(float eta, float friction, ST_Vector3 gravitationalAcceleration);
+
+//the penetration restriction will start out as none, as the first contact
+//will be resolved simply by pushing out of the normal of the contact.
+//this will then turn the pentration restriction to be within the plane 
+//of the normal.  The second contact normal is then projected onto the plane
+//to calculated the direction of the next penetation push out.
+typedef enum PenetrationRestrictionType
+{
+	ST_PENETRATION_RESTRICTION_NONE = 0,
+	ST_PENETRATION_RESTRICTION_PLANE = 1,
+	ST_PENETRATION_RESTRICTION_DIRECTION = 2
+} PenetrationRestrictionType;
+
+typedef struct PenetrationRestriction
+{
+	//direction to hold none, plane normal, or out dir
+	ST_Direction planeNormal;
+	ST_Vector3 positionOnNormal;
+	ST_Direction tangent;
+	ST_Direction restrictedDir;
+	PenetrationRestrictionType penetrationRestrictionType;
+	//once the restriction direction is set, it cannot be undone
+	b32 restrictionDirectionSet;
+} PenetrationRestriction;
+
+void sphereTraceSubscriberListAddOnCollisionEnterCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider,
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext);
+
+void sphereTraceSubscriberListAddOnCollisionStayCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider, 
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext);
+
+void sphereTraceSubscriberListAddOnCollisionExitCallback(ST_SimulationSpace* pSimSpace, ST_Collider* pCollider, 
+	void (*callback)(const ST_SphereContact* const contact, ST_Collider* pOtherCollider, void* pContext), void* pContext);
+
+ST_SimulationSpace sphereTraceSimulationConstruct();
+
+void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace);
 
 void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulationSpace, ST_PlaneCollider* const pPlaneCollider);
+
+void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimulationSpace, ST_TriangleCollider* const pTriangleCollider);
 
 void sphereTraceSimulationInsertBowlCollider(ST_SimulationSpace* const pSimulationSpace, ST_BowlCollider* const pBowlCollider);
 
@@ -72,19 +107,25 @@ ST_Vector3 sphereTraceSimulationImposedStepPosition(const ST_SimulationSpace* co
 
 void sphereTraceSimulationStepQuantities(const ST_SimulationSpace* const pSimulationSpace, float dt);
 
-void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt);
+void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt);
 
-void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt);
+void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt);
 
-void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt);
+void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt);
 
-void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt);
+void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt);
 
-void sphereTraceSimulationSphereSphereResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_Contact* const pContactInfo, float dt);
+void sphereTraceSimulationSphereSphereResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt);
 
-void sphereTraceSimulationGlobalSolveBruteForce(ST_SimulationSpace* const pSimulationSpace, float dt);
+//void sphereTraceSimulationAddCurFrameContactEntry(ST_IndexList* pCollidersThatHaveSubscribers, ST_SphereContact* const pContact);
 
-void sphereTraceSimulationGlobalSolveBruteForceSpacialPartitioned(ST_SimulationSpace* const pSimulationSpace, float dt);
+void sphereTraceSimulationExecuteCallbacksOnCollider(ST_Collider* const pCollider);
+
+void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt, ST_Index iterations);
+
+void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
+
+void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt);
 
 void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const pSimulationSpace, float dt);
 

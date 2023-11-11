@@ -30,8 +30,14 @@ ST_UniformTerrainCollider sphereTraceColliderUniformTerrainConstruct(int xCells,
 	terrain.forward = gVector3Forward;
 	terrain.position = gVector3Zero;
 	terrain.rotation = gQuaternionIdentity;
-	terrain.collider.colliderType = COLLIDER_TERRAIN;
+	//terrain.collider.colliderType = COLLIDER_TERRAIN;
+	terrain.collider = sphereTraceColliderConstruct(COLLIDER_TERRAIN, sqrtf(terrain.aabb.halfExtents.x* terrain.aabb.halfExtents.x+ terrain.aabb.halfExtents.z* terrain.aabb.halfExtents.z));
 	return terrain;
+}
+
+void sphereTraceColliderUniformTerrainFree(ST_UniformTerrainCollider* const pTerrainCollider)
+{
+	free(pTerrainCollider->triangles);
 }
 
 ST_Vector3 sphereTraceColliderUniformTerrainInverseTransformPoint(ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 point)
@@ -367,7 +373,7 @@ ST_IndexList sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(con
 	//return indices;
 }
 
-b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_Contact* const pContactInfo)
+b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const pContactInfo)
 {
 	ST_IndexListData* pIl;
 	ST_AABB imposedAABB;
@@ -405,7 +411,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 						if (closestPointInCylinder.y >= minHeight)
 						{
 							c++;
-							ST_Contact ciTest;
+							ST_SphereContact ciTest;
 							if (sphereTraceColliderTriangleImposedSphereCollisionTest(&pTerrainCollider->triangles[index], imposedPosition, imposedRadius, &ciTest))
 							{
 								if (ciTest.penetrationDistance > maxPen)
@@ -430,7 +436,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 		return 0;
 }
 
-//b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_Contact* const pContactInfo)
+//b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const pContactInfo)
 //{
 //	ST_IndexListData* pIl;
 //	ST_AABB imposedAABB;
@@ -452,7 +458,7 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 //			{
 //				if (sphereTraceColliderAABBIntersectImposedSphere(&pTerrainCollider->triangles[index].aabb, imposedPosition, imposedRadius))
 //				{
-//					ST_Contact ciTest;
+//					ST_SphereContact ciTest;
 //					if (sphereTraceColliderTriangleImposedSphereCollisionTest(&pTerrainCollider->triangles[index], imposedPosition, imposedRadius, &ciTest))
 //					{
 //						if(ciTest.normal.v.y>=0.0f)
@@ -545,12 +551,12 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 //	}
 //}
 
-b32 sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_SphereCollider* const pSphereCollider, ST_Contact* const pContactInfo)
+b32 sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(const ST_UniformTerrainCollider* const pTerrainCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const pContactInfo)
 {
 	b32 res = sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(pTerrainCollider, pSphereCollider->rigidBody.position, pSphereCollider->radius, pContactInfo);
 	if (res)
 	{
-		pContactInfo->contactB = pSphereCollider;
+		pContactInfo->pSphereCollider = pSphereCollider;
 		//pContactInfo->sphereTriangleContactInfo.pSphereCollider = pSphereCollider;
 	}
 	return res;
@@ -952,7 +958,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceByStartEndPoint(const ST_Uniform
 	stdDummy.sphereCenter = endPoint;
 	stdDummy.radius = radius;
 	ST_Direction dir = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(endPoint, startPoint));
-	ST_Contact sttci;
+	ST_SphereContact sttci;
 	if (sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(pTerrainCollider, startPoint, radius, &sttci))
 	{
 		//*pSphereTraceData = sttci.downSphereTraceData;
@@ -1338,7 +1344,7 @@ ST_UniformTerrainSpherePrecomputedSampler sphereTraceColliderUniformTerrainSpher
 						//		//}
 						//	sphereTraceColliderUniformTerrainSampleTriangleIndex(pTerrainCollider, sphereTraceData.rayTraceData.contact.point);
 						//}
-						precompSampler.sampledIndexes[sampleIndex][i+j*subIncrements] = ((ST_TriangleCollider*)(sphereTraceData.rayTraceData.contact.contactA))->terrainIndex;
+						//precompSampler.sampledIndexes[sampleIndex][i+j*subIncrements] = ((ST_TriangleCollider*)(sphereTraceData.rayTraceData.contact.contactA))->terrainIndex;
 						//printf("%i ", (int)((ST_TriangleCollider*)(sphereTraceData.rayTraceData.contact.contactA))->terrainIndex);
 
 					}
@@ -1351,7 +1357,7 @@ ST_UniformTerrainSpherePrecomputedSampler sphereTraceColliderUniformTerrainSpher
 }
 
 
-b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, ST_SphereCollider* const pSphereCollider, ST_Contact* const pContact)
+b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const pContact)
 {
 	int ind = sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSampleIndex(pPrecompSampler->pUniformTerrainCollider, pSphereCollider->rigidBody.position);
 	float maxDist = -FLT_MAX;
@@ -1367,7 +1373,7 @@ b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest
 	//		{
 	//			if (sphereTraceColliderAABBIntersectAABB(&pTriangleCollider->aabb, &pSphereCollider->aabb))
 	//			{
-	//				ST_Contact ciTest;
+	//				ST_SphereContact ciTest;
 	//				if (sphereTraceColliderTriangleSphereCollisionTest(pTriangleCollider, pSphereCollider, &ciTest))
 	//				{
 	//					if (ciTest.penetrationDistance > maxDist)

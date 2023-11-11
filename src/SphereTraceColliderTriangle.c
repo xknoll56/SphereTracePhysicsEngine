@@ -135,7 +135,8 @@ ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vecto
 	ST_TriangleCollider triangleCollider;
 	sphereTraceColliderTriangleSetVertexAndEdgeData(&triangleCollider, v1, v2, v3);
 	triangleCollider.ignoreCollisions = 0;
-	triangleCollider.collider.colliderType = COLLIDER_TRIANGLE;
+	//triangleCollider.collider.colliderType = COLLIDER_TRIANGLE;
+	triangleCollider.collider = sphereTraceColliderConstruct(COLLIDER_TRIANGLE, fmaxf(fmaxf(triangleCollider.vertexDists[0], triangleCollider.vertexDists[1]), triangleCollider.vertexDists[2]));
 	return triangleCollider;
 }
 
@@ -181,8 +182,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 	{
 		if (sphereTraceColliderTriangleIsProjectedPointContained(pSphereTraceData->rayTraceData.contact.point, pTriangleCollider))
 		{
-			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 	}
@@ -194,8 +195,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[edgeInd], &datTest))
 		{
 			*pSphereTraceData = datTest;
-			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 		return 0;
@@ -226,10 +227,17 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 		}
 		if (closestEdgePointDist < FLT_MAX)
 		{
-			pSphereTraceData->rayTraceData.contact.contactA = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.contactAType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
+			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 	}
 	return 0;
+}
+
+b32 sphereTraceColliderTriangleSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&clipoutDir);
+	ST_Vector3 castPoint = sphereTraceVector3AddAndScale(spherePos, clipoutDir.v, 2 * pTriangleCollider->collider.boundingRadius + 2 * sphereRadius);
+	return sphereTraceColliderTriangleSphereTrace(castPoint, sphereTraceDirectionNegative(clipoutDir), sphereRadius, pTriangleCollider, pSphereCastData);
 }

@@ -12,6 +12,7 @@ typedef struct ST_SpacialPartitionBucket
 	ST_AABB aabb;
 	//ST_VectorArrayPointers planeColliderPointers;
 	ST_IndexList planeColliderIndices;
+	ST_IndexList triangleColliderIndices;
 	ST_IndexList sphereColliderIndices;
 	ST_IndexList bowlColliderIndices;
 	ST_IndexList pipeColliderIndices;

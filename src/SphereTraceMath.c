@@ -533,6 +533,14 @@ ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from)
 	return v;
 }
 
+ST_Vector3 sphereTraceVector3ProjectVector3OntoPlane(ST_Vector3 vec, ST_Direction planeNormal)
+{
+	float dnm = sphereTraceVector3Dot(vec, planeNormal.v);
+	ST_Vector3 dnv = sphereTraceVector3Scale(planeNormal.v, dnm);
+	ST_Vector3 dt = sphereTraceVector3Subtract(vec, dnv);
+	return dt;
+}
+
 ST_Matrix4 sphereTraceMatrixIdentity()
 {
 	return sphereTraceMatrixConstruct(
@@ -693,24 +701,54 @@ ST_Matrix4 sphereTraceMatrixLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
 
 ST_Matrix4 sphereTraceMatrixMult(ST_Matrix4 mat1, ST_Matrix4 mat2)
 {
-	return sphereTraceMatrixConstruct(
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 0), sphereTraceMatrixCol(mat2, 0)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 0), sphereTraceMatrixCol(mat2, 1)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 0), sphereTraceMatrixCol(mat2, 2)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 0), sphereTraceMatrixCol(mat2, 3)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 1), sphereTraceMatrixCol(mat2, 0)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 1), sphereTraceMatrixCol(mat2, 1)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 1), sphereTraceMatrixCol(mat2, 2)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 1), sphereTraceMatrixCol(mat2, 3)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 2), sphereTraceMatrixCol(mat2, 0)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 2), sphereTraceMatrixCol(mat2, 1)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 2), sphereTraceMatrixCol(mat2, 2)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 2), sphereTraceMatrixCol(mat2, 3)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 3), sphereTraceMatrixCol(mat2, 0)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 3), sphereTraceMatrixCol(mat2, 1)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 3), sphereTraceMatrixCol(mat2, 2)),
-			sphereTraceVector4Dot(sphereTraceMatrixRow(mat1, 3), sphereTraceMatrixCol(mat2, 3))
-	);
+	ST_Matrix4 ret;
+	ret.m00 = mat1.m00 * mat2.m00 + mat1.m01 * mat2.m10 + mat1.m02 * mat2.m20 + mat1.m03 * mat2.m30;
+	ret.m01 = mat1.m00 * mat2.m01 + mat1.m01 * mat2.m11 + mat1.m02 * mat2.m21 + mat1.m03 * mat2.m31;
+	ret.m02 = mat1.m00 * mat2.m02 + mat1.m01 * mat2.m12 + mat1.m02 * mat2.m22 + mat1.m03 * mat2.m32;
+	ret.m03 = mat1.m00 * mat2.m03 + mat1.m01 * mat2.m13 + mat1.m02 * mat2.m23 + mat1.m03 * mat2.m33;			  
+	ret.m10 = mat1.m10 * mat2.m00 + mat1.m11 * mat2.m10 + mat1.m12 * mat2.m20 + mat1.m13 * mat2.m30;
+	ret.m11 = mat1.m10 * mat2.m01 + mat1.m11 * mat2.m11 + mat1.m12 * mat2.m21 + mat1.m13 * mat2.m31;
+	ret.m12 = mat1.m10 * mat2.m02 + mat1.m11 * mat2.m12 + mat1.m12 * mat2.m22 + mat1.m13 * mat2.m32;
+	ret.m13 = mat1.m10 * mat2.m03 + mat1.m11 * mat2.m13 + mat1.m12 * mat2.m23 + mat1.m13 * mat2.m33;			  
+	ret.m20 = mat1.m20 * mat2.m00 + mat1.m21 * mat2.m10 + mat1.m22 * mat2.m20 + mat1.m23 * mat2.m30;
+	ret.m21 = mat1.m20 * mat2.m01 + mat1.m21 * mat2.m11 + mat1.m22 * mat2.m21 + mat1.m23 * mat2.m31;
+	ret.m22 = mat1.m20 * mat2.m02 + mat1.m21 * mat2.m12 + mat1.m22 * mat2.m22 + mat1.m23 * mat2.m32;
+	ret.m23 = mat1.m20 * mat2.m03 + mat1.m21 * mat2.m13 + mat1.m22 * mat2.m23 + mat1.m23 * mat2.m33;			  
+	ret.m30 = mat1.m30 * mat2.m00 + mat1.m31 * mat2.m10 + mat1.m32 * mat2.m20 + mat1.m33 * mat2.m30;
+	ret.m31 = mat1.m30 * mat2.m01 + mat1.m31 * mat2.m11 + mat1.m32 * mat2.m21 + mat1.m33 * mat2.m31;
+	ret.m32 = mat1.m30 * mat2.m02 + mat1.m31 * mat2.m12 + mat1.m32 * mat2.m22 + mat1.m33 * mat2.m32;
+	ret.m33 = mat1.m30 * mat2.m03 + mat1.m31 * mat2.m13 + mat1.m32 * mat2.m23 + mat1.m33 * mat2.m33;
+	return ret;
+}
+
+ST_Matrix4 sphereTraceMatrixMultByRef(const ST_Matrix4* pMat1, const ST_Matrix4* pMat2)
+{
+	ST_Matrix4 ret;
+	ret.m00 = pMat1->m00 * pMat2->m00 + pMat1->m01 * pMat2->m10 + pMat1->m02 * pMat2->m20 + pMat1->m03 * pMat2->m30;
+	ret.m01 = pMat1->m00 * pMat2->m01 + pMat1->m01 * pMat2->m11 + pMat1->m02 * pMat2->m21 + pMat1->m03 * pMat2->m31;
+	ret.m02 = pMat1->m00 * pMat2->m02 + pMat1->m01 * pMat2->m12 + pMat1->m02 * pMat2->m22 + pMat1->m03 * pMat2->m32;
+	ret.m03 = pMat1->m00 * pMat2->m03 + pMat1->m01 * pMat2->m13 + pMat1->m02 * pMat2->m23 + pMat1->m03 * pMat2->m33;
+	ret.m10 = pMat1->m10 * pMat2->m00 + pMat1->m11 * pMat2->m10 + pMat1->m12 * pMat2->m20 + pMat1->m13 * pMat2->m30;
+	ret.m11 = pMat1->m10 * pMat2->m01 + pMat1->m11 * pMat2->m11 + pMat1->m12 * pMat2->m21 + pMat1->m13 * pMat2->m31;
+	ret.m12 = pMat1->m10 * pMat2->m02 + pMat1->m11 * pMat2->m12 + pMat1->m12 * pMat2->m22 + pMat1->m13 * pMat2->m32;
+	ret.m13 = pMat1->m10 * pMat2->m03 + pMat1->m11 * pMat2->m13 + pMat1->m12 * pMat2->m23 + pMat1->m13 * pMat2->m33;
+	ret.m20 = pMat1->m20 * pMat2->m00 + pMat1->m21 * pMat2->m10 + pMat1->m22 * pMat2->m20 + pMat1->m23 * pMat2->m30;
+	ret.m21 = pMat1->m20 * pMat2->m01 + pMat1->m21 * pMat2->m11 + pMat1->m22 * pMat2->m21 + pMat1->m23 * pMat2->m31;
+	ret.m22 = pMat1->m20 * pMat2->m02 + pMat1->m21 * pMat2->m12 + pMat1->m22 * pMat2->m22 + pMat1->m23 * pMat2->m32;
+	ret.m23 = pMat1->m20 * pMat2->m03 + pMat1->m21 * pMat2->m13 + pMat1->m22 * pMat2->m23 + pMat1->m23 * pMat2->m33;
+	ret.m30 = pMat1->m30 * pMat2->m00 + pMat1->m31 * pMat2->m10 + pMat1->m32 * pMat2->m20 + pMat1->m33 * pMat2->m30;
+	ret.m31 = pMat1->m30 * pMat2->m01 + pMat1->m31 * pMat2->m11 + pMat1->m32 * pMat2->m21 + pMat1->m33 * pMat2->m31;
+	ret.m32 = pMat1->m30 * pMat2->m02 + pMat1->m31 * pMat2->m12 + pMat1->m32 * pMat2->m22 + pMat1->m33 * pMat2->m32;
+	ret.m33 = pMat1->m30 * pMat2->m03 + pMat1->m31 * pMat2->m13 + pMat1->m32 * pMat2->m23 + pMat1->m33 * pMat2->m33;
+	return ret;
+}
+
+void sphereTraceMatrixPrint(ST_Matrix4 mat)
+{
+	printf("%f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f\n%f, %f, %f, %f\n", mat.m00, mat.m01, mat.m02, mat.m03,
+		mat.m10, mat.m11, mat.m12, mat.m13,
+		mat.m20, mat.m21, mat.m22, mat.m23,
+		mat.m30, mat.m31, mat.m32, mat.m33);
 }
 
 ST_Vector3 sphereTraceVector3GetLocalXAxisFromRotationMatrix(ST_Matrix4 mat)
@@ -1025,6 +1063,14 @@ ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir)
 		dir.normalized = 1;
 	}
 	return dir;
+}
+
+ST_Direction sphereTraceDirectionProjectDirectionOntoPlane(ST_Direction dir, ST_Direction planeNormal)
+{
+	float dnm = sphereTraceVector3Dot(dir.v, planeNormal.v);
+	ST_Vector3 dnv = sphereTraceVector3Scale(planeNormal.v, dnm);
+	ST_Vector3 dt = sphereTraceVector3Subtract(dir.v, dnv);
+	return sphereTraceDirectionConstructNormalized(dt);
 }
 
 float sphereTraceDirectionGetDistanceInDirection(ST_Direction dir, ST_Vector3 from, ST_Vector3 to)

@@ -332,7 +332,8 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float a
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
 	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
 	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-	planeCollider.collider.colliderType = COLLIDER_PLANE;
+	//planeCollider.collider.colliderType = COLLIDER_PLANE;
+	planeCollider.collider= sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent*xHalfExtent+zHalfExtent*zHalfExtent));
 	return planeCollider;
 }
 
@@ -349,7 +350,8 @@ ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
 	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
 	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-	planeCollider.collider.colliderType = COLLIDER_PLANE;
+	//planeCollider.collider.colliderType = COLLIDER_PLANE;
+	planeCollider.collider = sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent * xHalfExtent + zHalfExtent * zHalfExtent));
 	return planeCollider;
 }
 
@@ -416,7 +418,7 @@ b32 sphereTraceColliderPlaneIsProjectedPointContained(ST_Vector3 projectedPoint,
 
 b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 pointOnPlane, ST_Direction planeNormal, ST_SphereTraceData* const pSphereTraceData)
 {
-	ST_Contact contact;
+	ST_SphereContact contact;
 	if (sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(from, radius, planeNormal, pointOnPlane, &contact))
 	{
 		pSphereTraceData->radius = radius;
@@ -513,4 +515,13 @@ b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float
 	if (closestEdgePointDist < FLT_MAX)
 		return 1;
 	return 0;
+}
+
+b32 sphereTraceColliderPlaneSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereCastData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&clipoutDir);
+	ST_Vector3 castPoint = sphereTraceVector3AddAndScale(spherePos, clipoutDir.v, 2 * pPlaneCollider->collider.boundingRadius + 2 * sphereRadius);
+	b32 ret = sphereTraceColliderPlaneSphereTrace(castPoint, sphereTraceDirectionNegative(clipoutDir), sphereRadius, pPlaneCollider, pSphereCastData);
+	ST_Direction dir = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(castPoint, pSphereCastData->sphereCenter));
+	return ret;
 }

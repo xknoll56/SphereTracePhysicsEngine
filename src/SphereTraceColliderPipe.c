@@ -19,13 +19,15 @@ ST_PipeCollider sphereTraceColliderPipeConstruct(ST_Vector3 position, float radi
 		pipeCollider.right = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(up.v, gVector3Up));
 		pipeCollider.forward = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(up.v, pipeCollider.right.v));
 	}
-	pipeCollider.collider.colliderType = COLLIDER_PIPE;
+	//pipeCollider.collider.colliderType = COLLIDER_PIPE;
+	float boundingRadius = sqrtf((length * 0.5f) * (length * 0.5f) + radius * radius);
+	pipeCollider.collider = sphereTraceColliderConstruct(COLLIDER_PIPE, boundingRadius);
 	pipeCollider.collider.bucketIndices = sphereTraceIndexListConstruct();
 	sphereTraceColliderPipeSetAABB(&pipeCollider);
 	return pipeCollider;
 }
 
-b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPipeCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_Contact* pContact)
+b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPipeCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* pContact)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(imposedPosition, pPipeCollider->position);
 	float upDist = sphereTraceVector3Dot(pPipeCollider->up.v, dp);
@@ -37,10 +39,9 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 		float tangentDist = sphereTraceVector3Length(tangent);
 		if (tangentDist <= pPipeCollider->radius && tangentDist >= (pPipeCollider->radius - imposedRadius))
 		{
-			pContact->collisionType = COLLISION_FACE_INWARD_CIRCULAR;
-			pContact->contactA = pPipeCollider;
-			pContact->contactAType = COLLIDER_PIPE;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_INWARD_CIRCULAR;
+			pContact->pOtherCollider = pPipeCollider;
+			pContact->otherColliderType = COLLIDER_PIPE;
 			pContact->point = sphereTraceVector3AddAndScale2(pPipeCollider->position, pPipeCollider->up.v, upDist, tangent, pPipeCollider->radius / tangentDist);
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(tangent, -1.0f / tangentDist), 1);
 			pContact->penetrationDistance = imposedRadius - pPipeCollider->radius + tangentDist;
@@ -50,10 +51,9 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 		}
 		else if (tangentDist > pPipeCollider->radius && tangentDist <= (pPipeCollider->radius + imposedRadius))
 		{
-			pContact->collisionType = COLLISION_FACE_OUTWARD_CIRCULAR;
-			pContact->contactA = pPipeCollider;
-			pContact->contactAType = COLLIDER_PIPE;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_OUTWARD_CIRCULAR;
+			pContact->pOtherCollider = pPipeCollider;
+			pContact->otherColliderType = COLLIDER_PIPE;
 			pContact->point = sphereTraceVector3AddAndScale2(pPipeCollider->position, pPipeCollider->up.v, upDist, tangent, pPipeCollider->radius / tangentDist);
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(tangent, 1.0f / tangentDist), 1);
 			pContact->penetrationDistance =imposedRadius-(tangentDist - pPipeCollider->radius);
@@ -75,11 +75,9 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 		float dist = sphereTraceVector3Length(dEdge);
 		if (dist <= imposedRadius)
 		{
-			pContact->collisionType = COLLISION_EDGE_FACE;
-			pContact->contactA = pPipeCollider;
-			pContact->contactAType = COLLIDER_PIPE;
-			pContact->contactB = NULL;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_EDGE;
+			pContact->pOtherCollider = pPipeCollider;
+			pContact->otherColliderType = COLLIDER_PIPE;
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dEdge, 1.0f / dist), 1);
 			pContact->point = closestPointOnCircle;
 			pContact->penetrationDistance = imposedRadius - dist;
@@ -99,11 +97,9 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 		float dist = sphereTraceVector3Length(dEdge);
 		if (dist <= imposedRadius)
 		{
-			pContact->collisionType = COLLISION_EDGE_FACE;
-			pContact->contactA = pPipeCollider;
-			pContact->contactAType = COLLIDER_PIPE;
-			pContact->contactB = NULL;
-			pContact->contactBType = COLLIDER_SPHERE;
+			pContact->collisionType = ST_COLLISION_EDGE;
+			pContact->pOtherCollider = pPipeCollider;
+			pContact->otherColliderType = COLLIDER_PIPE;
 			pContact->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dEdge, 1.0f / dist), 1);
 			pContact->point = closestPointOnCircle;
 			pContact->penetrationDistance = imposedRadius - dist;
@@ -113,11 +109,11 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 	return 0;
 }
 
-b32 sphereTraceColliderPipeSphereCollisionTest(ST_PipeCollider* const pPipeCollider, ST_SphereCollider* const pSphere, ST_Contact* pContact)
+b32 sphereTraceColliderPipeSphereCollisionTest(ST_PipeCollider* const pPipeCollider, ST_SphereCollider* const pSphere, ST_SphereContact* pContact)
 {
 	if (sphereTraceColliderPipeImposedSphereCollisionTest(pPipeCollider, pSphere->rigidBody.position, pSphere->radius, pContact))
 	{
-		pContact->contactB = pSphere;
+		pContact->pSphereCollider = pSphere;
 		return 1;
 	}
 	return 0;

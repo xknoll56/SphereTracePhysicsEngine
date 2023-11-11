@@ -16,3 +16,5 @@ b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoi
 b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const ST_TriangleCollider* const pTriangleCollider, ST_RayTraceData* const pRaycastData);
 //
 b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);
+//
+b32 sphereTraceColliderTriangleSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);

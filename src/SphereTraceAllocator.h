@@ -1,8 +1,11 @@
 #pragma once
 #include <stdlib.h>
 #include "SphereTraceLists.h"
+//#include "SphereTraceCollider.h"
 
 typedef uintptr_t ST_Index;
+typedef struct ST_CallbackFunction ST_CallbackFunction;
+typedef struct ST_SphereContactEntry ST_SphereContactEntry;
 
 typedef struct ST_FreeStack
 {
@@ -48,3 +51,7 @@ ST_Vector3ListData* sphereTraceAllocatorAllocateVector3ListData();
 void sphereTraceAllocatorFreeVector3ListData(void* pIndex);
 ST_Vector3* sphereTraceAllocatorAllocateVector3();
 void sphereTraceAllocatorFreeVector3(void* pIndex);
+ST_CallbackFunction* sphereTraceAllocatorAllocateCallbackFunction();
+void sphereTraceAllocatorFreeCallbackFunction(void* pIndex);
+ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry();
+void sphereTraceAllocatorFreeContactEntry(void* pIndex);
