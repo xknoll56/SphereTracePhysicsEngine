@@ -6,6 +6,8 @@
 typedef uintptr_t ST_Index;
 typedef struct ST_CallbackFunction ST_CallbackFunction;
 typedef struct ST_SphereContactEntry ST_SphereContactEntry;
+typedef struct ST_SphereContact ST_SphereContact;
+typedef struct ST_OctTreeNode ST_OctTreeNode;
 
 typedef struct ST_FreeStack
 {
@@ -32,11 +34,17 @@ ST_ObjectPool sphereTraceAllocatorObjectPoolConstruct(ST_Index capacity, ST_Inde
 void* sphereTraceAllocatorObjectPoolAllocateObject(ST_ObjectPool* const pObjectPool);
 void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, void* pObject);
 
+
+//linear object pools are really just pre-allocated arrays 
+//they will not make use of the free stack
+void sphereTraceAllocatorLinearObjectPoolReset(ST_ObjectPool* const pLinearObjectPool);
+
 typedef struct ST_Allocator
 {
 	ST_ObjectPool** objectPools;
+	ST_ObjectPool* pCurrentObjectPool;
 	ST_Index numObjects;
-	ST_Index curPool;
+	ST_Index curPoolIndex;
 	ST_Index maxPools;
 } ST_Allocator;
 
@@ -44,7 +52,16 @@ ST_Allocator sphereTraceAllocatorConstruct(ST_Index poolCapacity, ST_Index objec
 void* sphereTraceAllocatorAllocateObject(ST_Allocator* const pAllocator);
 void sphereTraceAllocatorFreeObject(ST_Allocator* const pAllocator, void* pObject);
 
+//Linear allocaters are different in that they can only be free'd all at once (ie reset)
+//and elements can be accessed by index
+ST_Allocator sphereTraceLinearAllocatorConstruct(ST_Index poolCapacity, ST_Index objectSize, ST_Index maxPools);
+void* sphereTraceLinearAllocatorAllocateObject(ST_Allocator* const pLinearAllocator);
+void sphereTraceLinearAllocatorReset(ST_Allocator* const pLinearAllocator);
+void* sphereTraceLinearAllocatorGetByIndex(ST_Allocator* const pLinearAllocator, ST_Index index);
+
 void sphereTraceAllocatorInitialize();
+ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode();
+void sphereTraceAllocatorFreeOctTreeNode(void* pIndex);
 ST_IndexListData* sphereTraceAllocatorAllocateIndexListData();
 void sphereTraceAllocatorFreeIndexListData(void* pIndex);
 ST_Vector3ListData* sphereTraceAllocatorAllocateVector3ListData();
@@ -55,3 +72,7 @@ ST_CallbackFunction* sphereTraceAllocatorAllocateCallbackFunction();
 void sphereTraceAllocatorFreeCallbackFunction(void* pIndex);
 ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry();
 void sphereTraceAllocatorFreeContactEntry(void* pIndex);
+ST_SphereContact* sphereTraceLinearAllocatorAllocateSphereContact();
+ST_Index sphereTraceLinearAllocatorGetSphereContactCount();
+ST_SphereContact* sphereTraceLinearAllocatorGetSphereContactByIndex(ST_Index index);
+void sphereTraceLinearAllocatorResetSphereContacts();

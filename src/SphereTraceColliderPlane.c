@@ -1,6 +1,62 @@
 #include "SphereTraceColliderPlane.h"
 #include "SphereTraceGlobals.h"
 
+ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float angle, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
+{
+	ST_PlaneCollider planeCollider;
+	planeCollider.collider = sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent * xHalfExtent + zHalfExtent * zHalfExtent));
+	planeCollider.position = position;
+	planeCollider.normal = sphereTraceDirectionConstructNormalized(normalDir);
+	float dot = sphereTraceVector3Dot(planeCollider.normal.v, gVector3Forward);
+	if (dot == 1.0f)
+	{
+		planeCollider.right = sphereTraceDirectionConstructNormalized(gVector3Right);
+	}
+	else if (dot == -1.0f)
+	{
+		planeCollider.right = sphereTraceDirectionConstructNormalized(sphereTraceVector3Negative(gVector3Right));
+	}
+	else
+		planeCollider.right = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(planeCollider.normal.v, gVector3Forward));
+	ST_Quaternion rotation = sphereTraceQuaternionFromAngleAxis(planeCollider.normal.v, angle);
+	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3RotatePoint(planeCollider.right.v, rotation), 1);
+	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3Cross(planeCollider.right.v, planeCollider.normal.v), 1);
+	planeCollider.xHalfExtent = xHalfExtent;
+	planeCollider.zHalfExtent = zHalfExtent;
+	ST_Matrix4 rotMat = sphereTraceMatrixConstructFromRightForwardUp(planeCollider.right.v, planeCollider.normal.v, planeCollider.forward.v);
+	planeCollider.rotation = sphereTraceQuaternionNormalize(sphereTraceMatrixQuaternionFromRotationMatrix(rotMat));
+
+	//retreive the adjusted rotation matrix, matrix from quaternion is not perfect so the directional vectors change slightly
+	rotMat = sphereTraceMatrixFromQuaternion(planeCollider.rotation);
+	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 1);
+	planeCollider.normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 1);
+	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 1);
+	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
+	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
+	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
+	planeCollider.collider.aabb.center = planeCollider.position;
+	//planeCollider.collider.colliderType = COLLIDER_PLANE;
+	return planeCollider;
+}
+
+ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
+{
+	ST_PlaneCollider planeCollider;
+	planeCollider.collider = sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent * xHalfExtent + zHalfExtent * zHalfExtent));
+	planeCollider.position = position;
+	planeCollider.xHalfExtent = xHalfExtent;
+	planeCollider.zHalfExtent = zHalfExtent;
+	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 0);
+	planeCollider.normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 0);
+	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 0);
+	planeCollider.rotation = sphereTraceMatrixQuaternionFromRotationMatrix(rotMat);
+	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
+	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
+	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
+	//planeCollider.collider.colliderType = COLLIDER_PLANE;
+	return planeCollider;
+}
+
 void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* const pPlaneCollider)
 {
 	//forward right
@@ -289,70 +345,15 @@ ST_PlaneVertexDirection sphereTraceColliderPlaneGetClosestTransformedVertexToPoi
 void sphereTraceColliderPlaneSetAABBExtents(ST_PlaneCollider* const pPlaneCollider)
 {
 	//set aabb extents
-	pPlaneCollider->aabb.halfExtents.x = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Right))], pPlaneCollider->position).x;
-	pPlaneCollider->aabb.halfExtents.y = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Up))], pPlaneCollider->position).y;
-	pPlaneCollider->aabb.halfExtents.z = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Forward))], pPlaneCollider->position).z;
+	pPlaneCollider->collider.aabb.halfExtents.x = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Right))], pPlaneCollider->position).x;
+	pPlaneCollider->collider.aabb.halfExtents.y = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Up))], pPlaneCollider->position).y;
+	pPlaneCollider->collider.aabb.halfExtents.z = sphereTraceVector3Subtract(pPlaneCollider->transformedVertices[sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(pPlaneCollider, sphereTraceVector3Add(pPlaneCollider->position, gVector3Forward))], pPlaneCollider->position).z;
 }
 
 void sphereTraceColliderPlaneAABBSetTransformedVertices(ST_PlaneCollider* const pPlaneCollider)
 {
-	pPlaneCollider->aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(pPlaneCollider->position, pPlaneCollider->aabb.halfExtents);
-	pPlaneCollider->aabb.leftDownBackTransformedVertex = sphereTraceVector3Subtract(pPlaneCollider->position, pPlaneCollider->aabb.halfExtents);
-}
-
-ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float angle, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
-{
-	ST_PlaneCollider planeCollider;
-	planeCollider.position = position;
-	planeCollider.normal = sphereTraceDirectionConstructNormalized(normalDir);
-	float dot = sphereTraceVector3Dot(planeCollider.normal.v, gVector3Forward);
-	if (dot == 1.0f)
-	{
-		planeCollider.right = sphereTraceDirectionConstructNormalized(gVector3Right);
-	}
-	else if (dot == -1.0f)
-	{
-		planeCollider.right = sphereTraceDirectionConstructNormalized(sphereTraceVector3Negative(gVector3Right));
-	}
-	else
-		planeCollider.right = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(planeCollider.normal.v, gVector3Forward));
-	ST_Quaternion rotation = sphereTraceQuaternionFromAngleAxis(planeCollider.normal.v, angle);
-	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3RotatePoint(planeCollider.right.v, rotation), 1);
-	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3Cross(planeCollider.right.v, planeCollider.normal.v), 1);
-	planeCollider.xHalfExtent = xHalfExtent;
-	planeCollider.zHalfExtent = zHalfExtent;
-	ST_Matrix4 rotMat = sphereTraceMatrixConstructFromRightForwardUp(planeCollider.right.v, planeCollider.normal.v, planeCollider.forward.v);
-	planeCollider.rotation = sphereTraceQuaternionNormalize(sphereTraceMatrixQuaternionFromRotationMatrix(rotMat));
-
-	//retreive the adjusted rotation matrix, matrix from quaternion is not perfect so the directional vectors change slightly
-	rotMat = sphereTraceMatrixFromQuaternion(planeCollider.rotation);
-	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 1);
-	planeCollider.normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 1);
-	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 1);
-	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
-	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
-	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-	//planeCollider.collider.colliderType = COLLIDER_PLANE;
-	planeCollider.collider= sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent*xHalfExtent+zHalfExtent*zHalfExtent));
-	return planeCollider;
-}
-
-ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
-{
-	ST_PlaneCollider planeCollider;
-	planeCollider.position = position;
-	planeCollider.xHalfExtent = xHalfExtent;
-	planeCollider.zHalfExtent = zHalfExtent;
-	planeCollider.right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 0);
-	planeCollider.normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 0);
-	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 0);
-	planeCollider.rotation = sphereTraceMatrixQuaternionFromRotationMatrix(rotMat);
-	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
-	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
-	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-	//planeCollider.collider.colliderType = COLLIDER_PLANE;
-	planeCollider.collider = sphereTraceColliderConstruct(COLLIDER_PLANE, sqrtf(xHalfExtent * xHalfExtent + zHalfExtent * zHalfExtent));
-	return planeCollider;
+	pPlaneCollider->collider.aabb.highExtent = sphereTraceVector3Add(pPlaneCollider->position, pPlaneCollider->collider.aabb.halfExtents);
+	pPlaneCollider->collider.aabb.lowExtent = sphereTraceVector3Subtract(pPlaneCollider->position, pPlaneCollider->collider.aabb.halfExtents);
 }
 
 
@@ -431,35 +432,17 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 		return 1;
 	}
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
-	sphereTraceColliderInfinitePlaneRayTrace(from, dir, planeNormal, pointOnPlane, &pSphereTraceData->rayTraceData);
+	ST_Vector3 temp = sphereTraceVector3Subtract(pointOnPlane, from);
+	if(sphereTraceVector3IsVectorPositiveInDirection(temp, planeNormal))
+		temp = sphereTraceVector3AddAndScale(pointOnPlane, sphereTraceVector3Negative(planeNormal.v), radius);
+	else
+		temp = sphereTraceVector3AddAndScale(pointOnPlane, planeNormal.v, radius);
+
+	sphereTraceColliderInfinitePlaneRayTrace(from, dir, planeNormal, temp, &pSphereTraceData->rayTraceData);
 	if (pSphereTraceData->rayTraceData.distance < 0.0f || isinf(pSphereTraceData->rayTraceData.distance))
 		return 0;
-	float alpha;
-	float dot = sphereTraceVector3Dot(dir.v, pSphereTraceData->rayTraceData.contact.normal.v);
-	float hypotinus;
-	ST_Vector3 orthogonal = pSphereTraceData->rayTraceData.contact.normal.v;
-	if (fabsf(fabsf(dot) - 1) < COLLIDER_TOLERANCE)
-	{
-		alpha = 0.0f;
-		hypotinus = radius;
-	}
-	else
-	{
-		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, dir.v);
-		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, orthogonal);
-		sphereTraceVector3NormalizeByRef(&orthogonal);
-		alpha = acosf(sphereTraceVector3Dot(sphereTraceVector3Negative(dir.v), orthogonal));
-		hypotinus = radius / sinf(alpha);
-	}
 
-	//if (sphereTraceVector3EpsilonEquals(dir, sphereTraceVector3Negative(orthogonal), COLLIDER_TOLERANCE))
-	//{
-
-	//}
-	//
-
-	pSphereTraceData->sphereCenter = sphereTraceVector3AddAndScale(from, dir.v, pSphereTraceData->rayTraceData.distance - hypotinus);
-
+	pSphereTraceData->sphereCenter = pSphereTraceData->rayTraceData.contact.point;
 	pSphereTraceData->rayTraceData.contact.point = sphereTraceVector3AddAndScale(pSphereTraceData->sphereCenter, sphereTraceVector3Negative(pSphereTraceData->rayTraceData.contact.normal.v), radius);
 	pSphereTraceData->rayTraceData.startPoint = from;
 	pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, from));
@@ -470,6 +453,61 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 
 
 }
+
+//b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 pointOnPlane, ST_Direction planeNormal, ST_SphereTraceData* const pSphereTraceData)
+//{
+//	ST_SphereContact contact;
+//	if (sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(from, radius, planeNormal, pointOnPlane, &contact))
+//	{
+//		pSphereTraceData->radius = radius;
+//		pSphereTraceData->sphereCenter = from;
+//		pSphereTraceData->traceDistance = 0.0f;
+//		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(from, contact.point);
+//		pSphereTraceData->rayTraceData.contact.point = contact.point;
+//		pSphereTraceData->rayTraceData.contact.normal = contact.normal;
+//		pSphereTraceData->rayTraceData.startPoint = from;
+//		return 1;
+//	}
+//	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+//	sphereTraceColliderInfinitePlaneRayTrace(from, dir, planeNormal, pointOnPlane, &pSphereTraceData->rayTraceData);
+//	if (pSphereTraceData->rayTraceData.distance < 0.0f || isinf(pSphereTraceData->rayTraceData.distance))
+//		return 0;
+//	float alpha;
+//	float dot = sphereTraceVector3Dot(dir.v, pSphereTraceData->rayTraceData.contact.normal.v);
+//	float hypotinus;
+//	ST_Vector3 orthogonal = pSphereTraceData->rayTraceData.contact.normal.v;
+//	if (fabsf(fabsf(dot) - 1) < COLLIDER_TOLERANCE)
+//	{
+//		alpha = 0.0f;
+//		hypotinus = radius;
+//	}
+//	else
+//	{
+//		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, dir.v);
+//		orthogonal = sphereTraceVector3Cross(pSphereTraceData->rayTraceData.contact.normal.v, orthogonal);
+//		sphereTraceVector3NormalizeByRef(&orthogonal);
+//		alpha = acosf(sphereTraceVector3Dot(sphereTraceVector3Negative(dir.v), orthogonal));
+//		hypotinus = radius / sinf(alpha);
+//	}
+//
+//	//if (sphereTraceVector3EpsilonEquals(dir, sphereTraceVector3Negative(orthogonal), COLLIDER_TOLERANCE))
+//	//{
+//
+//	//}
+//	//
+//
+//	pSphereTraceData->sphereCenter = sphereTraceVector3AddAndScale(from, dir.v, pSphereTraceData->rayTraceData.distance - hypotinus);
+//
+//	pSphereTraceData->rayTraceData.contact.point = sphereTraceVector3AddAndScale(pSphereTraceData->sphereCenter, sphereTraceVector3Negative(pSphereTraceData->rayTraceData.contact.normal.v), radius);
+//	pSphereTraceData->rayTraceData.startPoint = from;
+//	pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, from));
+//	pSphereTraceData->radius = radius;
+//	pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
+//	//pSphereTraceData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.hitPoint));
+//	return 1;
+//
+//
+//}
 
 b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereTraceData)
 {

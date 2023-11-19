@@ -1,6 +1,8 @@
 #include "SphereTraceCollider.h"
 
-
+//
+ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3);
+//
 int sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point);
 //
 int sphereTraceColliderTriangleGetClosestTransformedVertexIndexToPoint(const ST_TriangleCollider* const pTriangleCollider, ST_Vector3 point);
@@ -8,8 +10,6 @@ int sphereTraceColliderTriangleGetClosestTransformedVertexIndexToPoint(const ST_
 void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleCollider);
 //
 void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3);
-//
-ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3);
 //
 b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_TriangleCollider* const pTriangleCollider);
 //

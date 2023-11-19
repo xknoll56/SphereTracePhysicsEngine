@@ -276,6 +276,11 @@ ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2)
 	return sphereTraceVector3Construct(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z );
 }
 
+ST_Vector3 sphereTraceVector3SubtractAbsolute(ST_Vector3 v1, ST_Vector3 v2)
+{
+	return sphereTraceVector3Construct(fabsf(v1.x - v2.x), fabsf(v1.y - v2.y), fabsf(v1.z - v2.z));
+}
+
 void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v)
 {
 	pRef->x -= v.x;
@@ -539,6 +544,11 @@ ST_Vector3 sphereTraceVector3ProjectVector3OntoPlane(ST_Vector3 vec, ST_Directio
 	ST_Vector3 dnv = sphereTraceVector3Scale(planeNormal.v, dnm);
 	ST_Vector3 dt = sphereTraceVector3Subtract(vec, dnv);
 	return dt;
+}
+
+b32 sphereTraceVector3IsVectorPositiveInDirection(ST_Vector3 vec, ST_Direction direction)
+{
+	return sphereTraceVector3Dot(vec, direction.v) >= 0.0f;
 }
 
 ST_Matrix4 sphereTraceMatrixIdentity()

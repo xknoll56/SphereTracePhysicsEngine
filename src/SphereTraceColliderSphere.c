@@ -1,10 +1,26 @@
 #include "SphereTraceColliderSphere.h"
 #include "SphereTraceGlobals.h"
 
+
+ST_SphereCollider sphereTraceColliderSphereConstruct(float radius)
+{
+	ST_SphereCollider sphereCollider;
+	sphereCollider.collider = sphereTraceColliderConstruct(COLLIDER_SPHERE, radius);
+	sphereCollider.rigidBody = sphereTraceRigidBodyConstruct(1.0f, 1.0f);
+	sphereCollider.radius = radius;
+	sphereCollider.ignoreCollisions = 0;
+	sphereCollider.restingContact = ST_FALSE;
+	sphereCollider.prevFrameContacts = sphereTraceIndexListConstruct();
+	sphereCollider.collider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
+	sphereTraceColliderSphereAABBSetTransformedVertices(&sphereCollider);
+	return sphereCollider;
+}
+
 void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* const pSphereCollider)
 {
-	pSphereCollider->aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(pSphereCollider->rigidBody.position, pSphereCollider->aabb.halfExtents);
-	pSphereCollider->aabb.leftDownBackTransformedVertex = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, pSphereCollider->aabb.halfExtents);
+	pSphereCollider->collider.aabb.highExtent = sphereTraceVector3Add(pSphereCollider->rigidBody.position, pSphereCollider->collider.aabb.halfExtents);
+	pSphereCollider->collider.aabb.lowExtent = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, pSphereCollider->collider.aabb.halfExtents);
+	pSphereCollider->collider.aabb.center = pSphereCollider->rigidBody.position;
 }
 
 //todo, check the closest edge instead
@@ -50,34 +66,6 @@ b32 sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(ST_Vector3 impose
 	return 0;
 }
 
-ST_SphereCollider sphereTraceColliderSphereConstruct(float radius)
-{
-	ST_SphereCollider sphereCollider;
-	sphereCollider.rigidBody = sphereTraceRigidBodyConstruct(1.0f, 1.0f);
-	sphereCollider.radius = radius;
-	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
-	sphereCollider.ignoreCollisions = 0;
-	sphereTraceColliderSphereAABBSetTransformedVertices(&sphereCollider);
-	sphereCollider.collider = sphereTraceColliderConstruct(COLLIDER_SPHERE, radius);
-	sphereCollider.restingContact = ST_FALSE;
-	sphereCollider.prevFrameContacts = sphereTraceIndexListConstruct();
-	return sphereCollider;
-}
-
-ST_SphereCollider sphereTraceColliderSphereConstructWithPosition(float radius, ST_Vector3 position)
-{
-	ST_SphereCollider sphereCollider;
-	sphereCollider.rigidBody = sphereTraceRigidBodyConstruct(1.0f, 1.0f);
-	sphereCollider.rigidBody.position = position;
-	sphereCollider.radius = radius;
-	sphereCollider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
-	sphereCollider.ignoreCollisions = 0;
-	sphereTraceColliderSphereAABBSetTransformedVertices(&sphereCollider);
-	sphereCollider.collider = sphereTraceColliderConstruct(COLLIDER_SPHERE, radius);
-	sphereCollider.restingContact = ST_FALSE;
-	sphereCollider.prevFrameContacts = sphereTraceIndexListConstruct();
-	return sphereCollider;
-}
 
 b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const ST_SphereCollider* const pSphere, ST_RayTraceData* const pData)
 {

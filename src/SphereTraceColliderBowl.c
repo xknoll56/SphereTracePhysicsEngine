@@ -4,10 +4,10 @@
 ST_BowlCollider sphereTraceColliderBowlConstruct(ST_Vector3 position, float radius, ST_Direction normal)
 {
 	ST_BowlCollider bowlCollider;
+	bowlCollider.collider = sphereTraceColliderConstruct(COLLIDER_BOWL, radius);
 	bowlCollider.position = position;
 	bowlCollider.radius = radius;
 	bowlCollider.normal = normal;
-	bowlCollider.collider = sphereTraceColliderConstruct(COLLIDER_BOWL, radius);
 	//bowlCollider.collider.colliderType = COLLIDER_BOWL;
 	//bowlCollider.collider.bucketIndices = sphereTraceIndexListConstruct();
 	sphereTraceColliderBowlsSetAABB(&bowlCollider);
@@ -86,7 +86,8 @@ b32 sphereTraceColliderBowlSphereCollisionTest(ST_BowlCollider* const pBowlColli
 void sphereTraceColliderBowlsSetAABB(ST_BowlCollider* const pBowlCollider)
 {
 	ST_Vector3 centroid = pBowlCollider->position;
-	pBowlCollider->aabb.halfExtents = sphereTraceVector3UniformSize(pBowlCollider->radius);
-	pBowlCollider->aabb.rightTopForwardsTransformedVertex = sphereTraceVector3Add(centroid, pBowlCollider->aabb.halfExtents);
-	pBowlCollider->aabb.leftDownBackTransformedVertex = sphereTraceVector3Subtract(centroid, pBowlCollider->aabb.halfExtents);
+	pBowlCollider->collider.aabb.halfExtents = sphereTraceVector3UniformSize(pBowlCollider->radius);
+	pBowlCollider->collider.aabb.highExtent = sphereTraceVector3Add(centroid, pBowlCollider->collider.aabb.halfExtents);
+	pBowlCollider->collider.aabb.lowExtent = sphereTraceVector3Subtract(centroid, pBowlCollider->collider.aabb.halfExtents);
+	pBowlCollider->collider.aabb.center = centroid;
 }

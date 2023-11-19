@@ -1,6 +1,9 @@
 #pragma once
 #include "SphereTraceCollider.h"
 
+//
+ST_SphereCollider sphereTraceColliderSphereConstruct(float radius);
+//
 void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* const pSphereCollider);
 //
 b32 sphereTraceColliderAABBIntersectImposedSphere(const ST_AABB* const aabb, ST_Vector3 imposedPosition, float imposedRadius);
@@ -8,10 +11,6 @@ b32 sphereTraceColliderAABBIntersectImposedSphere(const ST_AABB* const aabb, ST_
 b32 sphereTraceColliderAABBIntersectSphere(const ST_AABB* const aabb, const ST_SphereCollider* const pSphereCollider);
 //
 b32 sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(ST_Vector3 imposedPosition, float imposedRadius, ST_Direction planeNormal, ST_Vector3 pointOnPlane, ST_SphereContact* const pContact);
-//
-ST_SphereCollider sphereTraceColliderSphereConstruct(float radius);
-//
-ST_SphereCollider sphereTraceColliderSphereConstructWithPosition(float radius, ST_Vector3 position);
 //
 b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const ST_SphereCollider* const pSphere, ST_RayTraceData* const pData);
 //

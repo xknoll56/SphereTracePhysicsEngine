@@ -1,6 +1,7 @@
 #pragma once
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
+#include "SphereTraceAllocator.h"
 
 extern const ST_Vector2 gVector2Zero;
 extern const ST_Vector2 gVector2One;
@@ -54,3 +55,5 @@ extern const ST_Direction gDirectionBack;
 
 #define ST_TRUE 1
 #define ST_FALSE 0
+
+#define ST_OBJECT_POOL_FOR_EACH(pObject, pObjectPool) \

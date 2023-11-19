@@ -71,11 +71,11 @@ ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float
 
 b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 point)
 {
-	if (point.x >= aabb->leftDownBackTransformedVertex.x && point.x <= aabb->rightTopForwardsTransformedVertex.x)
+	if (point.x >= aabb->lowExtent.x && point.x <= aabb->highExtent.x)
 	{
-		if (point.y >= aabb->leftDownBackTransformedVertex.y && point.y <= aabb->rightTopForwardsTransformedVertex.y)
+		if (point.y >= aabb->lowExtent.y && point.y <= aabb->highExtent.y)
 		{
-			if (point.z >= aabb->leftDownBackTransformedVertex.z && point.z <= aabb->rightTopForwardsTransformedVertex.z)
+			if (point.z >= aabb->lowExtent.z && point.z <= aabb->highExtent.z)
 			{
 				return 1;
 			}
@@ -86,139 +86,165 @@ b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 p
 
 void sphereTraceColliderAABBSetHalfExtents(ST_AABB* const aabb)
 {
-	aabb->halfExtents = sphereTraceVector3Subtract(aabb->rightTopForwardsTransformedVertex, sphereTraceVector3Average(aabb->leftDownBackTransformedVertex, aabb->rightTopForwardsTransformedVertex));
+	aabb->halfExtents = sphereTraceVector3Subtract(aabb->highExtent, sphereTraceVector3Average(aabb->lowExtent, aabb->highExtent));
 }
 
 void sphereTraceColliderAABBResizeAABBToContainAnotherAABB(ST_AABB* const aabbToResize, const ST_AABB* const aabbToContain)
 {
 	b32 resizeDidHappen = 0;
-	if (aabbToContain->leftDownBackTransformedVertex.x < aabbToResize->leftDownBackTransformedVertex.x)
+	if (aabbToContain->lowExtent.x < aabbToResize->lowExtent.x)
 	{
-		aabbToResize->leftDownBackTransformedVertex.x = aabbToContain->leftDownBackTransformedVertex.x;
+		aabbToResize->lowExtent.x = aabbToContain->lowExtent.x;
 		resizeDidHappen = 1;
 	}
-	if (aabbToContain->leftDownBackTransformedVertex.y < aabbToResize->leftDownBackTransformedVertex.y)
+	if (aabbToContain->lowExtent.y < aabbToResize->lowExtent.y)
 	{
-		aabbToResize->leftDownBackTransformedVertex.y = aabbToContain->leftDownBackTransformedVertex.y;
+		aabbToResize->lowExtent.y = aabbToContain->lowExtent.y;
 		resizeDidHappen = 1;
 	}
-	if (aabbToContain->leftDownBackTransformedVertex.z < aabbToResize->leftDownBackTransformedVertex.z)
+	if (aabbToContain->lowExtent.z < aabbToResize->lowExtent.z)
 	{
-		aabbToResize->leftDownBackTransformedVertex.z = aabbToContain->leftDownBackTransformedVertex.z;
+		aabbToResize->lowExtent.z = aabbToContain->lowExtent.z;
 		resizeDidHappen = 1;
 	}
-	if (aabbToContain->rightTopForwardsTransformedVertex.x > aabbToResize->rightTopForwardsTransformedVertex.x)
+	if (aabbToContain->highExtent.x > aabbToResize->highExtent.x)
 	{
-		aabbToResize->rightTopForwardsTransformedVertex.x = aabbToContain->rightTopForwardsTransformedVertex.x;
+		aabbToResize->highExtent.x = aabbToContain->highExtent.x;
 		resizeDidHappen = 1;
 	}
-	if (aabbToContain->rightTopForwardsTransformedVertex.y > aabbToResize->rightTopForwardsTransformedVertex.y)
+	if (aabbToContain->highExtent.y > aabbToResize->highExtent.y)
 	{
-		aabbToResize->rightTopForwardsTransformedVertex.y = aabbToContain->rightTopForwardsTransformedVertex.y;
+		aabbToResize->highExtent.y = aabbToContain->highExtent.y;
 		resizeDidHappen = 1;
 	}
-	if (aabbToContain->rightTopForwardsTransformedVertex.z > aabbToResize->rightTopForwardsTransformedVertex.z)
+	if (aabbToContain->highExtent.z > aabbToResize->highExtent.z)
 	{
-		aabbToResize->rightTopForwardsTransformedVertex.z = aabbToContain->rightTopForwardsTransformedVertex.z;
+		aabbToResize->highExtent.z = aabbToContain->highExtent.z;
 		resizeDidHappen = 1;
 	}
 	if (resizeDidHappen)
 	{
 		sphereTraceColliderAABBSetHalfExtents(aabbToResize);
+		aabbToResize->center = sphereTraceVector3Average(aabbToResize->highExtent, aabbToResize->lowExtent);
 	}
 }
 
 b32 sphereTraceColliderAABBIntersectAABB(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
 {
-	if ((aabb1->rightTopForwardsTransformedVertex.x >= aabb2->rightTopForwardsTransformedVertex.x && aabb1->leftDownBackTransformedVertex.x <= aabb2->rightTopForwardsTransformedVertex.x)
-		|| (aabb1->rightTopForwardsTransformedVertex.x >= aabb2->leftDownBackTransformedVertex.x && aabb1->leftDownBackTransformedVertex.x <= aabb2->leftDownBackTransformedVertex.x)
-		|| (aabb2->rightTopForwardsTransformedVertex.x >= aabb1->rightTopForwardsTransformedVertex.x && aabb2->leftDownBackTransformedVertex.x <= aabb1->rightTopForwardsTransformedVertex.x)
-		|| (aabb2->rightTopForwardsTransformedVertex.x >= aabb1->leftDownBackTransformedVertex.x && aabb2->leftDownBackTransformedVertex.x <= aabb1->leftDownBackTransformedVertex.x))
+	ST_Vector3 absdp = sphereTraceVector3SubtractAbsolute(aabb1->center, aabb2->center);
+	if (absdp.x <= (aabb1->halfExtents.x + aabb2->halfExtents.x))
 	{
-		if ((aabb1->rightTopForwardsTransformedVertex.y >= aabb2->rightTopForwardsTransformedVertex.y && aabb1->leftDownBackTransformedVertex.y <= aabb2->rightTopForwardsTransformedVertex.y)
-			|| (aabb1->rightTopForwardsTransformedVertex.y >= aabb2->leftDownBackTransformedVertex.y && aabb1->leftDownBackTransformedVertex.y <= aabb2->leftDownBackTransformedVertex.y)
-			|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->rightTopForwardsTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->rightTopForwardsTransformedVertex.y)
-			|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->leftDownBackTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->leftDownBackTransformedVertex.y))
+		if (absdp.y <= (aabb1->halfExtents.y + aabb2->halfExtents.y))
 		{
-			if ((aabb1->rightTopForwardsTransformedVertex.z >= aabb2->rightTopForwardsTransformedVertex.z && aabb1->leftDownBackTransformedVertex.z <= aabb2->rightTopForwardsTransformedVertex.z)
-				|| (aabb1->rightTopForwardsTransformedVertex.z >= aabb2->leftDownBackTransformedVertex.z && aabb1->leftDownBackTransformedVertex.z <= aabb2->leftDownBackTransformedVertex.z)
-				|| (aabb2->rightTopForwardsTransformedVertex.z >= aabb1->rightTopForwardsTransformedVertex.z && aabb2->leftDownBackTransformedVertex.z <= aabb1->rightTopForwardsTransformedVertex.z)
-				|| (aabb2->rightTopForwardsTransformedVertex.z >= aabb1->leftDownBackTransformedVertex.z && aabb2->leftDownBackTransformedVertex.z <= aabb1->leftDownBackTransformedVertex.z))
+			if (absdp.z <= (aabb1->halfExtents.z + aabb2->halfExtents.z))
 			{
 				return 1;
 			}
 		}
 	}
-
 	return 0;
+	//if ((aabb1->highExtent.x >= aabb2->highExtent.x && aabb1->lowExtent.x <= aabb2->highExtent.x)
+	//	|| (aabb1->highExtent.x >= aabb2->lowExtent.x && aabb1->lowExtent.x <= aabb2->lowExtent.x)
+	//	|| (aabb2->highExtent.x >= aabb1->highExtent.x && aabb2->lowExtent.x <= aabb1->highExtent.x)
+	//	|| (aabb2->highExtent.x >= aabb1->lowExtent.x && aabb2->lowExtent.x <= aabb1->lowExtent.x))
+	//{
+	//	if ((aabb1->highExtent.y >= aabb2->highExtent.y && aabb1->lowExtent.y <= aabb2->highExtent.y)
+	//		|| (aabb1->highExtent.y >= aabb2->lowExtent.y && aabb1->lowExtent.y <= aabb2->lowExtent.y)
+	//		|| (aabb2->highExtent.y >= aabb1->highExtent.y && aabb2->lowExtent.y <= aabb1->highExtent.y)
+	//		|| (aabb2->highExtent.y >= aabb1->lowExtent.y && aabb2->lowExtent.y <= aabb1->lowExtent.y))
+	//	{
+	//		if ((aabb1->highExtent.z >= aabb2->highExtent.z && aabb1->lowExtent.z <= aabb2->highExtent.z)
+	//			|| (aabb1->highExtent.z >= aabb2->lowExtent.z && aabb1->lowExtent.z <= aabb2->lowExtent.z)
+	//			|| (aabb2->highExtent.z >= aabb1->highExtent.z && aabb2->lowExtent.z <= aabb1->highExtent.z)
+	//			|| (aabb2->highExtent.z >= aabb1->lowExtent.z && aabb2->lowExtent.z <= aabb1->lowExtent.z))
+	//		{
+	//			return 1;
+	//		}
+	//	}
+	//}
+
+	//return 0;
 }
 
 b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
 {
-	if ((aabb1->rightTopForwardsTransformedVertex.x >= aabb2->rightTopForwardsTransformedVertex.x && aabb1->leftDownBackTransformedVertex.x <= aabb2->rightTopForwardsTransformedVertex.x)
-		|| (aabb1->rightTopForwardsTransformedVertex.x >= aabb2->leftDownBackTransformedVertex.x && aabb1->leftDownBackTransformedVertex.x <= aabb2->leftDownBackTransformedVertex.x)
-		|| (aabb2->rightTopForwardsTransformedVertex.x >= aabb1->rightTopForwardsTransformedVertex.x && aabb2->leftDownBackTransformedVertex.x <= aabb1->rightTopForwardsTransformedVertex.x)
-		|| (aabb2->rightTopForwardsTransformedVertex.x >= aabb1->leftDownBackTransformedVertex.x && aabb2->leftDownBackTransformedVertex.x <= aabb1->leftDownBackTransformedVertex.x))
+	if (fabsf(aabb1->center.x - aabb2->center.x) <= (aabb1->halfExtents.x + aabb2->halfExtents.x))
 	{
-
-		if ((aabb1->rightTopForwardsTransformedVertex.z >= aabb2->rightTopForwardsTransformedVertex.z && aabb1->leftDownBackTransformedVertex.z <= aabb2->rightTopForwardsTransformedVertex.z)
-			|| (aabb1->rightTopForwardsTransformedVertex.z >= aabb2->leftDownBackTransformedVertex.z && aabb1->leftDownBackTransformedVertex.z <= aabb2->leftDownBackTransformedVertex.z)
-			|| (aabb2->rightTopForwardsTransformedVertex.z >= aabb1->rightTopForwardsTransformedVertex.z && aabb2->leftDownBackTransformedVertex.z <= aabb1->rightTopForwardsTransformedVertex.z)
-			|| (aabb2->rightTopForwardsTransformedVertex.z >= aabb1->leftDownBackTransformedVertex.z && aabb2->leftDownBackTransformedVertex.z <= aabb1->leftDownBackTransformedVertex.z))
+		if (fabsf(aabb1->center.z - aabb2->center.z) <= (aabb1->halfExtents.z + aabb2->halfExtents.z))
 		{
 			return 1;
 		}
 	}
-
 	return 0;
+	//if ((aabb1->highExtent.x >= aabb2->highExtent.x && aabb1->lowExtent.x <= aabb2->highExtent.x)
+	//	|| (aabb1->highExtent.x >= aabb2->lowExtent.x && aabb1->lowExtent.x <= aabb2->lowExtent.x)
+	//	|| (aabb2->highExtent.x >= aabb1->highExtent.x && aabb2->lowExtent.x <= aabb1->highExtent.x)
+	//	|| (aabb2->highExtent.x >= aabb1->lowExtent.x && aabb2->lowExtent.x <= aabb1->lowExtent.x))
+	//{
+
+	//	if ((aabb1->highExtent.z >= aabb2->highExtent.z && aabb1->lowExtent.z <= aabb2->highExtent.z)
+	//		|| (aabb1->highExtent.z >= aabb2->lowExtent.z && aabb1->lowExtent.z <= aabb2->lowExtent.z)
+	//		|| (aabb2->highExtent.z >= aabb1->highExtent.z && aabb2->lowExtent.z <= aabb1->highExtent.z)
+	//		|| (aabb2->highExtent.z >= aabb1->lowExtent.z && aabb2->lowExtent.z <= aabb1->lowExtent.z))
+	//	{
+	//		return 1;
+	//	}
+	//}
+
+	//return 0;
 }
 
 b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
 {
-	if ((aabb1->rightTopForwardsTransformedVertex.y >= aabb2->rightTopForwardsTransformedVertex.y && aabb1->leftDownBackTransformedVertex.y <= aabb2->rightTopForwardsTransformedVertex.y)
-		|| (aabb1->rightTopForwardsTransformedVertex.y >= aabb2->leftDownBackTransformedVertex.y && aabb1->leftDownBackTransformedVertex.y <= aabb2->leftDownBackTransformedVertex.y)
-		|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->rightTopForwardsTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->rightTopForwardsTransformedVertex.y)
-		|| (aabb2->rightTopForwardsTransformedVertex.y >= aabb1->leftDownBackTransformedVertex.y && aabb2->leftDownBackTransformedVertex.y <= aabb1->leftDownBackTransformedVertex.y))
+	if (fabsf(aabb1->center.y - aabb2->center.y) <= (aabb1->halfExtents.y + aabb2->halfExtents.y))
 	{
 		return 1;
 	}
-
 	return 0;
+	//if ((aabb1->highExtent.y >= aabb2->highExtent.y && aabb1->lowExtent.y <= aabb2->highExtent.y)
+	//	|| (aabb1->highExtent.y >= aabb2->lowExtent.y && aabb1->lowExtent.y <= aabb2->lowExtent.y)
+	//	|| (aabb2->highExtent.y >= aabb1->highExtent.y && aabb2->lowExtent.y <= aabb1->highExtent.y)
+	//	|| (aabb2->highExtent.y >= aabb1->lowExtent.y && aabb2->lowExtent.y <= aabb1->lowExtent.y))
+	//{
+	//	return 1;
+	//}
+
+	//return 0;
 }
 
 ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb)
 {
-	return sphereTraceVector3Average(aabb->leftDownBackTransformedVertex, aabb->rightTopForwardsTransformedVertex);
+	return sphereTraceVector3Average(aabb->lowExtent, aabb->highExtent);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetRightBottomBackExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->rightTopForwardsTransformedVertex.x, paabb->leftDownBackTransformedVertex.y, paabb->leftDownBackTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->lowExtent.z);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetLeftTopBackExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->leftDownBackTransformedVertex.x, paabb->rightTopForwardsTransformedVertex.y, paabb->leftDownBackTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetLeftBottomForwardExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->leftDownBackTransformedVertex.x, paabb->leftDownBackTransformedVertex.y, paabb->rightTopForwardsTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetRightTopBackExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->rightTopForwardsTransformedVertex.x, paabb->rightTopForwardsTransformedVertex.y, paabb->leftDownBackTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetRightBottomForwardExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->rightTopForwardsTransformedVertex.x, paabb->leftDownBackTransformedVertex.y, paabb->rightTopForwardsTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
 }
 
 ST_Vector3 sphereTraceColliderAABBGetLeftTopForwardExtent(const ST_AABB* const paabb)
 {
-	return sphereTraceVector3Construct(paabb->leftDownBackTransformedVertex.x, paabb->rightTopForwardsTransformedVertex.y, paabb->rightTopForwardsTransformedVertex.z);
+	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->highExtent.z);
 }
 
 
@@ -232,14 +258,14 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 		{
 			if (dp.z >= 0.0f)
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(pSphereCastData->rayTraceData.startPoint, gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, gVector3One, pSphereCastData->radius);
+				aabb->lowExtent = sphereTraceVector3AddAndScale(pSphereCastData->rayTraceData.startPoint, gVector3One, -pSphereCastData->radius);
+				aabb->highExtent = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 			}
 		}
@@ -247,16 +273,16 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 		{
 			if (dp.z >= 0.0f)
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 
 			}
@@ -268,16 +294,16 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 		{
 			if (dp.z >= 0.0f)
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, pSphereCastData->radius);
 			}
 		}
@@ -285,20 +311,20 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 		{
 			if (dp.z >= 0.0f)
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
+				aabb->lowExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->sphereCenter.x,
 					pSphereCastData->sphereCenter.y, pSphereCastData->rayTraceData.startPoint.z), gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
+				aabb->highExtent = sphereTraceVector3AddAndScale(sphereTraceVector3Construct(pSphereCastData->rayTraceData.startPoint.x,
 					pSphereCastData->rayTraceData.startPoint.y, pSphereCastData->sphereCenter.z), gVector3One, pSphereCastData->radius);
 			}
 			else
 			{
-				aabb->leftDownBackTransformedVertex = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, gVector3One, -pSphereCastData->radius);
-				aabb->rightTopForwardsTransformedVertex = sphereTraceVector3AddAndScale(pSphereCastData->rayTraceData.startPoint, gVector3One, pSphereCastData->radius);
+				aabb->lowExtent = sphereTraceVector3AddAndScale(pSphereCastData->sphereCenter, gVector3One, -pSphereCastData->radius);
+				aabb->highExtent = sphereTraceVector3AddAndScale(pSphereCastData->rayTraceData.startPoint, gVector3One, pSphereCastData->radius);
 			}
 		}
 	}
 
-	aabb->halfExtents = sphereTraceVector3Subtract(aabb->rightTopForwardsTransformedVertex, sphereTraceVector3Average(aabb->rightTopForwardsTransformedVertex, aabb->leftDownBackTransformedVertex));
+	aabb->halfExtents = sphereTraceVector3Subtract(aabb->highExtent, sphereTraceVector3Average(aabb->highExtent, aabb->lowExtent));
 }
 
 
@@ -396,7 +422,7 @@ b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float 
 //}
 
 
-b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
+b32 sphereTraceColliderEdgeSphereTrace_(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
 {
 	ST_SphereContact contact;
 	//dir = sphereTraceVector3Normalize(dir);
@@ -456,7 +482,7 @@ b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float 
 		{
 			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point2, pSphereTraceData);
 		}
-		else 
+		else
 		{
 
 			pSphereTraceData->rayTraceData.startPoint = from;
@@ -523,6 +549,63 @@ b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float
 			pSphereTraceData->rayTraceData.contact.normal = sphereTraceDirectionNegative(rtd.contact.normal);
 			pSphereTraceData->rayTraceData.contact.collisionType = ST_COLLISION_EDGE;
 			pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(pSphereTraceData->rayTraceData.contact.point, pSphereTraceData->rayTraceData.startPoint);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
+{
+	pSphereTraceData->radius = radius;
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	if (sphereTraceColliderEdgeImposedSphereCollisionTest(pEdge, from, radius, &pSphereTraceData->rayTraceData.contact))
+	{
+		pSphereTraceData->radius = radius;
+		pSphereTraceData->rayTraceData.startPoint = from;
+		pSphereTraceData->sphereCenter = from;
+		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(from, pSphereTraceData->rayTraceData.contact.point));
+		pSphereTraceData->traceDistance = 0.0f;
+		return 1;
+	}
+	ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, pEdge->dir.v));
+	ST_Vector3 dp = sphereTraceVector3Subtract(pEdge->point1, from);
+	float crossDist = sphereTraceVector3Dot(cross, dp);
+	if (fabsf(crossDist) <= radius)
+	{
+		float theta = asinf(crossDist / radius);
+		float sliceRadius = cosf(theta) * radius;
+		ST_Direction normal = sphereTraceDirectionConstruct(sphereTraceVector3Cross(cross, pEdge->dir.v), 1);
+		ST_Vector3 temp = sphereTraceVector3Subtract(pEdge->point1, from);
+		if (sphereTraceVector3IsVectorPositiveInDirection(temp, normal))
+			temp = sphereTraceVector3AddAndScale(pEdge->point1, normal.v, -sliceRadius);
+		else
+			temp = sphereTraceVector3AddAndScale(pEdge->point1, normal.v, sliceRadius);
+		sphereTraceColliderInfinitePlaneRayTrace(sphereTraceVector3AddAndScale(from, cross, crossDist), dir, normal, temp, &pSphereTraceData->rayTraceData);
+		if (pSphereTraceData->rayTraceData.distance < 0.0f || isinf(pSphereTraceData->rayTraceData.distance))
+			return 0;
+		float lineDist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, pEdge->point1), pEdge->dir.v);
+		if (lineDist < 0.0f)
+		{
+			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point1, pSphereTraceData);
+		}
+		else if (lineDist > pEdge->dist)
+		{
+			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point2, pSphereTraceData);
+		}
+		else
+		{
+
+			temp = pSphereTraceData->rayTraceData.contact.point;
+			pSphereTraceData->sphereCenter = sphereTraceVector3AddAndScale(temp, cross, -crossDist);
+			pSphereTraceData->rayTraceData.contact.point = sphereTraceVector3AddAndScale(temp, pSphereTraceData->rayTraceData.contact.normal.v, -sliceRadius);
+			pSphereTraceData->rayTraceData.contact.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter,
+				pSphereTraceData->rayTraceData.contact.point));
+			pSphereTraceData->rayTraceData.startPoint = from;
+			pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, from));
+			pSphereTraceData->radius = radius;
+			pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
+			//pSphereTraceData->rayTraceData.normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.hitPoint));
 			return 1;
 		}
 	}

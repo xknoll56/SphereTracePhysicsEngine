@@ -127,5 +127,6 @@ void sphereTraceColliderPipeSetAABB(ST_PipeCollider* const pPipeCollider)
 	stdDummy.radius = pPipeCollider->radius;
 	stdDummy.rayTraceData.startPoint = startPoint;
 	stdDummy.sphereCenter = endPoint;
-	sphereTraceColliderResizeAABBWithSpherecast(&stdDummy, &pPipeCollider->aabb);
+	sphereTraceColliderResizeAABBWithSpherecast(&stdDummy, &pPipeCollider->collider.aabb);
+	pPipeCollider->collider.aabb.center = sphereTraceVector3Average(startPoint, endPoint);
 }

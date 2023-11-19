@@ -3,18 +3,23 @@
 #include "SphereTraceAllocator.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceCollider.h"
+#include "SphereTraceSpacialPartition.h"
 
 
 
 #define ST_INDEX_POOL_DEFAULT_SIZE 1000
+#define ST_OCTTREENODE_POOL_DEFAULT_SIZE 1000
 #define ST_FUNCTION_POOL_DEFAULT_SIZE 20
 #define ST_INDEX_ALLOCATOR_DEFAULT_SIZE 5
+#define ST_CONTACT_LINEAR_ALLOCATOR_SIZE 10
 
 static ST_Allocator indexListAllocator;
 static ST_Allocator vector3ListAllocator;
 static ST_Allocator vector3Allocator;
 static ST_Allocator callbackFunctionAllocator;
 static ST_Allocator contactEntryAllocator;
+static ST_Allocator sphereContactLinearAllocator;
+static ST_Allocator octTreeNodeAllocator;
 
 ST_FreeStack sphereTraceAllocatorFreeStackConstruct(ST_Index capacity, void* pArr, ST_Index objectSize)
 {
@@ -82,10 +87,16 @@ void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, 
 	}
 }
 
+void sphereTraceAllocatorLinearObjectPoolReset(ST_ObjectPool* const pLinearObjectPool)
+{
+	pLinearObjectPool->occupied = 0;
+	pLinearObjectPool->freeStack.head = 0;
+}
+
 ST_Allocator sphereTraceAllocatorConstruct(ST_Index poolCapacity, ST_Index objectSize, ST_Index maxPools)
 {
 	ST_Allocator allocator;
-	allocator.curPool = 0;
+	allocator.curPoolIndex = 0;
 	allocator.numObjects = 0;
 	allocator.maxPools = maxPools;
 	allocator.objectPools = (ST_ObjectPool**)malloc(allocator.maxPools * sizeof(ST_ObjectPool*));
@@ -94,15 +105,22 @@ ST_Allocator sphereTraceAllocatorConstruct(ST_Index poolCapacity, ST_Index objec
 		allocator.objectPools[i] = (ST_ObjectPool*)malloc(sizeof(ST_ObjectPool));
 		*allocator.objectPools[i] = sphereTraceAllocatorObjectPoolConstruct(poolCapacity, objectSize);
 	}
+	allocator.pCurrentObjectPool = allocator.objectPools[0];
 	return allocator;
 }
 
-void* sphereTraceAllocatorAllocateObject(ST_Allocator* const pAllocator)
+
+//If the allocator failes to reallocate, the program is closed because we
+//are out of memory
+b32 sphereTraceAllocatorIncrementObject(ST_Allocator* const pAllocator)
 {
 	pAllocator->numObjects++;
 	if (pAllocator->numObjects % pAllocator->objectPools[0]->capacity == 0)
-		pAllocator->curPool++;
-	if (pAllocator->curPool >= pAllocator->maxPools)
+	{
+		pAllocator->curPoolIndex++;
+		pAllocator->pCurrentObjectPool = pAllocator->objectPools[pAllocator->curPoolIndex];
+	}
+	if (pAllocator->curPoolIndex >= pAllocator->maxPools)
 	{
 		ST_Index newMax = pAllocator->maxPools * 2;
 		void* dataPointers = (ST_ObjectPool**)realloc(pAllocator->objectPools, newMax * sizeof(ST_ObjectPool*));
@@ -116,13 +134,20 @@ void* sphereTraceAllocatorAllocateObject(ST_Allocator* const pAllocator)
 					pAllocator->objectPools[0]->objectSize);
 			}
 			pAllocator->maxPools = newMax;
+			return 1;
 		}
 		else
 		{
-			return NULL;
+			return 0;
 		}
 	}
-	return sphereTraceAllocatorObjectPoolAllocateObject(pAllocator->objectPools[pAllocator->curPool]);
+}
+
+void* sphereTraceAllocatorAllocateObject(ST_Allocator* const pAllocator)
+{
+	if (!sphereTraceAllocatorIncrementObject(pAllocator))
+		exit(0);
+	return sphereTraceAllocatorObjectPoolAllocateObject(pAllocator->objectPools[pAllocator->curPoolIndex]);
 }
 
 void sphereTraceAllocatorFreeObject(ST_Allocator* const pAllocator, void* pObject)
@@ -130,10 +155,56 @@ void sphereTraceAllocatorFreeObject(ST_Allocator* const pAllocator, void* pObjec
 	if (pAllocator->numObjects > 0)
 	{
 		pAllocator->numObjects--;
-		sphereTraceAllocatorObjectPoolFreeObject(pAllocator->objectPools[pAllocator->curPool], pObject);
-		if (pAllocator->objectPools[pAllocator->curPool]->occupied == 0 && pAllocator->curPool>0)
-			pAllocator->curPool--;
+		sphereTraceAllocatorObjectPoolFreeObject(pAllocator->objectPools[pAllocator->curPoolIndex], pObject);
+		if (pAllocator->objectPools[pAllocator->curPoolIndex]->occupied == 0 && pAllocator->curPoolIndex >0)
+			pAllocator->curPoolIndex--;
 	}
+}
+
+ST_Allocator sphereTraceLinearAllocatorConstruct(ST_Index poolCapacity, ST_Index objectSize, ST_Index maxPools)
+{
+	ST_Allocator linearAllocator;
+	linearAllocator.maxPools = maxPools;
+	linearAllocator.curPoolIndex = 0;
+	linearAllocator.numObjects = 0;
+	linearAllocator.objectPools = (ST_ObjectPool**)malloc(linearAllocator.maxPools * sizeof(ST_ObjectPool*));
+	for (int i = 0; i < maxPools; i++)
+	{
+		linearAllocator.objectPools[i] = (ST_ObjectPool*)malloc(sizeof(ST_ObjectPool));
+		*linearAllocator.objectPools[i] = sphereTraceAllocatorObjectPoolConstruct(poolCapacity, objectSize);
+	}
+	linearAllocator.pCurrentObjectPool = linearAllocator.objectPools[0];
+	return linearAllocator;
+}
+
+void* sphereTraceLinearAllocatorAllocateObject(ST_Allocator* const pAllocator)
+{
+	ST_Index* pObject = pAllocator->pCurrentObjectPool->freeStack.pStack[pAllocator->pCurrentObjectPool->occupied++];
+	if (!sphereTraceAllocatorIncrementObject(pAllocator))
+		exit(0);
+	return pObject;
+}
+
+void sphereTraceLinearAllocatorReset(ST_Allocator* const pLinearAllocator)
+{
+	for (int i = 0; i < pLinearAllocator->curPoolIndex +1; i++)
+	{
+		sphereTraceAllocatorLinearObjectPoolReset(pLinearAllocator->objectPools[i]);
+	}
+	pLinearAllocator->curPoolIndex = 0;
+	pLinearAllocator->pCurrentObjectPool = pLinearAllocator->objectPools[0];
+	pLinearAllocator->numObjects = 0;
+}
+
+void* sphereTraceLinearAllocatorGetByIndex(ST_Allocator* const pLinearAllocator, ST_Index index)
+{
+	if (index < pLinearAllocator->numObjects)
+	{
+		ST_Index poolIndex = index / pLinearAllocator->objectPools[0]->capacity;
+		ST_ObjectPool* curPool = pLinearAllocator->objectPools[poolIndex];
+		return (ST_Index)curPool->data + (index % curPool->capacity) * curPool->objectSize;
+	}
+	return NULL;
 }
 
 
@@ -144,6 +215,18 @@ void sphereTraceAllocatorInitialize()
 	vector3Allocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_Vector3), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	callbackFunctionAllocator = sphereTraceAllocatorConstruct(ST_FUNCTION_POOL_DEFAULT_SIZE, sizeof(ST_CallbackFunction), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	contactEntryAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_SphereContactEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	sphereContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_SphereContact), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	octTreeNodeAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_OctTreeNode), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+}
+
+ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode()
+{
+	return sphereTraceAllocatorAllocateObject(&octTreeNodeAllocator);
+}
+
+void sphereTraceAllocatorFreeOctTreeNode(void* pIndex)
+{
+	sphereTraceAllocatorFreeObject(&octTreeNodeAllocator, pIndex);
 }
 
 ST_IndexListData* sphereTraceAllocatorAllocateIndexListData()
@@ -196,4 +279,24 @@ ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry()
 void sphereTraceAllocatorFreeContactEntry(void* pIndex)
 {
 	sphereTraceAllocatorFreeObject(&contactEntryAllocator, pIndex);
+}
+
+ST_SphereContact* sphereTraceLinearAllocatorAllocateSphereContact()
+{
+	return sphereTraceLinearAllocatorAllocateObject(&sphereContactLinearAllocator);
+}
+
+ST_Index sphereTraceLinearAllocatorGetSphereContactCount()
+{
+	return sphereContactLinearAllocator.numObjects;
+}
+
+ST_SphereContact* sphereTraceLinearAllocatorGetSphereContactByIndex(ST_Index index)
+{
+	return sphereTraceLinearAllocatorGetByIndex(&sphereContactLinearAllocator, index);
+}
+
+void sphereTraceLinearAllocatorResetSphereContacts()
+{
+	sphereTraceLinearAllocatorReset(&sphereContactLinearAllocator);
 }

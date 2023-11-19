@@ -58,10 +58,13 @@ typedef struct ST_AABB
 {
 	//The size of the aabb
 	ST_Vector3 halfExtents;
-
+	
 	//Transformed vertices
-	ST_Vector3 rightTopForwardsTransformedVertex;
-	ST_Vector3 leftDownBackTransformedVertex;
+	ST_Vector3 highExtent;
+	ST_Vector3 lowExtent;
+	
+	//center
+	ST_Vector3 center;
 } ST_AABB;
 
 typedef struct ST_Edge
@@ -99,6 +102,7 @@ typedef struct ST_Collider
 	ST_Index colliderIndex;
 	ST_SubscriberList subscriberList;
 	float boundingRadius;
+	ST_AABB aabb;
 	ST_Tag tag;
 } ST_Collider;
 
@@ -132,7 +136,6 @@ typedef struct ST_PlaneCollider
 	ST_Quaternion rotation;
 	ST_Vector3 transformedVertices[4];
 	ST_Edge transformedEdges[4];
-	ST_AABB aabb;
 	//ST_IndexList bucketIndices;
 	//ST_Index planeColliderIndex;
 } ST_PlaneCollider;
@@ -148,7 +151,6 @@ typedef struct ST_TriangleCollider
 	float vertexDists[3];
 	ST_Direction normal;
 	ST_Vector3 centroid;
-	ST_AABB aabb;
 
 	//members needed for terrain optimizations
 	ST_Index terrainIndex;
@@ -166,7 +168,6 @@ typedef struct ST_SphereCollider
 	b32 restingContact;
 	float radius;
 	ST_RigidBody rigidBody;
-	ST_AABB aabb;
 	b32 ignoreCollisions;
 	ST_IndexList prevFrameContacts;
 } ST_SphereCollider;
@@ -177,7 +178,6 @@ typedef struct ST_BowlCollider
 	ST_Vector3 position;
 	float radius;
 	ST_Direction normal;
-	ST_AABB aabb;
 } ST_BowlCollider;
 
 typedef struct ST_PipeCollider
@@ -189,7 +189,6 @@ typedef struct ST_PipeCollider
 	ST_Direction up;
 	ST_Direction right;
 	ST_Direction forward;
-	ST_AABB aabb;
 } ST_PipeCollider;
 
 typedef enum ST_PlaneEdgeDirection
@@ -322,7 +321,6 @@ typedef struct ST_UniformTerrainCollider
 	float xSize;
 	float zSize;
 	float cellSize;
-	ST_AABB aabb;
 	float angle;
 	ST_Vector3 right;
 	ST_Vector3 forward;

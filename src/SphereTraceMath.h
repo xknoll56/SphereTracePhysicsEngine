@@ -7,6 +7,8 @@
 
 typedef int b32;
 
+typedef char b8;
+
 typedef struct ST_Vector2
 {
 	float x;
@@ -129,6 +131,8 @@ void sphereTraceVector3AddByRef(ST_Vector3* const pRef, ST_Vector3 v);
 
 ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2);
 
+ST_Vector3 sphereTraceVector3SubtractAbsolute(ST_Vector3 v1, ST_Vector3 v2);
+
 void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v);
 
 ST_Vector3 sphereTraceVector3Negative(ST_Vector3 v);
@@ -198,6 +202,8 @@ ST_Vector4 sphereTraceVector4Lerp(ST_Vector4 point1, ST_Vector4 point2, float t)
 ST_Vector3 sphereTraceNormalizeBetweenPoints(ST_Vector3 to, ST_Vector3 from);
 
 ST_Vector3 sphereTraceVector3ProjectVector3OntoPlane(ST_Vector3 vec, ST_Direction planeNormal);
+
+b32 sphereTraceVector3IsVectorPositiveInDirection(ST_Vector3 vec, ST_Direction direction);
 
 ST_Matrix4 sphereTraceMatrixIdentity();
 
