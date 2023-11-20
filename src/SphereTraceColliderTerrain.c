@@ -867,10 +867,10 @@ ST_IndexList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTra
 	ST_Vector3 rightRadius = sphereTraceVector3Scale(sphereRight, pSphereTraceData->radius);
 	ST_Vector3 sphereForward = sphereTraceVector3Normalize(sphereTraceVector3Construct(dir.x, 0.0f, dir.z));
 	ST_Vector3 forwardRadius = sphereTraceVector3Scale(sphereForward, pSphereTraceData->radius);
-	float rightRight = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->rightPlane.normal.v));
-	float rightForward = fabsf(sphereTraceVector3Dot(rightRadius, terrainCollider->forwardPlane.normal.v));
-	float forwardRight = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->rightPlane.normal.v));
-	float forwardForward = fabsf(sphereTraceVector3Dot(forwardRadius, terrainCollider->forwardPlane.normal.v));
+	float rightRight = sphereTraceAbs(sphereTraceVector3Dot(rightRadius, terrainCollider->rightPlane.normal.v));
+	float rightForward = sphereTraceAbs(sphereTraceVector3Dot(rightRadius, terrainCollider->forwardPlane.normal.v));
+	float forwardRight = sphereTraceAbs(sphereTraceVector3Dot(forwardRadius, terrainCollider->rightPlane.normal.v));
+	float forwardForward = sphereTraceAbs(sphereTraceVector3Dot(forwardRadius, terrainCollider->forwardPlane.normal.v));
 	float signX = 1.0f;
 	float signZ = 1.0f;
 	if (rightDot1 <= rightDot2)
@@ -931,10 +931,10 @@ ST_IndexList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTra
 		{
 			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal.v, signX * distRight), terrainCollider->forwardPlane.normal.v, signZ * distFwd);
 			float dirDist = sphereTraceVector3Dot(dir, sphereTraceVector3Subtract(pos, pSphereTraceData->rayTraceData.startPoint));
-			ST_Vector3 centerPos = sphereTraceVector3AddAndScale(pSphereTraceData->rayTraceData.startPoint, dir, fabsf(dirDist));
+			ST_Vector3 centerPos = sphereTraceVector3AddAndScale(pSphereTraceData->rayTraceData.startPoint, dir, sphereTraceAbs(dirDist));
 			float distFromCenterLine = sphereTraceVector3Dot(sphereTraceVector3Subtract(centerPos, pos), sphereRight);
 			float height = centerPos.y - pSphereTraceData->radius / cTheta;
-			if (fabsf(distFromCenterLine) <= pSphereTraceData->radius + terrainCollider->cellSize)
+			if (sphereTraceAbs(distFromCenterLine) <= pSphereTraceData->radius + terrainCollider->cellSize)
 			{
 				int index = sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(terrainCollider, sphereTraceVector3Construct(pos.x, terrainCollider->collider.aabb.lowExtent.y, pos.z));
 				if (index != -1)

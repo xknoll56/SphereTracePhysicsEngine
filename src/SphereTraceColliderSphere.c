@@ -16,6 +16,12 @@ ST_SphereCollider sphereTraceColliderSphereConstruct(float radius)
 	return sphereCollider;
 }
 
+void sphereTraceColliderSphereSetPosition(ST_SphereCollider* pSphere, ST_Vector3 position)
+{
+	pSphere->rigidBody.position = position;
+	sphereTraceColliderSphereAABBSetTransformedVertices(pSphere);
+}
+
 void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* const pSphereCollider)
 {
 	pSphereCollider->collider.aabb.highExtent = sphereTraceVector3Add(pSphereCollider->rigidBody.position, pSphereCollider->collider.aabb.halfExtents);
@@ -27,11 +33,11 @@ void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* cons
 b32 sphereTraceColliderAABBIntersectImposedSphere(const ST_AABB* const aabb, ST_Vector3 imposedPosition, float imposedRadius)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(imposedPosition, sphereTraceColliderAABBMidPoint(aabb));
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Right)) > aabb->halfExtents.x + imposedRadius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Right)) > aabb->halfExtents.x + imposedRadius)
 		return 0;
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Up)) > aabb->halfExtents.y + imposedRadius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Up)) > aabb->halfExtents.y + imposedRadius)
 		return 0;
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Forward)) > aabb->halfExtents.z + imposedRadius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Forward)) > aabb->halfExtents.z + imposedRadius)
 		return 0;
 	return 1;
 }
@@ -39,11 +45,11 @@ b32 sphereTraceColliderAABBIntersectImposedSphere(const ST_AABB* const aabb, ST_
 b32 sphereTraceColliderAABBIntersectSphere(const ST_AABB* const aabb, const ST_SphereCollider* const pSphereCollider)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, sphereTraceColliderAABBMidPoint(aabb));
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Right)) > aabb->halfExtents.x + pSphereCollider->radius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Right)) > aabb->halfExtents.x + pSphereCollider->radius)
 		return 0;
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Up)) > aabb->halfExtents.y + pSphereCollider->radius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Up)) > aabb->halfExtents.y + pSphereCollider->radius)
 		return 0;
-	if (fabsf(sphereTraceVector3Dot(dp, gVector3Forward)) > aabb->halfExtents.z + pSphereCollider->radius)
+	if (sphereTraceAbs(sphereTraceVector3Dot(dp, gVector3Forward)) > aabb->halfExtents.z + pSphereCollider->radius)
 		return 0;
 	return 1;
 }
@@ -52,9 +58,9 @@ b32 sphereTraceColliderInfinitePlaneImposedSphereCollisionTest(ST_Vector3 impose
 {
 	ST_RayTraceData rtd;
 	sphereTraceColliderInfinitePlaneRayTrace(imposedPosition, planeNormal, planeNormal, pointOnPlane, &rtd);
-	if (fabsf(rtd.distance) <= imposedRadius)
+	if (sphereTraceAbs(rtd.distance) <= imposedRadius)
 	{
-		pContact->penetrationDistance = imposedRadius - fabsf(rtd.distance);
+		pContact->penetrationDistance = imposedRadius - sphereTraceAbs(rtd.distance);
 		pContact->point = rtd.contact.point;
 		pContact->normal = rtd.contact.normal;
 		//if (sphereTraceVector3Dot(sphereTraceVector3Subtract(rtd.hitPoint, imposedPosition), pContact->normal) > 0.0f)

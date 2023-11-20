@@ -55,6 +55,18 @@ float sphereTraceLerp(float x0, float x1, float t)
 	return (x1 - x0) * t + x0;
 }
 
+float sphereTraceAbs(float f)
+{
+	if (f >= 0.0f)
+	{
+		return f;
+	}
+	else
+	{
+		return -f;
+	}
+}
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	allocatedv2.x = x;
@@ -278,7 +290,7 @@ ST_Vector3 sphereTraceVector3Subtract(ST_Vector3 v1, ST_Vector3 v2)
 
 ST_Vector3 sphereTraceVector3SubtractAbsolute(ST_Vector3 v1, ST_Vector3 v2)
 {
-	return sphereTraceVector3Construct(fabsf(v1.x - v2.x), fabsf(v1.y - v2.y), fabsf(v1.z - v2.z));
+	return sphereTraceVector3Construct(sphereTraceAbs(v1.x - v2.x), sphereTraceAbs(v1.y - v2.y), sphereTraceAbs(v1.z - v2.z));
 }
 
 void sphereTraceVector3SubtractByRef(ST_Vector3* const pRef, ST_Vector3 v)
@@ -312,7 +324,7 @@ void sphereTraceVector2Print(ST_Vector2 v)
 
 b32 sphereTraceEpsilonEqual(float f1, float f2, float epsilon)
 {
-	if (fabsf(f1 - f2) < epsilon)
+	if (sphereTraceAbs(f1 - f2) < epsilon)
 		return 1;
 	else
 		return 0;
@@ -320,7 +332,7 @@ b32 sphereTraceEpsilonEqual(float f1, float f2, float epsilon)
 
 b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon)
 {
-	if (fabsf(v1.x - v2.x) < epsilon && fabsf(v1.y - v2.y) < epsilon && fabsf(v1.z - v2.z) < epsilon)
+	if (sphereTraceAbs(v1.x - v2.x) < epsilon && sphereTraceAbs(v1.y - v2.y) < epsilon && sphereTraceAbs(v1.z - v2.z) < epsilon)
 		return 1;
 	else
 		return 0;
@@ -328,7 +340,7 @@ b32 sphereTraceVector3EpsilonEquals(ST_Vector3 v1, ST_Vector3 v2, float epsilon)
 
 b32 sphereTraceVector4EpsilonEquals(ST_Vector4 v1, ST_Vector4 v2, float epsilon)
 {
-	if (fabsf(v1.x - v2.x) < epsilon && fabsf(v1.y - v2.y) < epsilon && fabsf(v1.z - v2.z) < epsilon && fabsf(v1.w - v2.w) < epsilon)
+	if (sphereTraceAbs(v1.x - v2.x) < epsilon && sphereTraceAbs(v1.y - v2.y) < epsilon && sphereTraceAbs(v1.z - v2.z) < epsilon && sphereTraceAbs(v1.w - v2.w) < epsilon)
 		return 1;
 	else
 		return 0;
@@ -926,12 +938,12 @@ ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vect
 	ST_Vector3 forward = sphereTraceVector3Normalize(sphereTraceVector3Subtract( at, eye));
 	float dot = sphereTraceVector3Dot(forward, up);
 	ST_Vector3 right;
-	if (fabsf(dot - 1.0f) < tolerance)
+	if (sphereTraceAbs(dot - 1.0f) < tolerance)
 	{
 		right = gVector3Left;
 		up = gVector3Forward;
 	}
-	else if (fabsf(dot + 1.0f) < tolerance)
+	else if (sphereTraceAbs(dot + 1.0f) < tolerance)
 	{
 		right = gVector3Left;
 		up = gVector3Back;
@@ -950,12 +962,12 @@ ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vect
 //	ST_Vector3 forward = sphereTraceVector3Normalize(sphereTraceVector3Subtract(eye, at));
 //	float dot = sphereTraceVector3Dot(forward, up);
 //	ST_Vector3 right;
-//	if (fabsf(dot - 1.0f) < tolerance)
+//	if (sphereTraceAbs(dot - 1.0f) < tolerance)
 //	{
 //		right = gVector3Left;
 //		up = gVector3Forward;
 //	}
-//	else if (fabsf(dot + 1.0f) < tolerance)
+//	else if (sphereTraceAbs(dot + 1.0f) < tolerance)
 //	{
 //		right = gVector3Left;
 //		up = gVector3Back;

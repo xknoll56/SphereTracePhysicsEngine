@@ -31,12 +31,14 @@ typedef struct ST_OctTree
 {
 	ST_OctTreeNode root;
 	ST_Index depth;
-	ST_IndexList masterColliderList;
 } ST_OctTree;
 
 ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb);
 void sphereTraceOctTreeNodeSetChildAABBByIndex(ST_OctTreeNode* const pNode, ST_Index i, ST_AABB* paabb);
 void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode);
+
+ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb);
+void sphereTraceOctTreeInsert(ST_OctTree* pTree, ST_Collider* pCollider);
 
 typedef struct ST_SpacialPartitionBucket
 {

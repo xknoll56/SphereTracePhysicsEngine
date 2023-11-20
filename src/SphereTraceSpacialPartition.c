@@ -7,6 +7,7 @@ ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb)
 	node.aabb = aabb;
 	node.hasChildren = ST_FALSE;
 	node.colliderList = sphereTraceIndexListConstruct();
+	return node;
 }
 
 void sphereTraceOctTreeNodeSetChildAABBByIndex(ST_OctTreeNode* const pNode, ST_Index i, ST_AABB* paabb)
@@ -50,43 +51,44 @@ void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode)
 		pNode->children[i] = sphereTraceAllocatorAllocateOctTreeNode();
 		sphereTraceOctTreeNodeSetChildAABBByIndex(pNode, i, &pNode->children[i]->aabb);
 		pNode->children[i]->hasChildren = ST_FALSE;
+		pNode->children[i]->colliderList = sphereTraceIndexListConstruct();
 	}
 	pNode->hasChildren = ST_TRUE;
 }
 
-void sphereTraceOctTreeNodeAABBIntersectionWithChildren(ST_OctTreeNode* const pNode, ST_AABB* paabb, b32 intersections[8])
+b32 sphereTraceOctTreeNodeAABBIntersectionWithChildren(ST_OctTreeNode* const pNode, ST_AABB* paabb, b32 intersections[8])
 {
 	if (pNode->hasChildren)
 	{
 		ST_Vector3 minDists = sphereTraceVector3Add(pNode->children[0]->aabb.halfExtents, paabb->halfExtents);
 		b32 intersectionsByCoord[6];
 
-		if (fabsf(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.x - paabb->center.x) <= minDists.x)
+		if (sphereTraceAbs(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.x - paabb->center.x) <= minDists.x)
 			intersectionsByCoord[0] = 1;
 		else
 			intersectionsByCoord[0] = 0;
 
-		if(fabsf(pNode->children[ST_RIGHT_DOWN_BACK]->aabb.center.x - paabb->center.x) <= minDists.x)
+		if(sphereTraceAbs(pNode->children[ST_RIGHT_DOWN_BACK]->aabb.center.x - paabb->center.x) <= minDists.x)
 			intersectionsByCoord[1] = 1;
 		else
 			intersectionsByCoord[1] = 1;
 
-		if(fabsf(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.y - paabb->center.y) <= minDists.y)
+		if(sphereTraceAbs(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.y - paabb->center.y) <= minDists.y)
 			intersectionsByCoord[2] = 1;
 		else
 			intersectionsByCoord[2] = 0;
 		
-		if(fabsf(pNode->children[ST_LEFT_UP_BACK]->aabb.center.y - paabb->center.y) <= minDists.y)
+		if(sphereTraceAbs(pNode->children[ST_LEFT_UP_BACK]->aabb.center.y - paabb->center.y) <= minDists.y)
 			intersectionsByCoord[3] = 1;
 		else
 			intersectionsByCoord[3] = 0;
 
-		if(fabsf(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.z - paabb->center.z) <= minDists.z)
+		if(sphereTraceAbs(pNode->children[ST_LEFT_DOWN_BACK]->aabb.center.z - paabb->center.z) <= minDists.z)
 			intersectionsByCoord[4] = 1;
 		else
 			intersectionsByCoord[4] = 0;
 
-		if(fabsf(pNode->children[ST_LEFT_DOWN_FORWARD]->aabb.center.z - paabb->center.z) <= minDists.z)
+		if(sphereTraceAbs(pNode->children[ST_LEFT_DOWN_FORWARD]->aabb.center.z - paabb->center.z) <= minDists.z)
 			intersectionsByCoord[5] = 1;
 		else
 			intersectionsByCoord[5] = 0;
@@ -99,6 +101,95 @@ void sphereTraceOctTreeNodeAABBIntersectionWithChildren(ST_OctTreeNode* const pN
 		intersections[ST_RIGHT_UP_BACK] = intersectionsByCoord[1] && intersectionsByCoord[3] && intersectionsByCoord[4];
 		intersections[ST_LEFT_UP_FORWARD] = intersectionsByCoord[0] && intersectionsByCoord[3] && intersectionsByCoord[5];
 		intersections[ST_RIGHT_UP_FORWARD] = intersectionsByCoord[1] && intersectionsByCoord[3] && intersectionsByCoord[5];
+		return 1;
+	}
+	return 0;
+}
+
+ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb)
+{
+	ST_OctTree octTree;
+	octTree.depth = 0;
+	octTree.root = sphereTraceOctTreeNodeConstruct(aabb);
+	return octTree;
+}
+
+void sphereTraceOctTreeNodeSampleIntersectionRecursive(ST_OctTreeNode* const pNode, ST_IndexList* pIntersections, ST_Collider* const pCollider)
+{
+	if (!pNode->hasChildren)
+	{
+		ST_IndexListData* pild = pNode->colliderList.pFirst;
+		ST_Collider* pOtherCollider;
+		for (int i = 0; i < pNode->colliderList.count; i++)
+		{
+			pOtherCollider = pild->value;
+			if (sphereTraceColliderAABBIntersectAABB(&pCollider->aabb, &pOtherCollider->aabb))
+			{
+				sphereTraceIndexListAddUnique(pIntersections, pOtherCollider);
+			}
+			pild = pild->pNext;
+		}
+	}
+	else
+	{
+		b32 childIntersections[8];
+		sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, &pCollider->aabb, childIntersections);
+		for (int i = 0; i < 8; i++)
+		{
+			if (childIntersections[i])
+			{
+				sphereTraceOctTreeNodeSampleIntersectionRecursive(pNode->children[i], pIntersections, pCollider);
+			}
+		}
+	}
+}
+
+ST_IndexList sphereTraceOctTreeSampleIntersection(ST_OctTree* const pOctTree, ST_Collider* const pCollider)
+{
+	ST_IndexList intersections = sphereTraceIndexListConstruct();
+	sphereTraceOctTreeNodeSampleIntersectionRecursive(&pOctTree->root, &intersections, pCollider);
+	return intersections;
+}
+
+void sphereTraceOctTreeNodeReLeafColliders(ST_OctTreeNode* const pNode)
+{
+	ST_IndexList colliders = pNode->colliderList;
+	ST_IndexListData* pild = colliders.pFirst;
+	b32 childIntersections[8];
+	ST_Collider* pCollider;
+	for (int i = 0; i < colliders.count; i++)
+	{
+		pCollider = pild->value;
+		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, &pCollider->aabb, childIntersections))
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				if (childIntersections[i])
+				{
+					sphereTraceIndexListAddFirst(&pNode->children[i]->colliderList, pCollider);
+				}
+			}
+		}
+		pild = pild->pNext;
+	}
+}
+
+void sphereTraceOctTreeInsert(ST_OctTree* pTree, ST_Collider* pCollider)
+{
+	ST_Index depth = pTree->depth;
+	if (!pTree->root.hasChildren)
+	{
+		if (pTree->root.colliderList.count == 0)
+		{
+			sphereTraceIndexListAddFirst(&pTree->root.colliderList, pCollider);
+		}
+		else
+		{
+			ST_IndexList collidersToReroot = pTree->root.colliderList;
+			sphereTraceOctTreeNodePopulateChildren(&pTree->root);
+			sphereTraceOctTreeNodeReLeafColliders(&pTree->root);
+			sphereTraceIndexListFree(&pTree->root.colliderList);
+		}
 	}
 }
 

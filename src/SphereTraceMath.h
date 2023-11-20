@@ -70,6 +70,8 @@ typedef struct ST_Color
 
 float sphereTraceLerp(float x0, float x1, float t);
 
+float sphereTraceAbs(float f);
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
 
 ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);

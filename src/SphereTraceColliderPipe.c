@@ -31,7 +31,7 @@ b32 sphereTraceColliderPipeImposedSphereCollisionTest(ST_PipeCollider* const pPi
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(imposedPosition, pPipeCollider->position);
 	float upDist = sphereTraceVector3Dot(pPipeCollider->up.v, dp);
-	if (fabsf(upDist) < pPipeCollider->length * 0.5f)
+	if (sphereTraceAbs(upDist) < pPipeCollider->length * 0.5f)
 	{
 		float rightDist = sphereTraceVector3Dot(dp, pPipeCollider->right.v);
 		float fwdDist = sphereTraceVector3Dot(dp, pPipeCollider->forward.v);

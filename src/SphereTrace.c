@@ -320,7 +320,7 @@ void sphereTraceSimulationSpherePlaneResponse(const ST_SimulationSpace* const pS
 	ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
 	float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
 
-	if (fabsf(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
+	if (sphereTraceAbs(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
 	{
 		pSphereCollider->restingContact = ST_FALSE;
 		sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
@@ -354,7 +354,7 @@ void sphereTraceSimulationSphereTriangleResponse(const ST_SimulationSpace* const
 	ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->normal.v, j);
 	float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
 
-	if (fabsf(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
+	if (sphereTraceAbs(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
 	{
 		pSphereCollider->restingContact = ST_FALSE;
 		sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
@@ -381,7 +381,7 @@ b32 sphereTraceSimulationSphereContactIsRestingCheck(const ST_SphereContact* con
 {
 	ST_SphereCollider* pSphereCollider = sphereTraceColliderSphereGetFromContact(pContactInfo);
 	float vnMag = sphereTraceVector3Dot(pContactInfo->normal.v, pSphereCollider->rigidBody.velocity);
-	return fabsf(vnMag) < ST_VELOCITY_THRESHOLD;
+	return sphereTraceAbs(vnMag) < ST_VELOCITY_THRESHOLD;
 }
 
 void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const pSimulationSpace, const ST_SphereContact* const pContactInfo, float dt, ST_Index* pNumImpulses)
@@ -395,15 +395,15 @@ void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const 
 	ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
 	float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
 	//float slope = sphereTraceVector3Dot(pContactInfo->normal.v, gVector3Up);
-	b32 restingContactCondition = (fabsf(vnMag) < ST_VELOCITY_THRESHOLD);
-	float accelNormal = fabsf(vnMag);
+	b32 restingContactCondition = (sphereTraceAbs(vnMag) < ST_VELOCITY_THRESHOLD);
+	float accelNormal = sphereTraceAbs(vnMag);
 	//printf("accel normal: %f\n", accelNormal);
 	//sphereTraceVector3Print(pContactInfo->normal.v);
 	if (pContactInfo->collisionType == ST_COLLISION_INWARD_CIRCULAR)
 	{
 		ST_Vector3 circularTangent = sphereTraceVector3Cross(pContactInfo->normal.v, pContactInfo->bitangent.v);
 		float centripitalAccel = sphereTraceVector3Dot(pSphereCollider->rigidBody.velocity, circularTangent);
-		if (fabsf(centripitalAccel) / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
+		if (sphereTraceAbs(centripitalAccel) / sphereTraceAbs(vnMag) > ST_VELOCITY_THRESHOLD)
 		{
 			centripitalAccel = centripitalAccel * centripitalAccel / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
 			if (centripitalAccel < 0.0f)
@@ -418,7 +418,7 @@ void sphereTraceSimulationSphereContactResponse(const ST_SimulationSpace* const 
 	else if (pContactInfo->collisionType == ST_COLLISION_INWARD_SPHEREICAL)
 	{
 		float centripitalAccel = sphereTraceVector3Length(vt);
-		if (centripitalAccel / fabsf(vnMag) > ST_VELOCITY_THRESHOLD)
+		if (centripitalAccel / sphereTraceAbs(vnMag) > ST_VELOCITY_THRESHOLD)
 		{
 			centripitalAccel = centripitalAccel * centripitalAccel / pContactInfo->radiusOfCurvature - sphereTraceVector3Dot(pSimulationSpace->gravitationalAcceleration, pContactInfo->normal.v);
 			if (centripitalAccel < 0.0f)
@@ -488,7 +488,7 @@ void sphereTraceSimulationSphereTerrainTriangleResponse(const ST_SimulationSpace
 	//ST_Vector3 dp = sphereTraceVector3Scale(pContactInfo->downSphereTraceData.rayTraceData.contact.normal.v, j);
 	//float slope = sphereTraceVector3Dot(pContactInfo->downSphereTraceData.rayTraceData.contact.normal.v, gVector3Up);
 
-	//if (fabsf(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
+	//if (sphereTraceAbs(vnMag) > ST_VELOCITY_THRESHOLD || slope < 0.0f)
 	//{
 	//	sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, dp);
 	//	ST_Vector3 ft = sphereTraceVector3Scale(sphereTraceVector3Normalize(vt), -sphereTraceVector3Length(vt) * j / vnMag);
@@ -877,8 +877,8 @@ void sphereTraceSimulationSphereMultipleContactResponse(const ST_SimulationSpace
 		ST_Vector3 vn = sphereTraceVector3Scale(pContactInfo->normal.v, vnMag);
 		ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
 		float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * (pSphereCollider->rigidBody.mass / (float)numContacts);
-		b32 restingContactCondition = (fabsf(vnMag) < ST_VELOCITY_THRESHOLD && pContactInfo->normal.v.y>0.0f);
-		float accelNormal = fabsf(vnMag);
+		b32 restingContactCondition = (sphereTraceAbs(vnMag) < ST_VELOCITY_THRESHOLD && pContactInfo->normal.v.y>0.0f);
+		float accelNormal = sphereTraceAbs(vnMag);
 		//printf("accel normal: %f\n", accelNormal);
 		if (!restingContactCondition)
 		{
@@ -917,7 +917,7 @@ void sphereTraceSimulationSphereMultipleContactResponse(const ST_SimulationSpace
 		ST_Vector3 vn = sphereTraceVector3Scale(pRestingContactWithMaxForce->normal.v, vnMag);
 		ST_Vector3 vt = sphereTraceVector3Subtract(pSphereCollider->rigidBody.velocity, vn);
 		float j = -(1.0f + pSimulationSpace->defaultMaterial.restitution) * vnMag * pSphereCollider->rigidBody.mass;
-		float accelNormal = fabsf(vnMag);
+		float accelNormal = sphereTraceAbs(vnMag);
 		//pSphereCollider->restingContact = ST_TRUE;
 		pSphereCollider->rigidBody.linearMomentum = sphereTraceVector3Scale(vt, pSphereCollider->rigidBody.mass);
 		ST_Vector3 actualVelocity = sphereTraceVector3Subtract(pSphereCollider->rigidBody.position, pSphereCollider->rigidBody.prevPosition);

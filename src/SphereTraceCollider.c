@@ -67,6 +67,36 @@ ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float
 	return ring;
 }
 
+ST_AABB sphereTraceAABBConstruct1(ST_Vector3 lowExtent, ST_Vector3 highExtent)
+{
+	ST_AABB aabb;
+	aabb.lowExtent = lowExtent;
+	aabb.highExtent = highExtent;
+	sphereTraceAABBSetCenterAndHalfExtents(&aabb);
+	return aabb;
+}
+
+ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents)
+{
+	ST_AABB aabb;
+	aabb.center = position;
+	aabb.halfExtents = halfExtents;
+	sphereTraceAABBSetHighAndLowExtents(&aabb);
+	return aabb;
+}
+
+void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb)
+{
+	paabb->center = sphereTraceVector3Average(paabb->lowExtent, paabb->highExtent);
+	paabb->halfExtents = sphereTraceVector3Subtract(paabb->highExtent, paabb->center);
+}
+
+void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb)
+{
+	paabb->highExtent = sphereTraceVector3Add(paabb->center, paabb->halfExtents);
+	paabb->lowExtent = sphereTraceVector3Subtract(paabb->center, paabb->halfExtents);
+}
+
 
 
 b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 point)
@@ -143,34 +173,119 @@ b32 sphereTraceColliderAABBIntersectAABB(const ST_AABB* const aabb1, const ST_AA
 		}
 	}
 	return 0;
-	//if ((aabb1->highExtent.x >= aabb2->highExtent.x && aabb1->lowExtent.x <= aabb2->highExtent.x)
-	//	|| (aabb1->highExtent.x >= aabb2->lowExtent.x && aabb1->lowExtent.x <= aabb2->lowExtent.x)
-	//	|| (aabb2->highExtent.x >= aabb1->highExtent.x && aabb2->lowExtent.x <= aabb1->highExtent.x)
-	//	|| (aabb2->highExtent.x >= aabb1->lowExtent.x && aabb2->lowExtent.x <= aabb1->lowExtent.x))
-	//{
-	//	if ((aabb1->highExtent.y >= aabb2->highExtent.y && aabb1->lowExtent.y <= aabb2->highExtent.y)
-	//		|| (aabb1->highExtent.y >= aabb2->lowExtent.y && aabb1->lowExtent.y <= aabb2->lowExtent.y)
-	//		|| (aabb2->highExtent.y >= aabb1->highExtent.y && aabb2->lowExtent.y <= aabb1->highExtent.y)
-	//		|| (aabb2->highExtent.y >= aabb1->lowExtent.y && aabb2->lowExtent.y <= aabb1->lowExtent.y))
-	//	{
-	//		if ((aabb1->highExtent.z >= aabb2->highExtent.z && aabb1->lowExtent.z <= aabb2->highExtent.z)
-	//			|| (aabb1->highExtent.z >= aabb2->lowExtent.z && aabb1->lowExtent.z <= aabb2->lowExtent.z)
-	//			|| (aabb2->highExtent.z >= aabb1->highExtent.z && aabb2->lowExtent.z <= aabb1->highExtent.z)
-	//			|| (aabb2->highExtent.z >= aabb1->lowExtent.z && aabb2->lowExtent.z <= aabb1->lowExtent.z))
-	//		{
-	//			return 1;
-	//		}
-	//	}
-	//}
+}
 
-	//return 0;
+b32 sphereTraceColliderAABBIntersectAABBIntersectionRegeon(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegeon)
+{
+	ST_Vector3 dp = sphereTraceVector3Subtract(aabb2->center, aabb1->center);
+	ST_Vector3 bothExtents = sphereTraceVector3Add(aabb1->halfExtents, aabb2->halfExtents);
+	ST_Vector3 lowExtent;
+	ST_Vector3 highExtent;
+	if (dp.x >= 0.0f)
+	{
+		if (dp.x <= bothExtents.x)
+		{
+			if (dp.y >= 0.0f)
+			{
+				if (dp.y <= bothExtents.y)
+				{
+					if (dp.z >= 0.0f)
+					{
+						if (dp.z <= bothExtents.z)
+						{
+							lowExtent.x = aabb2->lowExtent.x;
+							highExtent.x = aabb1->highExtent.x;
+							//if(lowExtent.x <)
+						}
+
+					}
+					else
+					{
+						if (dp.z >= -bothExtents.z)
+						{
+
+						}
+					}
+				}
+			}
+			else
+			{
+				if (dp.y >= -bothExtents.y)
+				{
+					if (dp.z >= 0.0f)
+					{
+						if (dp.z <= bothExtents.z)
+						{
+
+						}
+
+					}
+					else
+					{
+						if (dp.z >= -bothExtents.z)
+						{
+
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		if (dp.x >= -bothExtents.x)
+		{
+			if (dp.y >= 0.0f)
+			{
+				if (dp.y <= bothExtents.y)
+				{
+					if (dp.z >= 0.0f)
+					{
+						if (dp.z <= bothExtents.z)
+						{
+
+						}
+
+					}
+					else
+					{
+						if (dp.z >= -bothExtents.z)
+						{
+
+						}
+					}
+				}
+			}
+			else
+			{
+				if (dp.y >= -bothExtents.y)
+				{
+					if (dp.z >= 0.0f)
+					{
+						if (dp.z <= bothExtents.z)
+						{
+
+						}
+
+					}
+					else
+					{
+						if (dp.z >= -bothExtents.z)
+						{
+
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
 {
-	if (fabsf(aabb1->center.x - aabb2->center.x) <= (aabb1->halfExtents.x + aabb2->halfExtents.x))
+	if (sphereTraceAbs(aabb1->center.x - aabb2->center.x) <= (aabb1->halfExtents.x + aabb2->halfExtents.x))
 	{
-		if (fabsf(aabb1->center.z - aabb2->center.z) <= (aabb1->halfExtents.z + aabb2->halfExtents.z))
+		if (sphereTraceAbs(aabb1->center.z - aabb2->center.z) <= (aabb1->halfExtents.z + aabb2->halfExtents.z))
 		{
 			return 1;
 		}
@@ -196,7 +311,7 @@ b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1,
 
 b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
 {
-	if (fabsf(aabb1->center.y - aabb2->center.y) <= (aabb1->halfExtents.y + aabb2->halfExtents.y))
+	if (sphereTraceAbs(aabb1->center.y - aabb2->center.y) <= (aabb1->halfExtents.y + aabb2->halfExtents.y))
 	{
 		return 1;
 	}
@@ -441,7 +556,7 @@ b32 sphereTraceColliderEdgeSphereTrace_(ST_Vector3 from, ST_Direction dir, float
 	ST_Vector3 right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, pEdge->dir.v));
 	//ST_Vector3 sphereDir = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, edgeDir));
 	ST_Vector3 sphereDir = sphereTraceVector3Negative(dir.v);
-	float d = fabsf(sphereTraceVector3Dot(pEdge->dir.v, dir.v));
+	float d = sphereTraceAbs(sphereTraceVector3Dot(pEdge->dir.v, dir.v));
 	ST_Vector3 fwd = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, dir.v));
 	if (d > COLLIDER_TOLERANCE)
 		sphereDir = sphereTraceVector3Normalize(sphereTraceVector3Cross(right, pEdge->dir.v));
@@ -453,7 +568,7 @@ b32 sphereTraceColliderEdgeSphereTrace_(ST_Vector3 from, ST_Direction dir, float
 	float theta = acosf(sphereTraceVector3Dot(pEdge->dir.v, dir.v));
 	float rightDist;
 	rightDist = sphereTraceVector3Dot(sphereTraceVector3Subtract(from, pEdge->point1), right);
-	if (fabsf(rightDist) < radius)
+	if (sphereTraceAbs(rightDist) < radius)
 	{
 		float beta = acosf(rightDist / radius);
 		float fwdDist = sinf(beta) * radius;
@@ -466,7 +581,7 @@ b32 sphereTraceColliderEdgeSphereTrace_(ST_Vector3 from, ST_Direction dir, float
 		float distToPointOnEdgeOrthogonalWithSphereDirectionAndEdge = cosf(theta) * sphereTraceVector3Length(sphereTraceVector3Subtract(pointOnEdgeTracedFrompointOnPlaneNearOriginClosestToEdge, pointOnEdgeClosestToCenterRaycast));
 		ST_Vector3 intersection = sphereTraceVector3AddAndScale(pointOnEdgeClosestToCenterRaycast, pEdge->dir.v, -distToPointOnEdgeOrthogonalWithSphereDirectionAndEdge);
 
-		fwdDist = fabsf(tanf(theta) * sphereTraceVector3Length(sphereTraceVector3Subtract(pointOnEdgeClosestToCenterRaycast, intersection)));
+		fwdDist = sphereTraceAbs(tanf(theta) * sphereTraceVector3Length(sphereTraceVector3Subtract(pointOnEdgeClosestToCenterRaycast, intersection)));
 		ST_Vector3 testPoint2 = sphereTraceClosestPointOnLineBetweenTwoLines(intersection, sphereDir, pointOnEdgeClosestToCenterRaycast, dir.v);
 		if (sphereTraceVector3Nan(testPoint2))
 		{
@@ -517,7 +632,7 @@ b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float
 	sphereTraceColliderInfinitePlaneSphereTrace(from, dir, radius,
 		pEdge->point1, sphereTraceDirectionConstructNormalized(wall), pSphereTraceData);
 	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, pEdge->point1), cross);
-	if (fabsf(dist) <= radius)
+	if (sphereTraceAbs(dist) <= radius)
 	{
 		ST_Vector3 dirRight = sphereTraceVector3Cross(dir.v, cross);
 		float theta = acosf(dist, radius);
@@ -571,7 +686,7 @@ b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float 
 	ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, pEdge->dir.v));
 	ST_Vector3 dp = sphereTraceVector3Subtract(pEdge->point1, from);
 	float crossDist = sphereTraceVector3Dot(cross, dp);
-	if (fabsf(crossDist) <= radius)
+	if (sphereTraceAbs(crossDist) <= radius)
 	{
 		float theta = asinf(crossDist / radius);
 		float sliceRadius = cosf(theta) * radius;

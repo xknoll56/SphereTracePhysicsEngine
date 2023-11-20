@@ -87,7 +87,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(c
 
 	if (xDist > 0.0f)
 	{
-		if (fabsf(zDist) > xDist)
+		if (sphereTraceAbs(zDist) > xDist)
 		{
 			if (zDist > 0.0f)
 			{
@@ -108,7 +108,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(c
 	}
 	else
 	{
-		if (fabsf(zDist) > -xDist)
+		if (sphereTraceAbs(zDist) > -xDist)
 		{
 			if (zDist > 0.0f)
 			{
@@ -145,7 +145,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 		right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir, pPlaneCollider->forward.v));
 		fwd = sphereTraceVector3Cross(dir, right);
 		float rightDist = sphereTraceVector3Dot(right, pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1);
-		float theta = acosf(fabsf(rightDist) / radius);
+		float theta = acosf(sphereTraceAbs(rightDist) / radius);
 		start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 		ST_Vector3 edgeDir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point2, pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1));
 		sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1, edgeDir, &s1, &t1);
@@ -184,7 +184,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 		right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir, sphereTraceVector3Negative(pPlaneCollider->forward.v)));
 		fwd = sphereTraceVector3Cross(dir, right);
 		float rightDist = sphereTraceVector3Dot(right, pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1);
-		float theta = acosf(fabsf(rightDist) / radius);
+		float theta = acosf(sphereTraceAbs(rightDist) / radius);
 		start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 		ST_Vector3 edgeDir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point2, pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1));
 		sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1, edgeDir, &s1, &t1);
@@ -223,7 +223,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 		right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir, pPlaneCollider->right.v));
 		fwd = sphereTraceVector3Cross(dir, right);
 		float rightDist = sphereTraceVector3Dot(right, pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT].point1);
-		float theta = acosf(fabsf(rightDist) / radius);
+		float theta = acosf(sphereTraceAbs(rightDist) / radius);
 		start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 		ST_Vector3 edgeDir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT].point2, pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT].point1));
 		sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pPlaneCollider->transformedEdges[PLANE_EDGE_RIGHT].point1, edgeDir, &s2, &t2);
@@ -262,7 +262,7 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 		right = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir, sphereTraceVector3Negative(pPlaneCollider->right.v)));
 		fwd = sphereTraceVector3Cross(dir, right);
 		float rightDist = sphereTraceVector3Dot(right, pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT].point1);
-		float theta = acosf(fabsf(rightDist) / radius);
+		float theta = acosf(sphereTraceAbs(rightDist) / radius);
 		start = sphereTraceVector3AddAndScale(point, fwd, radius * sinf(theta));
 		ST_Vector3 edgeDir = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT].point2, pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT].point1));
 		sphereTraceVector3ClosestPointOnLineBetweenTwoLinesDistancesOnLines(start, dir, pPlaneCollider->transformedEdges[PLANE_EDGE_LEFT].point1, edgeDir, &s2, &t2);
@@ -391,10 +391,10 @@ b32 sphereTraceColliderPlaneRayTrace(ST_Vector3 from, ST_Direction dir, const ST
 		pRaycastData->startPoint = from;
 		ST_Vector3 vectorFromCenter = sphereTraceVector3Subtract(pRaycastData->contact.point, pPlaneCollider->position);
 		float xDist = sphereTraceVector3Dot(vectorFromCenter, pPlaneCollider->right.v);
-		if (fabsf(xDist) > pPlaneCollider->xHalfExtent)
+		if (sphereTraceAbs(xDist) > pPlaneCollider->xHalfExtent)
 			return 0;
 		float zDist = sphereTraceVector3Dot(vectorFromCenter, pPlaneCollider->forward.v);
-		if (fabsf(zDist) > pPlaneCollider->zHalfExtent)
+		if (sphereTraceAbs(zDist) > pPlaneCollider->zHalfExtent)
 			return 0;
 		return 1;
 	}
@@ -405,12 +405,12 @@ b32 sphereTraceColliderPlaneIsProjectedPointContained(ST_Vector3 projectedPoint,
 {
 	sphereTraceVector3SubtractByRef(&projectedPoint, pPlaneCollider->position);
 	float dist = sphereTraceVector3Dot(projectedPoint, pPlaneCollider->right.v);
-	if (fabsf(dist) > pPlaneCollider->xHalfExtent)
+	if (sphereTraceAbs(dist) > pPlaneCollider->xHalfExtent)
 	{
 		return 0;
 	}
 	dist = sphereTraceVector3Dot(projectedPoint, pPlaneCollider->forward.v);
-	if (fabsf(dist) > pPlaneCollider->zHalfExtent)
+	if (sphereTraceAbs(dist) > pPlaneCollider->zHalfExtent)
 	{
 		return 0;
 	}
@@ -476,7 +476,7 @@ b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction di
 //	float dot = sphereTraceVector3Dot(dir.v, pSphereTraceData->rayTraceData.contact.normal.v);
 //	float hypotinus;
 //	ST_Vector3 orthogonal = pSphereTraceData->rayTraceData.contact.normal.v;
-//	if (fabsf(fabsf(dot) - 1) < COLLIDER_TOLERANCE)
+//	if (sphereTraceAbs(sphereTraceAbs(dot) - 1) < COLLIDER_TOLERANCE)
 //	{
 //		alpha = 0.0f;
 //		hypotinus = radius;

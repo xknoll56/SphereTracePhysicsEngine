@@ -266,7 +266,13 @@ ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2);
 
 ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float radius);
 
+ST_AABB sphereTraceAABBConstruct1(ST_Vector3 lowExtent, ST_Vector3 highExtent);
 
+ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents);
+
+void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb);
+
+void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb);
 
 b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 point);
 
@@ -275,6 +281,8 @@ void sphereTraceColliderAABBSetHalfExtents(ST_AABB* const aabb);
 void sphereTraceColliderAABBResizeAABBToContainAnotherAABB(ST_AABB* const aabbToResize, const ST_AABB* const aabbToContain);
 
 b32 sphereTraceColliderAABBIntersectAABB(const ST_AABB* const aabb1, const ST_AABB* const aabb2);
+
+b32 sphereTraceColliderAABBIntersectAABBIntersectionRegeon(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegeon);
 
 b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1, const ST_AABB* const aabb2);
 
