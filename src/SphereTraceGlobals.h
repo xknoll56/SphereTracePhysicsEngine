@@ -1,6 +1,7 @@
 #pragma once
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
+#include "SphereTraceCollider.h"
 #include "SphereTraceAllocator.h"
 
 extern const ST_Vector2 gVector2Zero;
@@ -36,6 +37,7 @@ extern const ST_Direction gDirectionUp;
 extern const ST_Direction gDirectionDown;
 extern const ST_Direction gDirectionForward;
 extern const ST_Direction gDirectionBack;
+extern const ST_AABB gAABBOne;
 
 #define ST_VECTOR3(x, y, z) sphereTraceVector3Construct(x,y,z)
 //#define ST_VECTOR3() gVector3Zero

@@ -8,6 +8,7 @@ typedef struct ST_CallbackFunction ST_CallbackFunction;
 typedef struct ST_SphereContactEntry ST_SphereContactEntry;
 typedef struct ST_SphereContact ST_SphereContact;
 typedef struct ST_OctTreeNode ST_OctTreeNode;
+typedef struct ST_AABBContact ST_AABBContact;
 
 typedef struct ST_FreeStack
 {
@@ -59,6 +60,7 @@ void* sphereTraceLinearAllocatorAllocateObject(ST_Allocator* const pLinearAlloca
 void sphereTraceLinearAllocatorReset(ST_Allocator* const pLinearAllocator);
 void* sphereTraceLinearAllocatorGetByIndex(ST_Allocator* const pLinearAllocator, ST_Index index);
 
+//random allocator functions
 void sphereTraceAllocatorInitialize();
 ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode();
 void sphereTraceAllocatorFreeOctTreeNode(void* pIndex);
@@ -72,7 +74,13 @@ ST_CallbackFunction* sphereTraceAllocatorAllocateCallbackFunction();
 void sphereTraceAllocatorFreeCallbackFunction(void* pIndex);
 ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry();
 void sphereTraceAllocatorFreeContactEntry(void* pIndex);
+
+//linear allocator functions
 ST_SphereContact* sphereTraceLinearAllocatorAllocateSphereContact();
 ST_Index sphereTraceLinearAllocatorGetSphereContactCount();
 ST_SphereContact* sphereTraceLinearAllocatorGetSphereContactByIndex(ST_Index index);
 void sphereTraceLinearAllocatorResetSphereContacts();
+ST_AABBContact* sphereTraceLinearAllocatorAllocateAABBContact();
+ST_Index sphereTraceLinearAllocatorGetAABBContactCount();
+ST_AABBContact* sphereTraceLinearAllocatorGetAABBContactByIndex(ST_Index index);
+void sphereTraceLinearAllocatorResetAABBContacts();

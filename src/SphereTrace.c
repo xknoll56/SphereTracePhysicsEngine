@@ -656,7 +656,7 @@ void sphereTraceSimulationExecuteCallbacksOnCollider(ST_Collider* const pCollide
 
 void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt, ST_Index iterations)
 {
-	dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	dt = sphereTraceMin(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
 		dt = pSimulationSpace->minDeltaTime;
 	//clear cur frame colliders
@@ -965,7 +965,7 @@ void sphereTraceSimulationSphereMultipleContactResponse(const ST_SimulationSpace
 
 void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt)
 {
-	dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	dt = sphereTraceMin(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
 		dt = pSimulationSpace->minDeltaTime;
 
@@ -1158,7 +1158,7 @@ void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulat
 
 void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt)
 {
-	dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	dt = sphereTraceMin(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
 		dt = pSimulationSpace->minDeltaTime;
 	//update all sphere aabb's 
@@ -1316,7 +1316,7 @@ void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* c
 
 void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const pSimulationSpace, float dt)
 {
-	dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	dt = sphereTraceMin(dt, pSimulationSpace->minDeltaTime);
 	if (dt < 0.0f)
 		dt = pSimulationSpace->minDeltaTime;
 	ST_IndexListData* pSphereIndexData;
@@ -1460,7 +1460,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 					//float test = pSphereCollider->radius - sphereCastDataClosestPlane.rayTraceData.distance;
 					//if(test>0)
 					//printf("test: %f\n", test);
-					float adjustedDt = fminf((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
+					float adjustedDt = sphereTraceMin((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
 
 					//step the simulation
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
@@ -1480,7 +1480,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 				{
 					//float sphereCastDistance = sphereTraceVector3Length(sphereTraceVector3Subtract(sphereCastDataClosestSphere.sphereCenter, pSphereCollider->pRigidBody->position));
 					float sphereCastDistance = sphereCastDataClosestSphere.traceDistance;
-					float adjustedDt = fminf((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
+					float adjustedDt = sphereTraceMin((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
 
 					//step the simulation
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
@@ -1496,7 +1496,7 @@ void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const p
 				{
 					//float sphereCastDistance = sphereTraceVector3Length(sphereTraceVector3Subtract(sphereCastDataClosestTerrain.sphereCenter, pSphereCollider->pRigidBody->position));
 					float sphereCastDistance = sphereCastDataClosestTerrain.traceDistance;
-					float adjustedDt = fminf((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
+					float adjustedDt = sphereTraceMin((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
 
 					//step the simulation
 					sphereTraceSimulationStepQuantity(pSimulationSpace, &pSphereCollider->rigidBody, adjustedDt);
@@ -1606,7 +1606,7 @@ b32 sphereTraceSimulationRayTrace(const ST_SimulationSpace* const pSimulationSpa
 
 void sphereTraceSimulationSolveImposedPositionStaticSpacialPartition(ST_SimulationSpace* const pSimulationSpace, float dt)
 {
-	//dt = fminf(dt, pSimulationSpace->minDeltaTime);
+	//dt = sphereTraceMin(dt, pSimulationSpace->minDeltaTime);
 	//if (dt < 0.0f)
 	//	dt = pSimulationSpace->minDeltaTime;
 	ST_IndexListData* pSphereIndexData;
@@ -1780,7 +1780,7 @@ void sphereTraceSimulationSolveImposedPositionStaticSpacialPartition(ST_Simulati
 				if (closestCollider != FLT_MAX && !closestPlaneSame)
 				{
 					float sphereCastDistance = sphereCastClosestData.traceDistance;
-					float adjustedDt = fminf((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
+					float adjustedDt = sphereTraceMin((dt - accumulatedDt) * sphereCastDistance / imposedNextLength + ST_AUTO_DT_FACTOR * dt, dt - accumulatedDt);
 					if (closestPlaneSame)
 					{
 						adjustedDt = dt - accumulatedDt;

@@ -90,7 +90,7 @@ b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const 
 		{
 			hits = 1;
 			float length = sphereTraceVector3Length(intersectionMinusStart);
-			float theta = fminf(1.0f, asinf(length / pSphere->radius));
+			float theta = sphereTraceMin(1.0f, asinf(length / pSphere->radius));
 			ST_Vector3 dirComp = sphereTraceVector3Scale(negativeDir, length / tanf(theta));
 			if (length == 0.0f)
 				dirComp = sphereTraceVector3Scale(negativeDir, pSphere->radius);

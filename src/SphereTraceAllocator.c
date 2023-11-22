@@ -19,6 +19,7 @@ static ST_Allocator vector3Allocator;
 static ST_Allocator callbackFunctionAllocator;
 static ST_Allocator contactEntryAllocator;
 static ST_Allocator sphereContactLinearAllocator;
+static ST_Allocator aabbContactLinearAllocator;
 static ST_Allocator octTreeNodeAllocator;
 
 ST_FreeStack sphereTraceAllocatorFreeStackConstruct(ST_Index capacity, void* pArr, ST_Index objectSize)
@@ -216,6 +217,7 @@ void sphereTraceAllocatorInitialize()
 	callbackFunctionAllocator = sphereTraceAllocatorConstruct(ST_FUNCTION_POOL_DEFAULT_SIZE, sizeof(ST_CallbackFunction), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	contactEntryAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_SphereContactEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	sphereContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_SphereContact), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	aabbContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_AABB), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	octTreeNodeAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_OctTreeNode), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 }
 
@@ -299,4 +301,21 @@ ST_SphereContact* sphereTraceLinearAllocatorGetSphereContactByIndex(ST_Index ind
 void sphereTraceLinearAllocatorResetSphereContacts()
 {
 	sphereTraceLinearAllocatorReset(&sphereContactLinearAllocator);
+}
+
+ST_AABBContact* sphereTraceLinearAllocatorAllocateAABBContact()
+{
+	return sphereTraceLinearAllocatorAllocateObject(&aabbContactLinearAllocator);
+}
+ST_Index sphereTraceLinearAllocatorGetAABBContactCount()
+{
+	return aabbContactLinearAllocator.numObjects;
+}
+ST_AABBContact* sphereTraceLinearAllocatorGetAABBContactByIndex(ST_Index index)
+{
+	return sphereTraceLinearAllocatorGetByIndex(&aabbContactLinearAllocator, index);
+}
+void sphereTraceLinearAllocatorResetAABBContacts()
+{
+	sphereTraceLinearAllocatorReset(&aabbContactLinearAllocator);
 }

@@ -67,6 +67,30 @@ float sphereTraceAbs(float f)
 	}
 }
 
+float sphereTraceMin(float a, float b)
+{
+	if (a <= b)
+	{
+		return a;
+	}
+	else
+	{
+		return b;
+	}
+}
+
+float sphereTraceMax(float a, float b)
+{
+	if (a >= b)
+	{
+		return a;
+	}
+	else
+	{
+		return b;
+	}
+}
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	allocatedv2.x = x;

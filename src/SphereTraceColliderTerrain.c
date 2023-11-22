@@ -234,7 +234,7 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 
 int sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 samplePosition)
 {
-	//if (sphereTraceColliderAABBIsPointInside(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
+	//if (sphereTraceColliderAABBContainsPoint(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
 	//{
 	float dpx = samplePosition.x - terrainCollider->position.x;
 	float dpz = samplePosition.z - terrainCollider->position.z;
@@ -260,7 +260,7 @@ int sphereTraceColliderUniformTerrainSampleFirstTriangleIndex(const ST_UniformTe
 
 int sphereTraceColliderUniformTerrainSampleTriangleIndex(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 samplePosition)
 {
-	//if (sphereTraceColliderAABBIsPointInside(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
+	//if (sphereTraceColliderAABBContainsPoint(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
 	//{
 	float dpx = samplePosition.x - terrainCollider->position.x;
 	float dpz = samplePosition.z - terrainCollider->position.z;
@@ -299,7 +299,7 @@ int sphereTraceColliderUniformTerrainSampleTriangleIndex(const ST_UniformTerrain
 
 int sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSampleIndex(const ST_UniformTerrainCollider* const terrainCollider, ST_Vector3 samplePosition)
 {
-	//if (sphereTraceColliderAABBIsPointInside(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
+	//if (sphereTraceColliderAABBContainsPoint(&terrainCollider->aabb, (ST_Vector3) { samplePosition.x, terrainCollider->aabb.lowExtent.y, samplePosition.z }))
 	//{
 	float dpx = samplePosition.x - terrainCollider->position.x;
 	float dpz = samplePosition.z - terrainCollider->position.z;

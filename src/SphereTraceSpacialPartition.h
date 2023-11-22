@@ -6,6 +6,7 @@
 
 #define SPACIAL_PARTITION_STATIC_DIMENSION 10
 #define SPACIAL_PARTITION_STATIC_SIZE SPACIAL_PARTITION_STATIC_DIMENSION*SPACIAL_PARTITION_STATIC_DIMENSION*SPACIAL_PARTITION_STATIC_DIMENSION
+#define ST_OCT_TREE_POINT_RADIUS_SQUARED 0.33f
 
 typedef struct ST_OctTreeNode
 {
@@ -13,23 +14,13 @@ typedef struct ST_OctTreeNode
 	b32 hasChildren;
 	struct ST_OctTreeNode* children[8];
 	ST_IndexList colliderList;
+	ST_Vector3 point;
 } ST_OctTreeNode;
 
-typedef enum ST_OctTreNodeLocation
-{
-	ST_LEFT_DOWN_BACK = 0,
-	ST_RIGHT_DOWN_BACK = 1,
-	ST_LEFT_DOWN_FORWARD = 2,
-	ST_RIGHT_DOWN_FORWARD = 3,
-	ST_LEFT_UP_BACK = 4,
-	ST_RIGHT_UP_BACK = 5,
-	ST_LEFT_UP_FORWARD = 6,
-	ST_RIGHT_UP_FORWARD = 7
-} ST_OctTreNodeLocation;
 
 typedef struct ST_OctTree
 {
-	ST_OctTreeNode root;
+	ST_OctTreeNode* root;
 	ST_Index depth;
 } ST_OctTree;
 
@@ -38,7 +29,18 @@ void sphereTraceOctTreeNodeSetChildAABBByIndex(ST_OctTreeNode* const pNode, ST_I
 void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode);
 
 ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb);
-void sphereTraceOctTreeInsert(ST_OctTree* pTree, ST_Collider* pCollider);
+
+//will return pointers to all oct-tree leaf nodes that intersect with this aabb
+ST_IndexList sphereTraceOctTreeSampleIntersectionLeafs(ST_OctTree* const pOctTree, ST_AABB* const paabb);
+//will return pointers to all colliders intersecting in the tree
+ST_IndexList sphereTraceOctTreeSampleIntersectionColliders(ST_OctTree* const pOctTree, ST_Collider* const pCollider);
+//will insert point into a node, there can only be one point in each node,
+//when another point is placed within a node, if it is within a certain
+//radius it will not generate another node
+void sphereTraceOctTreeInsertPoint(ST_OctTree* pTree, ST_Vector3 point);
+void sphereTraceOctTreeInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider);
+ST_Index sphereTraceOctTreeGetMaxCollidersOnLeaf(ST_OctTree* pTree, ST_OctTreeNode** ppNodeWithMax);
+void sphereTraceOctTreeDisectNodesWithMinColliders(ST_OctTree* pTree, ST_Index minColliders);
 
 typedef struct ST_SpacialPartitionBucket
 {

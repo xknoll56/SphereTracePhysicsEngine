@@ -3,6 +3,8 @@
 #include "SphereTraceGlobals.h"
 #include "SphereTraceAllocator.h"
 
+const ST_AABB gAABBOne = { {0.5f,0.5f,0.5f}, {0.0f,0.0f,0.0f}, {1.0f,1.0f,1.0f}, {0.5f,0.5f,0.5f} };
+
 const char* ST_ColliderStrings[] =
 {
 	"Sphere",
@@ -99,7 +101,7 @@ void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb)
 
 
 
-b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 point)
+b32 sphereTraceColliderAABBContainsPoint(const ST_AABB* const aabb, ST_Vector3 point)
 {
 	if (point.x >= aabb->lowExtent.x && point.x <= aabb->highExtent.x)
 	{
@@ -175,110 +177,25 @@ b32 sphereTraceColliderAABBIntersectAABB(const ST_AABB* const aabb1, const ST_AA
 	return 0;
 }
 
-b32 sphereTraceColliderAABBIntersectAABBIntersectionRegeon(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegeon)
+b32 sphereTraceColliderAABBIntersectAABBIntersectionRegion(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegion)
 {
-	ST_Vector3 dp = sphereTraceVector3Subtract(aabb2->center, aabb1->center);
-	ST_Vector3 bothExtents = sphereTraceVector3Add(aabb1->halfExtents, aabb2->halfExtents);
-	ST_Vector3 lowExtent;
-	ST_Vector3 highExtent;
-	if (dp.x >= 0.0f)
+	intersectionRegion->lowExtent = sphereTraceVector3Construct(sphereTraceMax(aabb1->lowExtent.x, aabb2->lowExtent.x),
+		sphereTraceMax(aabb1->lowExtent.y, aabb2->lowExtent.y),
+		sphereTraceMax(aabb1->lowExtent.z, aabb2->lowExtent.z));
+
+	intersectionRegion->highExtent = sphereTraceVector3Construct(sphereTraceMin(aabb1->highExtent.x, aabb2->highExtent.x),
+		sphereTraceMin(aabb1->highExtent.y, aabb2->highExtent.y),
+		sphereTraceMin(aabb1->highExtent.z, aabb2->highExtent.z));
+
+	intersectionRegion->halfExtents = sphereTraceVector3Subtract(intersectionRegion->highExtent, intersectionRegion->lowExtent);
+	if (intersectionRegion->halfExtents.x >= 0.0f && intersectionRegion->halfExtents.y >= 0.0f && intersectionRegion->halfExtents.z >= 0.0f)
 	{
-		if (dp.x <= bothExtents.x)
-		{
-			if (dp.y >= 0.0f)
-			{
-				if (dp.y <= bothExtents.y)
-				{
-					if (dp.z >= 0.0f)
-					{
-						if (dp.z <= bothExtents.z)
-						{
-							lowExtent.x = aabb2->lowExtent.x;
-							highExtent.x = aabb1->highExtent.x;
-							//if(lowExtent.x <)
-						}
-
-					}
-					else
-					{
-						if (dp.z >= -bothExtents.z)
-						{
-
-						}
-					}
-				}
-			}
-			else
-			{
-				if (dp.y >= -bothExtents.y)
-				{
-					if (dp.z >= 0.0f)
-					{
-						if (dp.z <= bothExtents.z)
-						{
-
-						}
-
-					}
-					else
-					{
-						if (dp.z >= -bothExtents.z)
-						{
-
-						}
-					}
-				}
-			}
-		}
+		sphereTraceVector3ScaleByRef(&intersectionRegion->halfExtents, 0.5f);
+		intersectionRegion->center = sphereTraceVector3Add(intersectionRegion->lowExtent, intersectionRegion->halfExtents);
+		return 1;
 	}
-	else
-	{
-		if (dp.x >= -bothExtents.x)
-		{
-			if (dp.y >= 0.0f)
-			{
-				if (dp.y <= bothExtents.y)
-				{
-					if (dp.z >= 0.0f)
-					{
-						if (dp.z <= bothExtents.z)
-						{
 
-						}
-
-					}
-					else
-					{
-						if (dp.z >= -bothExtents.z)
-						{
-
-						}
-					}
-				}
-			}
-			else
-			{
-				if (dp.y >= -bothExtents.y)
-				{
-					if (dp.z >= 0.0f)
-					{
-						if (dp.z <= bothExtents.z)
-						{
-
-						}
-
-					}
-					else
-					{
-						if (dp.z >= -bothExtents.z)
-						{
-
-						}
-					}
-				}
-			}
-		}
-	}
+	return 0;
 }
 
 b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1, const ST_AABB* const aabb2)
@@ -332,35 +249,66 @@ ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb)
 	return sphereTraceVector3Average(aabb->lowExtent, aabb->highExtent);
 }
 
-ST_Vector3 sphereTraceColliderAABBGetRightBottomBackExtent(const ST_AABB* const paabb)
+ST_Vector3 sphereTraceColliderAABBGetExtentByOctant(const ST_AABB* const paabb, ST_Octant octant)
 {
-	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->lowExtent.z);
+	switch (octant)
+	{
+	case ST_LEFT_DOWN_BACK:
+		return paabb->lowExtent;
+		break;
+	case ST_RIGHT_DOWN_BACK:
+		return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->lowExtent.z);
+		break;
+	case ST_LEFT_DOWN_FORWARD:
+		return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
+		break;
+	case ST_RIGHT_DOWN_FORWARD:
+		return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
+		break;
+	case ST_LEFT_UP_BACK:
+		return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
+		break;
+	case ST_RIGHT_UP_BACK:
+		return sphereTraceVector3Construct(paabb->highExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
+		break;
+	case ST_LEFT_UP_FORWARD:
+		return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->highExtent.z);
+		break;
+	case ST_RIGHT_UP_FORWARD:
+		return paabb->highExtent;
+		break;
+	}
 }
 
-ST_Vector3 sphereTraceColliderAABBGetLeftTopBackExtent(const ST_AABB* const paabb)
-{
-	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
-}
-
-ST_Vector3 sphereTraceColliderAABBGetLeftBottomForwardExtent(const ST_AABB* const paabb)
-{
-	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
-}
-
-ST_Vector3 sphereTraceColliderAABBGetRightTopBackExtent(const ST_AABB* const paabb)
-{
-	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
-}
-
-ST_Vector3 sphereTraceColliderAABBGetRightBottomForwardExtent(const ST_AABB* const paabb)
-{
-	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
-}
-
-ST_Vector3 sphereTraceColliderAABBGetLeftTopForwardExtent(const ST_AABB* const paabb)
-{
-	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->highExtent.z);
-}
+//ST_Vector3 sphereTraceColliderAABBGetRightBottomBackExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->lowExtent.z);
+//}
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftTopBackExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
+//}
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftBottomForwardExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
+//}
+//
+//ST_Vector3 sphereTraceColliderAABBGetRightTopBackExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->highExtent.y, paabb->lowExtent.z);
+//}
+//
+//ST_Vector3 sphereTraceColliderAABBGetRightBottomForwardExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->highExtent.x, paabb->lowExtent.y, paabb->highExtent.z);
+//}
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftTopForwardExtent(const ST_AABB* const paabb)
+//{
+//	return sphereTraceVector3Construct(paabb->lowExtent.x, paabb->highExtent.y, paabb->highExtent.z);
+//}
 
 
 void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const pSphereCastData, ST_AABB* const aabb)

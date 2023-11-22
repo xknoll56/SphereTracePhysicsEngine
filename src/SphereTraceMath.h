@@ -72,6 +72,10 @@ float sphereTraceLerp(float x0, float x1, float t);
 
 float sphereTraceAbs(float f);
 
+float sphereTraceMin(float a, float b);
+
+float sphereTraceMax(float a, float b);
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
 
 ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);

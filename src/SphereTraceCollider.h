@@ -54,6 +54,18 @@ typedef struct ST_SphereContact
 
 typedef int ST_ColliderIndex;
 
+typedef enum ST_Octant
+{
+	ST_LEFT_DOWN_BACK = 0,
+	ST_RIGHT_DOWN_BACK = 1,
+	ST_LEFT_DOWN_FORWARD = 2,
+	ST_RIGHT_DOWN_FORWARD = 3,
+	ST_LEFT_UP_BACK = 4,
+	ST_RIGHT_UP_BACK = 5,
+	ST_LEFT_UP_FORWARD = 6,
+	ST_RIGHT_UP_FORWARD = 7
+} ST_Octant;
+
 typedef struct ST_AABB
 {
 	//The size of the aabb
@@ -105,6 +117,13 @@ typedef struct ST_Collider
 	ST_AABB aabb;
 	ST_Tag tag;
 } ST_Collider;
+
+typedef struct ST_AABBContact
+{
+	ST_Collider* pCollider;
+	ST_Collider* pOtherCollider;
+	ST_AABB intersectionRegion;
+} ST_AABBContact;
 
 typedef struct ST_CallbackFunction
 {
@@ -274,7 +293,7 @@ void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb);
 
 void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb);
 
-b32 sphereTraceColliderAABBIsPointInside(const ST_AABB* const aabb, ST_Vector3 point);
+b32 sphereTraceColliderAABBContainsPoint(const ST_AABB* const aabb, ST_Vector3 point);
 
 void sphereTraceColliderAABBSetHalfExtents(ST_AABB* const aabb);
 
@@ -282,7 +301,7 @@ void sphereTraceColliderAABBResizeAABBToContainAnotherAABB(ST_AABB* const aabbTo
 
 b32 sphereTraceColliderAABBIntersectAABB(const ST_AABB* const aabb1, const ST_AABB* const aabb2);
 
-b32 sphereTraceColliderAABBIntersectAABBIntersectionRegeon(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegeon);
+b32 sphereTraceColliderAABBIntersectAABBIntersectionRegion(const ST_AABB* const aabb1, const ST_AABB* const aabb2, ST_AABB* const intersectionRegion);
 
 b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1, const ST_AABB* const aabb2);
 
@@ -290,17 +309,18 @@ b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, c
 
 ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb);
 
-ST_Vector3 sphereTraceColliderAABBGetRightBottomBackExtent(const ST_AABB* const paabb);
-
-ST_Vector3 sphereTraceColliderAABBGetLeftTopBackExtent(const ST_AABB* const paabb);
-
-ST_Vector3 sphereTraceColliderAABBGetLeftBottomForwardExtent(const ST_AABB* const paabb);
-
-ST_Vector3 sphereTraceColliderAABBGetRightTopBackExtent(const ST_AABB* const paabb);
-
-ST_Vector3 sphereTraceColliderAABBGetRightBottomForwardExtent(const ST_AABB* const paabb);
-
-ST_Vector3 sphereTraceColliderAABBGetLeftTopForwardExtent(const ST_AABB* const paabb);
+ST_Vector3 sphereTraceColliderAABBGetExtentByOctant(const ST_AABB* const paabb, ST_Octant octant);
+//ST_Vector3 sphereTraceColliderAABBGetRightBottomBackExtent(const ST_AABB* const paabb);
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftTopBackExtent(const ST_AABB* const paabb);
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftBottomForwardExtent(const ST_AABB* const paabb);
+//
+//ST_Vector3 sphereTraceColliderAABBGetRightTopBackExtent(const ST_AABB* const paabb);
+//
+//ST_Vector3 sphereTraceColliderAABBGetRightBottomForwardExtent(const ST_AABB* const paabb);
+//
+//ST_Vector3 sphereTraceColliderAABBGetLeftTopForwardExtent(const ST_AABB* const paabb);
 
 void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const pSphereCastData, ST_AABB* const aabb);
 
