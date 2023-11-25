@@ -86,9 +86,12 @@ void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_In
 	if (pIntList->count == 1)
 	{
 		if (pIntList->pFirst->value == value)
+		{
 			sphereTraceAllocatorFreeIndexListData(pIntList->pFirst);
-		pIntList->pFirst = NULL;
-		pIntList->count--;
+			pIntList->pFirst = NULL;
+			pIntList->count--;
+			return;
+		}
 	}
 	else if (pIntList->count > 1)
 	{
@@ -173,6 +176,151 @@ void sphereTraceIndexListPrint(const ST_IndexList* const pIntList)
 		data = data->pNext;
 	}
 	printf("\n");
+}
+
+void sphereTraceSortedIndexListAdd(ST_IndexList* const pIntList, ST_Index value)
+{
+	if (pIntList->pFirst == NULL)
+	{
+		pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
+		pIntList->pFirst->value = value;
+		pIntList->pFirst->pNext = NULL;
+		pIntList->count++;
+	}
+	else
+	{
+		ST_IndexListData* pData = pIntList->pFirst;
+		ST_IndexListData* pDataPrev = pIntList->pFirst;
+		int index;
+		for (index=0; index < pIntList->count; index++)
+		{
+			if (pData->value > value)
+			{
+				break;
+			}
+			pDataPrev = pData;
+			pData = pData->pNext;
+		}
+		if (index == 0)
+		{
+			pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
+			pIntList->pFirst->value = value;
+			pIntList->pFirst->pNext = pData;
+		}
+		else
+		{
+			pDataPrev->pNext = sphereTraceAllocatorAllocateIndexListData();
+			pDataPrev->pNext->value = value;
+			pDataPrev->pNext->pNext = pData;
+		}
+		pIntList->count++;
+	}
+}
+b32 sphereTraceSortedIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value)
+{
+	if (pIntList->pFirst == NULL)
+	{
+		pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
+		pIntList->pFirst->value = value;
+		pIntList->pFirst->pNext = NULL;
+		pIntList->count++;
+		return 1;
+	}
+	else
+	{
+		ST_IndexListData* pData = pIntList->pFirst;
+		ST_IndexListData* pDataPrev = pIntList->pFirst;
+		int index;
+		for (index = 0; index < pIntList->count; index++)
+		{
+			if (pData->value == value)
+			{
+				return 0;
+			}
+			else if (pData->value > value)
+			{
+				break;
+			}
+			pDataPrev = pData;
+			pData = pData->pNext;
+		}
+		if (index == 0)
+		{
+			pIntList->pFirst = sphereTraceAllocatorAllocateIndexListData();
+			pIntList->pFirst->value = value;
+			pIntList->pFirst->pNext = pData;
+		}
+		else
+		{
+			pDataPrev->pNext = sphereTraceAllocatorAllocateIndexListData();
+			pDataPrev->pNext->value = value;
+			pDataPrev->pNext->pNext = pData;
+		}
+		pIntList->count++;
+		return 1;
+	}
+}
+void sphereTraceSortedIndexListRemove(ST_IndexList* const pIntList, ST_Index value)
+{
+	if (pIntList->count == 1)
+	{
+		if (pIntList->pFirst->value == value)
+		{
+			sphereTraceAllocatorFreeIndexListData(pIntList->pFirst);
+			pIntList->pFirst = NULL;
+			pIntList->count--;
+			return;
+		}
+	}
+	else if (pIntList->count > 1)
+	{
+		ST_IndexListData* pData = pIntList->pFirst;
+		ST_IndexListData* pNext = pIntList->pFirst->pNext;
+		if (pIntList->pFirst->value == value)
+		{
+			sphereTraceAllocatorFreeIndexListData(pIntList->pFirst);
+			pIntList->pFirst = pNext;
+			pIntList->count--;
+			return;
+		}
+		else if (pIntList->pFirst->value > value)
+		{
+			return;
+		}
+		for (int i = 0; i < pIntList->count-1; i++)
+		{
+			if (pNext->value == value)
+			{
+				pData->pNext = pNext->pNext;
+				sphereTraceAllocatorFreeIndexListData(pNext);
+				pIntList->count--;
+				return;
+			}
+			else if (pNext->value > value)
+			{
+				return;
+			}
+			pData = pNext;
+			pNext = pNext->pNext;
+		}
+	}
+}
+b32 sphereTraceSortedIndexListContains(const ST_IndexList* const pIntList, ST_Index value)
+{
+	ST_IndexListData* pild = pIntList->pFirst;
+	for (int i = 0; i < pIntList->count; i++)
+	{
+		if (pild->value == value)
+		{
+			return 1;
+		}
+		else if (pild->value > value)
+		{
+			return 0;
+		}
+		pild = pild->pNext;
+	}
+	return 0;
 }
 
 

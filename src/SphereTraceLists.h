@@ -22,9 +22,12 @@ void sphereTraceIndexListAddFirst(ST_IndexList* const pIntList, ST_Index value);
 
 void sphereTraceIndexListAddLast(ST_IndexList* const pIntList, ST_Index value);
 
+
 b32 sphereTraceIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
 
+
 void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_Index value);
+
 
 void sphereTraceIndexListFree(ST_IndexList* const pIntList);
 
@@ -34,6 +37,11 @@ ST_IndexList sphereTraceIndexListConstructForDeletedValues(const ST_IndexList* c
 
 void sphereTraceIndexListPrint(const ST_IndexList* const pIntList);
 
+//all sorted list functions, assumes sorted in ascending order
+void sphereTraceSortedIndexListAdd(ST_IndexList* const pIntList, ST_Index value);
+b32 sphereTraceSortedIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
+void sphereTraceSortedIndexListRemove(ST_IndexList* const pIntList, ST_Index value);
+b32 sphereTraceSortedIndexListContains(const ST_IndexList* const pIntList, ST_Index value);
 
 typedef struct ST_Vector3ListData
 {

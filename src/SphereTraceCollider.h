@@ -110,7 +110,10 @@ typedef struct ST_SubscriberList
 typedef struct ST_Collider
 {
 	ST_ColliderType colliderType;
+	//bucket indices for the grid spacial partition
 	ST_IndexList bucketIndices;
+	//leaf nodes on oct tree
+	ST_IndexList leafNodes;
 	ST_Index colliderIndex;
 	ST_SubscriberList subscriberList;
 	float boundingRadius;
@@ -292,6 +295,10 @@ ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents);
 void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb);
 
 void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb);
+
+float sphereTraceAABBGetBoundingRadius(ST_AABB* paabb);
+
+float sphereTraceAABBGetBoundingRadiusSquared(ST_AABB* paabb);
 
 b32 sphereTraceColliderAABBContainsPoint(const ST_AABB* const aabb, ST_Vector3 point);
 

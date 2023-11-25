@@ -452,17 +452,19 @@ ST_Vector3 sphereTraceMathClosestPointOnLineNearestToPoint(ST_Vector3 linePoint,
 	ST_Vector3 dp = sphereTraceVector3Subtract(point, linePoint);
 	ST_Vector3 dir = sphereTraceVector3Normalize(sphereTraceVector3Cross(sphereTraceVector3Cross(dp, lineDir), lineDir));
 	float dist = sphereTraceVector3Dot(dir, dp);
-	return sphereTraceVector3AddAndScale(linePoint, dir, dist);
+	return sphereTraceVector3AddAndScale(point, dir, -dist);
 }
 
-void sphereTraceMathClosestPointOnLineNearestToPointExtractData(ST_Vector3 linePoint, ST_Vector3 lineDir, ST_Vector3 point, ST_Vector3* pPoint, ST_Vector3* pDir, float* pLineDist, float* pClosestDist)
+void sphereTraceMathClosestPointOnLineNearestToPointExtractData(ST_Vector3 linePoint, ST_Vector3 lineDir, ST_Vector3 point, ST_Vector3* pPoint, ST_Vector3* pDir,  float* pClosestDist)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(point, linePoint);
 	ST_Vector3 dir = sphereTraceVector3Normalize(sphereTraceVector3Cross( lineDir, sphereTraceVector3Cross(dp, lineDir)));
+	//dir towards the point from the closest point on line
 	*pDir = dir;
-	*pLineDist = sphereTraceVector3Dot(dp, lineDir);
-	*pPoint = sphereTraceVector3AddAndScale(linePoint, lineDir, *pLineDist);
-	*pClosestDist = sphereTraceVector3Distance(*pPoint, point);
+	//distance from the line point
+	*pClosestDist = sphereTraceVector3Dot(dp, dir);
+	//closest point on line
+	*pPoint = sphereTraceVector3AddAndScale(point, dir, -*pClosestDist);
 }
 
 //line must have a negative slope, and positive intersept

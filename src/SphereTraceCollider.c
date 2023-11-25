@@ -99,6 +99,16 @@ void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb)
 	paabb->lowExtent = sphereTraceVector3Subtract(paabb->center, paabb->halfExtents);
 }
 
+float sphereTraceAABBGetBoundingRadius(ST_AABB* paabb)
+{
+	return sqrtf(paabb->halfExtents.x * paabb->halfExtents.x + paabb->halfExtents.y * paabb->halfExtents.y + paabb->halfExtents.z * paabb->halfExtents.z);
+}
+
+float sphereTraceAABBGetBoundingRadiusSquared(ST_AABB* paabb)
+{
+	return paabb->halfExtents.x * paabb->halfExtents.x + paabb->halfExtents.y * paabb->halfExtents.y + paabb->halfExtents.z * paabb->halfExtents.z;
+}
+
 
 
 b32 sphereTraceColliderAABBContainsPoint(const ST_AABB* const aabb, ST_Vector3 point)
