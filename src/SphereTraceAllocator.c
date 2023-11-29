@@ -12,8 +12,10 @@
 #define ST_FUNCTION_POOL_DEFAULT_SIZE 20
 #define ST_INDEX_ALLOCATOR_DEFAULT_SIZE 5
 #define ST_CONTACT_LINEAR_ALLOCATOR_SIZE 10
+#define ST_COLLIDER_ALLOCATOR_SIZE 50
 
 static ST_Allocator indexListAllocator;
+static ST_Allocator keyValueListAllocator;
 static ST_Allocator vector3ListAllocator;
 static ST_Allocator vector3Allocator;
 static ST_Allocator callbackFunctionAllocator;
@@ -21,6 +23,9 @@ static ST_Allocator contactEntryAllocator;
 static ST_Allocator sphereContactLinearAllocator;
 static ST_Allocator aabbContactLinearAllocator;
 static ST_Allocator octTreeNodeAllocator;
+static ST_Allocator sphereColliderAllocator;
+static ST_Allocator planeColliderAllocator;
+static ST_Allocator triangleColliderAllocator;
 
 ST_FreeStack sphereTraceAllocatorFreeStackConstruct(ST_Index capacity, void* pArr, ST_Index objectSize)
 {
@@ -212,6 +217,7 @@ void* sphereTraceLinearAllocatorGetByIndex(ST_Allocator* const pLinearAllocator,
 void sphereTraceAllocatorInitialize()
 {
 	indexListAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_IndexListData), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	keyValueListAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_KeyValueListData), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	vector3ListAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_Vector3ListData), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	vector3Allocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_Vector3), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	callbackFunctionAllocator = sphereTraceAllocatorConstruct(ST_FUNCTION_POOL_DEFAULT_SIZE, sizeof(ST_CallbackFunction), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
@@ -219,6 +225,10 @@ void sphereTraceAllocatorInitialize()
 	sphereContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_SphereContact), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	aabbContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_AABB), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	octTreeNodeAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_OctTreeNode), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	//octTreeObjectEntryAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_SpaceObjectEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	sphereColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_SphereCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	planeColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_PlaneCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	triangleColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_TriangleCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 }
 
 ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode()
@@ -231,6 +241,15 @@ void sphereTraceAllocatorFreeOctTreeNode(void* pIndex)
 	sphereTraceAllocatorFreeObject(&octTreeNodeAllocator, pIndex);
 }
 
+//ST_SpaceObjectEntry* sphereTraceAllocatorAllocateOctTreeObjectEntry()
+//{
+//	return sphereTraceAllocatorAllocateObject(&octTreeObjectEntryAllocator);
+//}
+//void sphereTraceAllocatorFreeOctTreeObjectEntry(void* pIndex)
+//{
+//	sphereTraceAllocatorFreeObject(&octTreeObjectEntryAllocator, pIndex);
+//}
+
 ST_IndexListData* sphereTraceAllocatorAllocateIndexListData()
 {
 	return sphereTraceAllocatorAllocateObject(&indexListAllocator);
@@ -239,6 +258,16 @@ ST_IndexListData* sphereTraceAllocatorAllocateIndexListData()
 void sphereTraceAllocatorFreeIndexListData(void* pIndex)
 {
 	sphereTraceAllocatorFreeObject(&indexListAllocator, pIndex);
+}
+
+ST_KeyValueListData* sphereTraceAllocatorAllocateKeyValueListData()
+{
+	return sphereTraceAllocatorAllocateObject(&keyValueListAllocator);
+}
+
+void sphereTraceAllocatorFreeKeyValueListData(void* pIndex)
+{
+	sphereTraceAllocatorFreeObject(&keyValueListAllocator, pIndex);
 }
 
 ST_Vector3ListData* sphereTraceAllocatorAllocateVector3ListData()
@@ -275,6 +304,38 @@ void sphereTraceAllocatorFreeCallbackFunction(void* pIndex)
 ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry()
 {
 	return sphereTraceAllocatorAllocateObject(&contactEntryAllocator);
+}
+
+ST_Collider* sphereTraceAllocatorAllocateCollider(ST_ColliderType colliderType)
+{
+	switch (colliderType)
+	{
+	case COLLIDER_SPHERE:
+		return sphereTraceAllocatorAllocateObject(&sphereColliderAllocator);
+		break;
+	case COLLIDER_PLANE:
+		return sphereTraceAllocatorAllocateObject(&planeColliderAllocator);
+		break;
+	case COLLIDER_TRIANGLE:
+		return sphereTraceAllocatorAllocateObject(&triangleColliderAllocator);
+		break;
+	}
+}
+
+void sphereTraceAllocatorFreeCollider(ST_ColliderType colliderType, void* pIndex)
+{
+	switch (colliderType)
+	{
+	case COLLIDER_SPHERE:
+		sphereTraceAllocatorFreeObject(&sphereColliderAllocator, pIndex);
+		break;
+	case COLLIDER_PLANE:
+		sphereTraceAllocatorFreeObject(&planeColliderAllocator, pIndex);
+		break;
+	case COLLIDER_TRIANGLE:
+		sphereTraceAllocatorFreeObject(&triangleColliderAllocator, pIndex);
+		break;
+	}
 }
 
 

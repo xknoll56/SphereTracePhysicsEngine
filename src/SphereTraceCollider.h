@@ -107,19 +107,33 @@ typedef struct ST_SubscriberList
 	void* pSubscriberContext;
 } ST_SubscriberList;
 
+typedef struct ST_SpaceObjectEntry
+{
+	//pointer to the object (for the engine internals will
+	//simply be a collider)
+	ST_Index pObject;
+	//pointer to the aabb corresponding to this object
+	ST_AABB* paabb;
+	//pointer to the objects index list leaf nodes (will be used
+	//when objects are moved
+	ST_IndexList leafNodes;
+	b32 objectIsCollider;
+} ST_SpaceObjectEntry;
+
 typedef struct ST_Collider
 {
 	ST_ColliderType colliderType;
 	//bucket indices for the grid spacial partition
 	ST_IndexList bucketIndices;
-	//leaf nodes on oct tree
-	ST_IndexList leafNodes;
+	ST_SpaceObjectEntry octTreeEntry;
 	ST_Index colliderIndex;
 	ST_SubscriberList subscriberList;
 	float boundingRadius;
 	ST_AABB aabb;
 	ST_Tag tag;
 } ST_Collider;
+
+void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider);
 
 typedef struct ST_AABBContact
 {
@@ -291,6 +305,8 @@ ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float
 ST_AABB sphereTraceAABBConstruct1(ST_Vector3 lowExtent, ST_Vector3 highExtent);
 
 ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents);
+
+float sphereTraceAABBGetVolume(const ST_AABB* const paabb);
 
 void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb);
 

@@ -17,31 +17,45 @@ typedef struct ST_IndexList
 } ST_IndexList;
 
 ST_IndexList sphereTraceIndexListConstruct();
-
 void sphereTraceIndexListAddFirst(ST_IndexList* const pIntList, ST_Index value);
-
 void sphereTraceIndexListAddLast(ST_IndexList* const pIntList, ST_Index value);
-
-
 b32 sphereTraceIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
-
-
 void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_Index value);
-
-
 void sphereTraceIndexListFree(ST_IndexList* const pIntList);
-
+void sphereTraceIndexListReset(ST_IndexList* const pIntList);
 b32 sphereTraceIndexListContains(const ST_IndexList* const pIntList, ST_Index value);
-
 ST_IndexList sphereTraceIndexListConstructForDeletedValues(const ST_IndexList* const pOldIntList, const ST_IndexList* const pNewIntList);
-
 void sphereTraceIndexListPrint(const ST_IndexList* const pIntList);
-
 //all sorted list functions, assumes sorted in ascending order
 void sphereTraceSortedIndexListAdd(ST_IndexList* const pIntList, ST_Index value);
 b32 sphereTraceSortedIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
+void sphereTraceSortedIndexListMergeUnique(ST_IndexList* const pIntListMergeFrom, ST_IndexList* const pIntListMergeTo);
 void sphereTraceSortedIndexListRemove(ST_IndexList* const pIntList, ST_Index value);
 b32 sphereTraceSortedIndexListContains(const ST_IndexList* const pIntList, ST_Index value);
+
+typedef struct ST_KeyValueListData
+{
+	ST_Index key;
+	ST_Index value;
+	struct ST_KeyValueListData* pNext;
+} ST_KeyValueListData;
+
+typedef struct ST_KeyValueList
+{
+	ST_Index count;
+	ST_KeyValueListData* pFirst;
+} ST_KeyValueList;
+
+ST_KeyValueList sphereTraceKeyValueListConstruct();
+b32 sphereTraceKeyValueListAdd(ST_KeyValueList* const pList, ST_Index key, ST_Index value);
+void sphereTraceKeyValueListRemoveKey(ST_KeyValueList* const pList, ST_Index key);
+void sphereTraceKeyValueListFree(ST_KeyValueList* const pList);
+b32 sphereTraceKeyValueListContainsKey(const ST_KeyValueList* const pList, ST_Index key);
+void sphereTraceKeyValueListPrint(const ST_KeyValueList* const pList);
+//all sorted list functions, assumes sorted in ascending order
+b32 sphereTraceSortedKeyValueListAddUnique(ST_KeyValueList* const pList, ST_Index key, ST_Index value);
+void sphereTraceSortedKeyValueListRemoveKey(ST_KeyValueList* const pList, ST_Index key);
+b32 sphereTraceSortedKeyValueListContainsKey(const ST_KeyValueList* const pList, ST_Index key);
 
 typedef struct ST_Vector3ListData
 {

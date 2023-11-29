@@ -38,6 +38,13 @@ ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float bou
 	collider.boundingRadius = boundingRadius;
 	return collider;
 }
+void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider)
+{
+	pCollider->octTreeEntry.leafNodes = sphereTraceIndexListConstruct();
+	pCollider->octTreeEntry.paabb = &pCollider->aabb;
+	pCollider->octTreeEntry.pObject = pCollider;
+	pCollider->octTreeEntry.objectIsCollider = ST_TRUE;
+}
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
@@ -97,6 +104,11 @@ void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb)
 {
 	paabb->highExtent = sphereTraceVector3Add(paabb->center, paabb->halfExtents);
 	paabb->lowExtent = sphereTraceVector3Subtract(paabb->center, paabb->halfExtents);
+}
+
+float sphereTraceAABBGetVolume(const ST_AABB* const paabb)
+{
+	return 2.0f * paabb->halfExtents.x * 2.0f * paabb->halfExtents.y * 2.0f * paabb->halfExtents.z;
 }
 
 float sphereTraceAABBGetBoundingRadius(ST_AABB* paabb)

@@ -136,6 +136,12 @@ void sphereTraceIndexListFree(ST_IndexList* const pIntList)
 	pIntList->count = 0;
 }
 
+void sphereTraceIndexListReset(ST_IndexList* const pIntList)
+{
+	sphereTraceIndexListFree(pIntList);
+	*pIntList = sphereTraceIndexListConstruct();
+}
+
 b32 sphereTraceIndexListContains(const ST_IndexList* const pIntList, ST_Index value)
 {
 	ST_IndexListData* data = pIntList->pFirst;
@@ -260,6 +266,16 @@ b32 sphereTraceSortedIndexListAddUnique(ST_IndexList* const pIntList, ST_Index v
 		return 1;
 	}
 }
+
+void sphereTraceSortedIndexListMergeUnique(ST_IndexList* const pIntListMergeFrom, ST_IndexList* const pIntListMergeTo)
+{
+	ST_IndexListData* pild = pIntListMergeFrom->pFirst;
+	for (int i = 0; i < pIntListMergeFrom->count; i++)
+	{
+		sphereTraceSortedIndexListAddUnique(pIntListMergeTo, pild->value);
+		pild = pild->pNext;
+	}
+}
 void sphereTraceSortedIndexListRemove(ST_IndexList* const pIntList, ST_Index value)
 {
 	if (pIntList->count == 1)
@@ -315,6 +331,248 @@ b32 sphereTraceSortedIndexListContains(const ST_IndexList* const pIntList, ST_In
 			return 1;
 		}
 		else if (pild->value > value)
+		{
+			return 0;
+		}
+		pild = pild->pNext;
+	}
+	return 0;
+}
+
+/// <summary>
+/// key value list
+/// </summary>
+/// <returns></returns>
+ST_KeyValueList sphereTraceKeyValueListConstruct()
+{
+	ST_KeyValueList list;
+	list.count = 0;
+	list.pFirst = NULL;
+	return list;
+}
+
+
+b32 sphereTraceKeyValueListAdd(ST_KeyValueList* const pIntList, ST_Index key, ST_Index value)
+{
+	if (pIntList->pFirst == NULL)
+	{
+		pIntList->pFirst = sphereTraceAllocatorAllocateKeyValueListData();
+		pIntList->pFirst->key = key;
+		pIntList->pFirst->value = value;
+		pIntList->pFirst->pNext = NULL;
+		pIntList->count++;
+		return 1;
+	}
+	else
+	{
+		ST_KeyValueListData* pData = pIntList->pFirst;
+		for (int i = 0; i < pIntList->count - 1; i++)
+		{
+			if (pData != NULL)
+			{
+				if (pData->key == key)
+					return 0;
+			}
+			pData = pData->pNext;
+		}
+		if (pData != NULL)
+		{
+			if (pData->key == key)
+				return 0;
+		}
+		pData->pNext = sphereTraceAllocatorAllocateKeyValueListData();
+		pData->pNext->key = key;
+		pData->pNext->value = value;
+		pData->pNext->pNext = NULL;
+		pIntList->count++;
+		return 1;
+	}
+}
+
+void sphereTraceKeyValueListRemoveKey(ST_KeyValueList* const pIntList, ST_Index key)
+{
+	if (pIntList->count == 1)
+	{
+		if (pIntList->pFirst->key == key)
+		{
+			sphereTraceAllocatorFreeKeyValueListData(pIntList->pFirst);
+			pIntList->pFirst = NULL;
+			pIntList->count--;
+			return;
+		}
+	}
+	else if (pIntList->count > 1)
+	{
+		ST_KeyValueListData* pData = pIntList->pFirst;
+		ST_KeyValueListData* pNext = pIntList->pFirst->pNext;
+		if (pIntList->pFirst->key == key)
+		{
+			sphereTraceAllocatorFreeKeyValueListData(pIntList->pFirst);
+			pIntList->pFirst = pNext;
+			pIntList->count--;
+			return;
+		}
+		for (int i = 0; i < pIntList->count - 1; i++)
+		{
+			if (pNext->key == key)
+			{
+				pData->pNext = pNext->pNext;
+				sphereTraceAllocatorFreeKeyValueListData(pNext);
+				pIntList->count--;
+				return;
+			}
+			pData = pNext;
+			pNext = pNext->pNext;
+		}
+	}
+}
+
+void sphereTraceKeyValueListFree(ST_KeyValueList* const pIntList)
+{
+	ST_KeyValueListData* pData = pIntList->pFirst;
+	ST_KeyValueListData* pNext;
+	for (int i = 0; i < pIntList->count; i++)
+	{
+		if (pData != NULL)
+		{
+			pNext = pData->pNext;
+			sphereTraceAllocatorFreeKeyValueListData(pData);
+			pData = pNext;
+		}
+	}
+	pIntList->pFirst = NULL;
+	pIntList->count = 0;
+}
+
+b32 sphereTraceKeyValueListContainsKey(const ST_KeyValueList* const pIntList, ST_Index key)
+{
+	ST_KeyValueListData* data = pIntList->pFirst;
+	for (int i = 0; i < pIntList->count; i++)
+	{
+		if (data != NULL)
+		{
+			if (data->key == key)
+				return 1;
+			data = data->pNext;
+		}
+	}
+	return 0;
+}
+
+void sphereTraceKeyValueListPrint(const ST_KeyValueList* const pIntList)
+{
+	ST_KeyValueListData* data = pIntList->pFirst;
+	for (int i = 0; i < pIntList->count; i++)
+	{
+		printf("%i, key: %i, value: %i", i, data->key, data->value);
+		data = data->pNext;
+	}
+	printf("\n");
+}
+
+
+b32 sphereTraceSortedKeyValueListAddUnique(ST_KeyValueList* const pIntList, ST_Index key, ST_Index value)
+{
+	if (pIntList->pFirst == NULL)
+	{
+		pIntList->pFirst = sphereTraceAllocatorAllocateKeyValueListData();
+		pIntList->pFirst->key = key;
+		pIntList->pFirst->value = value;
+		pIntList->pFirst->pNext = NULL;
+		pIntList->count++;
+		return 1;
+	}
+	else
+	{
+		ST_KeyValueListData* pData = pIntList->pFirst;
+		ST_KeyValueListData* pDataPrev = pIntList->pFirst;
+		int index;
+		for (index = 0; index < pIntList->count; index++)
+		{
+			if (pData->key == key)
+			{
+				return 0;
+			}
+			else if (pData->key > key)
+			{
+				break;
+			}
+			pDataPrev = pData;
+			pData = pData->pNext;
+		}
+		if (index == 0)
+		{
+			pIntList->pFirst = sphereTraceAllocatorAllocateKeyValueListData();
+			pIntList->pFirst->key = key;
+			pIntList->pFirst->value = value;
+			pIntList->pFirst->pNext = pData;
+		}
+		else
+		{
+			pDataPrev->pNext = sphereTraceAllocatorAllocateKeyValueListData();
+			pDataPrev->pNext->key = key;
+			pDataPrev->pNext->value = value;
+			pDataPrev->pNext->pNext = pData;
+		}
+		pIntList->count++;
+		return 1;
+	}
+}
+void sphereTraceSortedKeyValueListRemoveKey(ST_KeyValueList* const pIntList, ST_Index key)
+{
+	if (pIntList->count == 1)
+	{
+		if (pIntList->pFirst->key == key)
+		{
+			sphereTraceAllocatorFreeKeyValueListData(pIntList->pFirst);
+			pIntList->pFirst = NULL;
+			pIntList->count--;
+			return;
+		}
+	}
+	else if (pIntList->count > 1)
+	{
+		ST_KeyValueListData* pData = pIntList->pFirst;
+		ST_KeyValueListData* pNext = pIntList->pFirst->pNext;
+		if (pIntList->pFirst->key == key)
+		{
+			sphereTraceAllocatorFreeKeyValueListData(pIntList->pFirst);
+			pIntList->pFirst = pNext;
+			pIntList->count--;
+			return;
+		}
+		else if (pIntList->pFirst->key > key)
+		{
+			return;
+		}
+		for (int i = 0; i < pIntList->count - 1; i++)
+		{
+			if (pNext->key == key)
+			{
+				pData->pNext = pNext->pNext;
+				sphereTraceAllocatorFreeKeyValueListData(pNext);
+				pIntList->count--;
+				return;
+			}
+			else if (pNext->key > key)
+			{
+				return;
+			}
+			pData = pNext;
+			pNext = pNext->pNext;
+		}
+	}
+}
+b32 sphereTraceSortedKeyValueListContainsKey(const ST_KeyValueList* const pIntList, ST_Index key)
+{
+	ST_KeyValueListData* pild = pIntList->pFirst;
+	for (int i = 0; i < pIntList->count; i++)
+	{
+		if (pild->key == key)
+		{
+			return 1;
+		}
+		else if (pild->key > key)
 		{
 			return 0;
 		}

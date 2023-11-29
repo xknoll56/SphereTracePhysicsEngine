@@ -9,6 +9,9 @@ typedef struct ST_SphereContactEntry ST_SphereContactEntry;
 typedef struct ST_SphereContact ST_SphereContact;
 typedef struct ST_OctTreeNode ST_OctTreeNode;
 typedef struct ST_AABBContact ST_AABBContact;
+typedef enum ST_ColliderType ST_ColliderType;
+typedef struct ST_Collider ST_Collider;
+typedef struct ST_SpaceObjectEntry ST_SpaceObjectEntry;
 
 typedef struct ST_FreeStack
 {
@@ -64,8 +67,12 @@ void* sphereTraceLinearAllocatorGetByIndex(ST_Allocator* const pLinearAllocator,
 void sphereTraceAllocatorInitialize();
 ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode();
 void sphereTraceAllocatorFreeOctTreeNode(void* pIndex);
+//ST_SpaceObjectEntry* sphereTraceAllocatorAllocateOctTreeObjectEntry();
+//void sphereTraceAllocatorFreeOctTreeObjectEntry(void* pIndex);
 ST_IndexListData* sphereTraceAllocatorAllocateIndexListData();
 void sphereTraceAllocatorFreeIndexListData(void* pIndex);
+ST_KeyValueListData* sphereTraceAllocatorAllocateKeyValueListData();
+void sphereTraceAllocatorFreeKeyValueListData(void* pIndex);
 ST_Vector3ListData* sphereTraceAllocatorAllocateVector3ListData();
 void sphereTraceAllocatorFreeVector3ListData(void* pIndex);
 ST_Vector3* sphereTraceAllocatorAllocateVector3();
@@ -74,6 +81,8 @@ ST_CallbackFunction* sphereTraceAllocatorAllocateCallbackFunction();
 void sphereTraceAllocatorFreeCallbackFunction(void* pIndex);
 ST_SphereContactEntry* sphereTraceAllocatorAllocateContactEntry();
 void sphereTraceAllocatorFreeContactEntry(void* pIndex);
+ST_Collider* sphereTraceAllocatorAllocateCollider(ST_ColliderType colliderType);
+void sphereTraceAllocatorFreeCollider(ST_ColliderType colliderType, void* pIndex);
 
 //linear allocator functions
 ST_SphereContact* sphereTraceLinearAllocatorAllocateSphereContact();

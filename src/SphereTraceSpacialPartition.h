@@ -10,12 +10,14 @@
 #define ST_OCT_TREE_SMALLEST_OCTANT_SIZE 1.0f
 #define ST_OCT_TREE_MAX_DEPTH 7
 
+
 typedef struct ST_OctTreeNode
 {
 	ST_AABB aabb;
 	b32 hasChildren;
 	struct ST_OctTreeNode* children[8];
-	ST_IndexList colliderList;
+	struct ST_OctTreeNode* pParant;
+	ST_IndexList objectEntries;
 	ST_Index depth;
 	float boundingRadius;
 } ST_OctTreeNode;
@@ -28,31 +30,34 @@ typedef struct ST_OctTree
 	ST_Index maxDepth;
 } ST_OctTree;
 
-ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb, ST_Index depth);
+ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb, ST_Index depth, ST_OctTreeNode* pParent);
+void sphereTraceOctTreeNodeFree(ST_OctTreeNode* const pNode);
 void sphereTraceOctTreeNodeSetChildAABBByIndex(ST_OctTreeNode* const pNode, ST_Index i, ST_AABB* paabb);
 void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode);
+//ST_Index sphereTraceOctTreeNodeCountObjectsBelow(ST_OctTreeNode* const pNode);
+ST_Index sphereTraceOctTreeNodeGetObjectCountBelow(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueObjects, ST_IndexList* pNodesBelow);
 
 ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb);
 
 //will return pointers to all oct-tree leaf nodes that intersect with this aabb
 ST_IndexList sphereTraceOctTreeSampleIntersectionLeafs(ST_OctTree* const pOctTree, ST_AABB* const paabb);
 //will sample both colliders and leafs and add whichever items are not on the current sorted lists
-void sphereTraceOctTreeReSampleIntersectionLeafsAndColliders(ST_OctTree* const pOctTree, ST_AABB* const paabb, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);
+void sphereTraceOctTreeReSampleIntersectionLeafsAndObjects(ST_OctTree* const pOctTree, ST_AABB* const paabb, ST_IndexList* const pLeafs, ST_IndexList* const pObjects);
 //
-void sphereTraceOctTreeSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);
+void sphereTraceOctTreeSampleIntersectionLeafsAndObjectsFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pObjects);
 //will return pointers to all colliders intersecting in the tree
-ST_IndexList sphereTraceOctTreeSampleIntersectionColliders(ST_OctTree* const pOctTree, ST_Collider* const pCollider);
+//ST_IndexList sphereTraceOctTreeSampleIntersectionColliders(ST_OctTree* const pOctTree, ST_Collider* const pCollider);
 //will insert point into a node, there can only be one point in each node,
 //when another point is placed within a node, if it is within a certain
 //radius it will not generate another node
 ST_OctTreeNode* sphereTraceOctTreeSampleLeafNode(ST_OctTree* pTree, ST_Vector3 point);
-void sphereTraceOctTreeInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider);
-ST_Index sphereTraceOctTreeGetMaxCollidersOnLeaf(ST_OctTree* pTree, ST_OctTreeNode** ppNodeWithMax);
-//void sphereTraceOctTreeDisectNodesWithMinColliders(ST_OctTree* pTree, ST_Index minColliders);
-//This will calculated the max number of colliders on a leaf, disect it
-//recalculate then see if a change is made and continue until a change
-//is not made
-//void sphereTraceOctTreeDisectNodesUntilIneffective(ST_OctTree* pTree, ST_Index maxIterations);
+//inserts an object id with a pointer to an aabb and returns the list of leaf nodes its added to
+void sphereTraceOctTreeInsertObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree);
+//will allocate an object entry then insert it with a collider
+void sphereTraceOctTreeInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
+void sphereTraceOctTreeRemoveObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree);
+void sphereTraceOctTreeReInsertObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree);
+
 
 typedef struct ST_SpacialPartitionBucket
 {
