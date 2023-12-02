@@ -11,7 +11,6 @@ typedef struct ST_OctTreeNode ST_OctTreeNode;
 typedef struct ST_AABBContact ST_AABBContact;
 typedef enum ST_ColliderType ST_ColliderType;
 typedef struct ST_Collider ST_Collider;
-typedef struct ST_SpaceObjectEntry ST_SpaceObjectEntry;
 
 typedef struct ST_FreeStack
 {

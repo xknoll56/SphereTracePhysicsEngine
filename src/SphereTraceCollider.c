@@ -31,20 +31,25 @@ ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float bou
 {
 	ST_Collider collider;
 	collider.colliderType = colliderType;
+	if (colliderType == COLLIDER_SPHERE)
+		collider.isDynamic = ST_TRUE;
+	else
+		collider.isDynamic = ST_FALSE;
 	collider.bucketIndices = sphereTraceIndexListConstruct();
+	collider.octTreeLeafs = sphereTraceIndexListConstruct();
 	//default, will be set later when the derrived collider is created
 	collider.colliderIndex = 0;
 	collider.subscriberList = sphereTraceSubscriberListConstruct();
 	collider.boundingRadius = boundingRadius;
 	return collider;
 }
-void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider)
-{
-	pCollider->octTreeEntry.leafNodes = sphereTraceIndexListConstruct();
-	pCollider->octTreeEntry.paabb = &pCollider->aabb;
-	pCollider->octTreeEntry.pObject = pCollider;
-	pCollider->octTreeEntry.objectIsCollider = ST_TRUE;
-}
+//void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider)
+//{
+//	pCollider->octTreeEntry.leafNodes = sphereTraceIndexListConstruct();
+//	pCollider->octTreeEntry.paabb = &pCollider->aabb;
+//	pCollider->octTreeEntry.pObject = pCollider;
+//	pCollider->octTreeEntry.objectIsCollider = ST_TRUE;
+//}
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
@@ -264,6 +269,106 @@ b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, c
 	//}
 
 	//return 0;
+}
+
+b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData)
+{
+	ST_Vector3 dp = sphereTraceVector3Subtract(paabb->center, from);
+	if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+	{
+		if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+		{
+			if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+			{
+				pRaycastData->distance = 0.0f;
+				pRaycastData->startPoint = from;
+				pRaycastData->contact.point = from;
+				return 1;
+
+			}
+		}
+	}
+	ST_Vector3 dpDir = sphereTraceVector3Normalize(dp);
+	float dot = sphereTraceVector3Dot(dpDir, dir.v);
+	if (dot >= 0.0f)
+	{
+		if (dpDir.x >= 0.0f)
+		{
+			//check the left face
+			sphereTraceColliderInfiniteXPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);
+			if ((pRaycastData->contact.point.y >= paabb->lowExtent.y) && (pRaycastData->contact.point.z >= paabb->lowExtent.z))
+			{
+				if ((pRaycastData->contact.point.y <= paabb->highExtent.y) && (pRaycastData->contact.point.z <= paabb->highExtent.z))
+				{
+					return 1;
+				}
+			}
+		}
+		else
+		{
+			//check the right face
+			sphereTraceColliderInfiniteXPlaneRayTrace(from, dir, paabb->highExtent, pRaycastData);
+			if ((pRaycastData->contact.point.y >= paabb->lowExtent.y) && (pRaycastData->contact.point.z >= paabb->lowExtent.z))
+			{
+				if ((pRaycastData->contact.point.y <= paabb->highExtent.y) && (pRaycastData->contact.point.z <= paabb->highExtent.z))
+				{
+					return 1;
+				}
+			}
+		}
+
+		if (dpDir.y >= 0.0f)
+		{
+			//check the left face
+			sphereTraceColliderInfiniteYPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);
+			if ((pRaycastData->contact.point.x >= paabb->lowExtent.x) && (pRaycastData->contact.point.z >= paabb->lowExtent.z))
+			{
+				if ((pRaycastData->contact.point.x <= paabb->highExtent.x) && (pRaycastData->contact.point.z <= paabb->highExtent.z))
+				{
+					return 1;
+				}
+			}
+		}
+		else
+		{
+			//check the right face
+			sphereTraceColliderInfiniteYPlaneRayTrace(from, dir, paabb->highExtent, pRaycastData);
+			if ((pRaycastData->contact.point.x >= paabb->lowExtent.x) && (pRaycastData->contact.point.z >= paabb->lowExtent.z))
+			{
+				if ((pRaycastData->contact.point.x <= paabb->highExtent.x) && (pRaycastData->contact.point.z <= paabb->highExtent.z))
+				{
+					return 1;
+				}
+			}
+		}
+
+		if (dpDir.z >= 0.0f)
+		{
+			//check the left face
+			sphereTraceColliderInfiniteZPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);
+			if ((pRaycastData->contact.point.y >= paabb->lowExtent.y) && (pRaycastData->contact.point.x >= paabb->lowExtent.x))
+			{
+				if ((pRaycastData->contact.point.y <= paabb->highExtent.y) && (pRaycastData->contact.point.x <= paabb->highExtent.x))
+				{
+					return 1;
+				}
+			}
+		}
+		else
+		{
+			//check the right face
+			sphereTraceColliderInfiniteZPlaneRayTrace(from, dir, paabb->highExtent, pRaycastData);
+			if ((pRaycastData->contact.point.y >= paabb->lowExtent.y) && (pRaycastData->contact.point.x >= paabb->lowExtent.x))
+			{
+				if ((pRaycastData->contact.point.y <= paabb->highExtent.y) && (pRaycastData->contact.point.x <= paabb->highExtent.x))
+				{
+					return 1;
+				}
+			}
+		}
+	}
+
+	return 0;
 }
 
 ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb)

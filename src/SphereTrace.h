@@ -43,6 +43,8 @@ typedef struct ST_SimulationSpace
 	float minDeltaTime;
 	ST_Material defaultMaterial;
 	ST_SpacialPartitionStaticContainer spacialPartitionContainer;
+	ST_AABB worldAABB;
+	ST_OctTree octTree;
 } ST_SimulationSpace;
 
 
@@ -95,6 +97,8 @@ void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimula
 
 void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const pSimulationSpace, ST_UniformTerrainCollider* const pTerrainCollider);
 
+void sphereTraceSimulationConstructOctTree(ST_SimulationSpace* const pSimulationSpace);
+
 void sphereTraceSimulationUpdateSphereColliderBucketIndices(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 
 void sphereTraceSimulationApplyForcesAndTorques(const ST_SimulationSpace* const pSimulationSpace, ST_RigidBody* const pRigidBody, float dt, b32 incrementGravity);
@@ -124,6 +128,8 @@ void sphereTraceSimulationExecuteCallbacksOnCollider(ST_Collider* const pCollide
 void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt, ST_Index iterations);
 
 void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
+
+void sphereTraceSimulationOctTreeSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
 
 void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt);
 

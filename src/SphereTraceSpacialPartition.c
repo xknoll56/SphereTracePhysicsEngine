@@ -6,7 +6,7 @@ ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb, ST_Index depth, ST_
 	ST_OctTreeNode node;
 	node.aabb = aabb;
 	node.hasChildren = ST_FALSE;
-	node.objectEntries = sphereTraceIndexListConstruct();
+	node.colliderEntries = sphereTraceIndexListConstruct();
 	node.depth = depth;
 	node.boundingRadius = sphereTraceAABBGetBoundingRadius(&aabb);
 	node.pParant = pParent;
@@ -14,7 +14,7 @@ ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb, ST_Index depth, ST_
 }
 void sphereTraceOctTreeNodeFree(ST_OctTreeNode* const pNode)
 {
-	sphereTraceIndexListFree(&pNode->objectEntries);
+	sphereTraceIndexListFree(&pNode->colliderEntries);
 	sphereTraceAllocatorFreeOctTreeNode(pNode);
 }
 
@@ -176,30 +176,30 @@ b32 sphereTraceOctTreeNodeIsInPerspective(ST_OctTreeNode* const pNode, ST_Vector
 }
 
 
-void sphereTraceOctTreeNodeReLeafObjects(ST_OctTreeNode* const pNode)
+void sphereTraceOctTreeNodeReLeafColliders(ST_OctTreeNode* const pNode)
 {
-	ST_IndexList objectList = pNode->objectEntries;
-	ST_IndexListData* pild = objectList.pFirst;
+	ST_IndexList colliderList = pNode->colliderEntries;
+	ST_IndexListData* pild = colliderList.pFirst;
 	b32 childIntersections[8];
-	ST_SpaceObjectEntry* pObjectEntry;
-	for (ST_Index i = 0; i < objectList.count; i++)
+	ST_Collider* pCollider;
+	for (ST_Index i = 0; i < colliderList.count; i++)
 	{
-		pObjectEntry = pild->value;
-		sphereTraceSortedIndexListRemove(&pObjectEntry->leafNodes, pNode);
-		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, pObjectEntry->paabb, childIntersections))
+		pCollider = pild->value;
+		sphereTraceSortedIndexListRemove(&pCollider->octTreeLeafs, pNode);
+		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, &pCollider->aabb, childIntersections))
 		{
 			for (int i = 0; i < 8; i++)
 			{
 				if (childIntersections[i])
 				{
-					sphereTraceSortedIndexListAddUnique(&pNode->children[i]->objectEntries, pObjectEntry);
-					sphereTraceSortedIndexListAddUnique(&pObjectEntry->leafNodes, pNode->children[i]);
+					sphereTraceSortedIndexListAddUnique(&pNode->children[i]->colliderEntries, pCollider);
+					sphereTraceSortedIndexListAddUnique(&pCollider->octTreeLeafs, pNode->children[i]);
 				}
 			}
 		}
 		pild = pild->pNext;
 	}
-	sphereTraceIndexListFree(&pNode->objectEntries);
+	sphereTraceIndexListFree(&pNode->colliderEntries);
 }
 
 
@@ -215,7 +215,7 @@ void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode)
 		*pNode->children[i] = sphereTraceOctTreeNodeConstruct(aabb, pNode->depth+1, pNode);
 	}
 	pNode->hasChildren = ST_TRUE;
-	sphereTraceOctTreeNodeReLeafObjects(pNode);
+	sphereTraceOctTreeNodeReLeafColliders(pNode);
 }
 
 //if there is no reduction in the number of objects on a single child
@@ -224,14 +224,14 @@ void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode)
 b32 sphereTraceOctTreeNodeDoesReLeafProvideBenefit(ST_OctTreeNode* const pNode, ST_Index maxIntersectionCountPerObject)
 {
 	b32 childIntersections[8];
-	ST_IndexListData* pild = pNode->objectEntries.pFirst;
-	ST_SpaceObjectEntry* pObjectEntry;
+	ST_IndexListData* pild = pNode->colliderEntries.pFirst;
+	ST_Collider* pCollider;
 	ST_Index intersectionCount = 0;
-	for (int i = 0; i < pNode->objectEntries.count; i++)
+	for (int i = 0; i < pNode->colliderEntries.count; i++)
 	{
 		intersectionCount = 0;
-		pObjectEntry = pild->value;
-		sphereTraceOctTreeNodeAABBIntersectionWithFutureChildren(pNode, pObjectEntry->paabb, childIntersections);
+		pCollider = pild->value;
+		sphereTraceOctTreeNodeAABBIntersectionWithFutureChildren(pNode, &pCollider->aabb, childIntersections);
 		for (int j = 0; j < 8; j++)
 		{
 			if (childIntersections[j])
@@ -258,18 +258,18 @@ float sphereTraceOctTreeNodeCalculateVolumePercent(ST_OctTreeNode* const pNode, 
 //if all colliders are above the minimum volume percent, its likely innefficient to keep disecting
 b32 sphereTraceOctTreeNodeVolumeRequirements(ST_OctTreeNode* const pNode, float maxVolumePercentOfNode, float minVolumeOfSelf)
 {
-	ST_IndexListData* pild = pNode->objectEntries.pFirst;
-	ST_SpaceObjectEntry* pObjectEntry;
+	ST_IndexListData* pild = pNode->colliderEntries.pFirst;
+	ST_Collider* pCollider;
 	float commulativeVolume = 0.0f;
 	float volumeOfNode = sphereTraceAABBGetVolume(&pNode->aabb);
 	float maxVolumeOfSelf = 0.0f;
-	for (ST_Index i = 0; i < pNode->objectEntries.count; i++)
+	for (ST_Index i = 0; i < pNode->colliderEntries.count; i++)
 	{
-		pObjectEntry = pild->value;
+		pCollider = pild->value;
 		ST_AABB intersectionRegion = gAABBOne;
-		sphereTraceColliderAABBIntersectAABBIntersectionRegion(&pNode->aabb, pObjectEntry->paabb, &intersectionRegion);
+		sphereTraceColliderAABBIntersectAABBIntersectionRegion(&pNode->aabb, &pCollider->aabb, &intersectionRegion);
 		commulativeVolume += sphereTraceAABBGetVolume(&intersectionRegion);
-		float volumeOfSelf = sphereTraceAABBGetVolume(&intersectionRegion) / sphereTraceAABBGetVolume(pObjectEntry->paabb);
+		float volumeOfSelf = sphereTraceAABBGetVolume(&intersectionRegion) / sphereTraceAABBGetVolume(&pCollider->aabb);
 		if (volumeOfSelf > maxVolumeOfSelf)
 		{
 			maxVolumeOfSelf = volumeOfSelf;
@@ -396,20 +396,24 @@ ST_IndexList sphereTraceOctTreeSampleIntersectionLeafs(ST_OctTree* const pOctTre
 	return intersections;
 }
 
-void sphereTraceOctTreeNodeReSampleIntersectionLeafsAndObjectsRecursive(ST_OctTreeNode* const pNode, ST_AABB* const paabb, ST_IndexList* const pLeafs, ST_IndexList* const pObjects)
+void sphereTraceOctTreeNodeReSampleIntersectionLeafsAndCollidersRecursive(ST_OctTreeNode* const pNode, ST_AABB* const paabb, 
+	ST_IndexList* const pLeafs, ST_IndexList* const pColliders, b32 sampleDynamicColliders, b32 sampleStaticColliders)
 {
 	if (!pNode->hasChildren)
 	{
 		//were guarenteed not to be adding the same nodes, and sorting them does not matter
-		sphereTraceSortedIndexListAddUnique(pLeafs, pNode);
-		ST_IndexListData* pild = pNode->objectEntries.pFirst;
-		ST_SpaceObjectEntry* pObjectEntry;
-		for (int i = 0; i < pNode->objectEntries.count; i++)
+		//if pointer to index list is null dont bother collecting the leafs
+		if(pLeafs!=NULL)
+			sphereTraceSortedIndexListAddUnique(pLeafs, pNode);
+		ST_IndexListData* pild = pNode->colliderEntries.pFirst;
+		ST_Collider* pCollider;
+		for (int i = 0; i < pNode->colliderEntries.count; i++)
 		{
-			pObjectEntry = pild->value;
-			if (sphereTraceColliderAABBIntersectAABB(paabb, pObjectEntry->paabb))
+			pCollider = pild->value;
+			if (sphereTraceColliderAABBIntersectAABB(paabb, &pCollider->aabb))
 			{
-				sphereTraceSortedIndexListAddUnique(pObjects, pObjectEntry);
+				if((pCollider->isDynamic && sampleDynamicColliders) || (!pCollider->isDynamic && sampleStaticColliders))
+					sphereTraceSortedIndexListAddUnique(pColliders, pCollider);
 			}
 			pild = pild->pNext;
 		}
@@ -422,18 +426,19 @@ void sphereTraceOctTreeNodeReSampleIntersectionLeafsAndObjectsRecursive(ST_OctTr
 		{
 			if (childIntersections[i])
 			{
-				sphereTraceOctTreeNodeReSampleIntersectionLeafsAndObjectsRecursive(pNode->children[i],  paabb, pLeafs, pObjects);
+				sphereTraceOctTreeNodeReSampleIntersectionLeafsAndCollidersRecursive(pNode->children[i],  paabb, pLeafs, pColliders, sampleDynamicColliders, sampleStaticColliders);
 			}
 		}
 	}
 }
 
-void sphereTraceOctTreeReSampleIntersectionLeafsAndObjects(ST_OctTree* const pOctTree, ST_AABB* const paabb, ST_IndexList* const pLeafs, ST_IndexList* const pObjects)
+void sphereTraceOctTreeReSampleIntersectionLeafsAndColliders(ST_OctTree* const pOctTree, ST_AABB* const paabb, ST_IndexList* const pLeafs, 
+	ST_IndexList* const pColliders, b32 sampleDynamicColliders, b32 sampleStaticColliders)
 {
-	sphereTraceOctTreeNodeReSampleIntersectionLeafsAndObjectsRecursive(pOctTree->root, paabb, pLeafs, pObjects);
+	sphereTraceOctTreeNodeReSampleIntersectionLeafsAndCollidersRecursive(pOctTree->root, paabb, pLeafs, pColliders, sampleDynamicColliders, sampleStaticColliders);
 }
 
-void sphereTraceOctTreeNodeSampleIntersectionLeafsAndObjectsFromPerspectiveRecursive(ST_OctTreeNode* const pNode, ST_Vector3 from, ST_Direction dir, float fov, float far, ST_IndexList* const pLeafs, ST_IndexList* const pObjects)
+void sphereTraceOctTreeNodeSampleIntersectionLeafsAndCollidersFromPerspectiveRecursive(ST_OctTreeNode* const pNode, ST_Vector3 from, ST_Direction dir, float fov, float far, ST_IndexList* const pLeafs, ST_IndexList* const pColliders)
 {
 	if (!pNode->hasChildren)
 	{
@@ -441,16 +446,9 @@ void sphereTraceOctTreeNodeSampleIntersectionLeafsAndObjectsFromPerspectiveRecur
 		sphereTraceIndexListAddFirst(pLeafs, pNode);
 
 		//if null is passed in for colliders than skip
-		if (pObjects != NULL)
+		if (pColliders != NULL)
 		{
-			ST_IndexListData* pild = pNode->objectEntries.pFirst;
-			ST_SpaceObjectEntry* pObjectEntry;
-			for (int i = 0; i < pNode->objectEntries.count; i++)
-			{
-				pObjectEntry = pild->value;
-				sphereTraceSortedIndexListAddUnique(pObjects, pObjectEntry);
-				pild = pild->pNext;
-			}
+			sphereTraceSortedIndexListMergeUnique(&pNode->colliderEntries, pColliders);
 		}
 	}
 	else
@@ -459,17 +457,17 @@ void sphereTraceOctTreeNodeSampleIntersectionLeafsAndObjectsFromPerspectiveRecur
 		{
 			if (sphereTraceOctTreeNodeIsInPerspective(pNode->children[i], from, dir, fov, far))
 			{
-				sphereTraceOctTreeNodeSampleIntersectionLeafsAndObjectsFromPerspectiveRecursive(pNode->children[i], from, dir, fov, far, pLeafs, pObjects);
+				sphereTraceOctTreeNodeSampleIntersectionLeafsAndCollidersFromPerspectiveRecursive(pNode->children[i], from, dir, fov, far, pLeafs, pColliders);
 			}
 		}
 	}
 }
 
 //leafs will not be sorted
-void sphereTraceOctTreeSampleIntersectionLeafsAndObjectsFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pObjects)
+void sphereTraceOctTreeSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pColliders)
 {
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
-	sphereTraceOctTreeNodeSampleIntersectionLeafsAndObjectsFromPerspectiveRecursive(pOctTree->root, from, dir, fov, f, pLeafs, pObjects);
+	sphereTraceOctTreeNodeSampleIntersectionLeafsAndCollidersFromPerspectiveRecursive(pOctTree->root, from, dir, fov, f, pLeafs, pColliders);
 }
 
 
@@ -525,18 +523,18 @@ ST_OctTreeNode* sphereTraceOctTreeSampleLeafNode(ST_OctTree* pTree, ST_Vector3 p
 	return NULL;
 }
 
-void sphereTraceOctTreeNodeInsertObjectIDRecursive(ST_OctTreeNode* const pNode, ST_SpaceObjectEntry* pObjectEntry, ST_Index maxDepth, b32 hasBeenAdded, b32 restructureTree)
+void sphereTraceOctTreeNodeInsertColliderRecursive(ST_OctTreeNode* const pNode, ST_Collider* const pCollider, ST_Index maxDepth, b32 hasBeenAdded, b32 restructureTree)
 {
 	if (pNode->hasChildren)
 	{
 		b32 childIntersections[8];
-		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, pObjectEntry->paabb, childIntersections))
+		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, &pCollider->aabb, childIntersections))
 		{
 			for (int i = 0; i < 8; i++)
 			{
 				if (childIntersections[i])
 				{
-					sphereTraceOctTreeNodeInsertObjectIDRecursive(pNode->children[i], pObjectEntry, maxDepth, hasBeenAdded, restructureTree);
+					sphereTraceOctTreeNodeInsertColliderRecursive(pNode->children[i], pCollider, maxDepth, hasBeenAdded, restructureTree);
 				}
 			}
 		}
@@ -546,193 +544,135 @@ void sphereTraceOctTreeNodeInsertObjectIDRecursive(ST_OctTreeNode* const pNode, 
 		//if it hasn't been added add it, then let the children disect recursively 
 		if (!hasBeenAdded)
 		{
-			sphereTraceSortedIndexListAddUnique(&pNode->objectEntries, pObjectEntry);
+			sphereTraceSortedIndexListAddUnique(&pNode->colliderEntries, pCollider);
 			hasBeenAdded = ST_TRUE;
 		}
-		if (restructureTree && pNode->objectEntries.count > 1 && pNode->depth < maxDepth 
-			&& sphereTraceOctTreeNodeVolumeRequirements(pNode, 0.75f, 0.25f))
+		if (restructureTree && pNode->colliderEntries.count > 1 && pNode->depth < maxDepth
+			&& sphereTraceOctTreeNodeVolumeRequirements(pNode, 0.80f, 0.20f))
 		{
 			sphereTraceOctTreeNodePopulateChildren(pNode);
-			sphereTraceOctTreeNodeInsertObjectIDRecursive(pNode, pObjectEntry, maxDepth, hasBeenAdded, restructureTree);
+			sphereTraceOctTreeNodeInsertColliderRecursive(pNode, pCollider, maxDepth, hasBeenAdded, restructureTree);
 		}
 		else
 		{
 			//its a leaf node, so add it to the object entry
-			sphereTraceSortedIndexListAddUnique(&pObjectEntry->leafNodes, pNode);
+			sphereTraceSortedIndexListAddUnique(&pCollider->octTreeLeafs, pNode);
 		}
 	}
 }
 
-void sphereTraceOctTreeInsertObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree)
-{
-	sphereTraceOctTreeNodeInsertObjectIDRecursive(pTree->root, pObjectEntry, pTree->maxDepth, ST_FALSE, restructureTree);
-}
 
 void sphereTraceOctTreeInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree)
 {
-	//ST_SpaceObjectEntry* pObjectEntry = sphereTraceAllocatorAllocateOctTreeObjectEntry();
-	//pObjectEntry->paabb = &pCollider->aabb;
-	//pObjectEntry->pLeafNodes = &pCollider->leafNodes;
-	//pObjectEntry->pObject = pCollider;
-	sphereTraceColliderSetOctTreeEntry(pCollider);
-	sphereTraceOctTreeNodeInsertObjectIDRecursive(pTree->root, &pCollider->octTreeEntry, pTree->maxDepth, ST_FALSE, restructureTree);
+	sphereTraceOctTreeNodeInsertColliderRecursive(pTree->root, pCollider, pTree->maxDepth, ST_FALSE, restructureTree);
 }
 
-ST_Index sphereTraceOctTreeNodeCountUniqueObjectsBelowRecursive(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueObjectIds, ST_IndexList* pNodesBelow)
+ST_Index sphereTraceOctTreeNodeCountUniqueCollidersBelowRecursive(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueColliders, ST_IndexList* pNodesBelow)
 {
 	sphereTraceSortedIndexListAddUnique(pNodesBelow, pNode);
 	if (!pNode->hasChildren)
 	{
-		ST_IndexListData* pild = pNode->objectEntries.pFirst;
-		for (int i = 0; i < pNode->objectEntries.count; i++)
-		{
-			sphereTraceSortedIndexListAddUnique(pUniqueObjectIds, pild->value);
-			pild = pild->pNext;
-		}
+		sphereTraceSortedIndexListMergeUnique(&pNode->colliderEntries, pUniqueColliders);
+		//ST_IndexListData* pild = pNode->objectEntries.pFirst;
+		//for (int i = 0; i < pNode->objectEntries.count; i++)
+		//{
+		//	sphereTraceSortedIndexListAddUnique(pUniqueObjectIds, pild->value);
+		//	pild = pild->pNext;
+		//}
 	}
 	else
 	{
 		for (int i = 0; i < 8; i++)
 		{
-			sphereTraceOctTreeNodeCountUniqueObjectsBelowRecursive(pNode->children[i], pUniqueObjectIds, pNodesBelow);
+			sphereTraceOctTreeNodeCountUniqueCollidersBelowRecursive(pNode->children[i], pUniqueColliders, pNodesBelow);
 		}
 	}
 }
 
-ST_Index sphereTraceOctTreeNodeGetObjectCountBelow(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueObjects, ST_IndexList* pNodesBelow)
+ST_Index sphereTraceOctTreeNodeGetColliderCountBelow(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueColliders, ST_IndexList* pNodesBelow)
 {
 	if (pNode->hasChildren)
 	{
 		for (int i = 0; i < 8; i++)
 		{
-			sphereTraceOctTreeNodeCountUniqueObjectsBelowRecursive(pNode->children[i], pUniqueObjects, pNodesBelow);
+			sphereTraceOctTreeNodeCountUniqueCollidersBelowRecursive(pNode->children[i], pUniqueColliders, pNodesBelow);
 		}
-		return pUniqueObjects->count;
+		return pUniqueColliders->count;
 	}
 	else
-		return pNode->objectEntries.count;
+		return pNode->colliderEntries.count;
 }
 
-void sphereTraceOctTreeNodeCollapseUpwardUntilMinimumObjects(ST_OctTreeNode* pNode, ST_Index minObjects, ST_IndexList* pCollapsedNodes, ST_IndexList* pUniqueObjects)
+void sphereTraceOctTreeNodeCollapseUpwardUntilMinimumColliders(ST_OctTreeNode* pNode, ST_Index minObjects, ST_IndexList* pCollapsedNodes, ST_IndexList* pUniqueColliders)
 {
-	ST_IndexList uniqueObjectsCheck = sphereTraceIndexListConstruct();
+	ST_IndexList uniqueCollidersCheck = sphereTraceIndexListConstruct();
 	ST_IndexList collapsedNodesCheck = sphereTraceIndexListConstruct();
 
 	ST_IndexListData* pild;
-	ST_Index count = sphereTraceOctTreeNodeGetObjectCountBelow(pNode, &uniqueObjectsCheck, &collapsedNodesCheck);
+	ST_Index count = sphereTraceOctTreeNodeGetColliderCountBelow(pNode, &uniqueCollidersCheck, &collapsedNodesCheck);
 	while (count <= minObjects && pNode != NULL)
 	{
-		sphereTraceSortedIndexListMergeUnique(&uniqueObjectsCheck, pUniqueObjects);
+		sphereTraceSortedIndexListMergeUnique(&uniqueCollidersCheck, pUniqueColliders);
 		sphereTraceSortedIndexListMergeUnique(&collapsedNodesCheck, pCollapsedNodes);
-		sphereTraceIndexListReset(&uniqueObjectsCheck);
+		sphereTraceIndexListReset(&uniqueCollidersCheck);
 		sphereTraceIndexListReset(&collapsedNodesCheck);
-		//sphereTraceSortedIndexListMergeUnique(pUniqueObjects, &pNode->objectEntries);
-		//it still does have children but were keeping track of them for deletion
 		pNode->hasChildren = ST_FALSE;
 		pNode = pNode->pParant;
 		if(pNode)
-			count = sphereTraceOctTreeNodeGetObjectCountBelow(pNode, &uniqueObjectsCheck, &collapsedNodesCheck);
+			count = sphereTraceOctTreeNodeGetColliderCountBelow(pNode, &uniqueCollidersCheck, &collapsedNodesCheck);
 	}
-	sphereTraceIndexListFree(&uniqueObjectsCheck);
+	sphereTraceIndexListFree(&uniqueCollidersCheck);
 	sphereTraceIndexListFree(&collapsedNodesCheck);
 }
 
-////a node is collapsable if the node has children, but
-////none of the child nodes have children
-//b32 sphereTraceOctTreeNodeIsCollapsable(ST_OctTreeNode* const pNode)
-//{
-//	if (pNode->hasChildren)
-//	{
-//		for (int i = 0; i < 8; i++)
-//		{
-//			if (pNode->children[i]->hasChildren)
-//			{
-//				return ST_FALSE;
-//			}
-//		}
-//	}
-//	else
-//		return ST_FALSE;
-//	return ST_TRUE;
-//}
-//
-////must be done on collapsable node, will return true once all children
-////have been brought up to parent and collapsed
-//b32 sphereTraceOctTreeNodeUnpopulateChildren(ST_OctTreeNode* const pNode)
-//{
-//	//if the node is not collapsable, then return
-//	if (!sphereTraceOctTreeNodeIsCollapsable(pNode))
-//		return ST_FALSE;
-//	ST_SpaceObjectEntry* pObjectEntry;
-//	ST_IndexListData* pild;
-//	//for each of the octants
-//	for (ST_Index i = 0; i < 8; i++)
-//	{
-//		//for each object in each of the child nodes
-//		pild = pNode->children[i]->objectEntries.pFirst;
-//		for (ST_Index j = 0; j < pNode->children[i]->objectEntries.count; j++)
-//		{
-//			pObjectEntry = pild->value;
-//			//add the object from the child node to the parent object list
-//			sphereTraceSortedIndexListAddUnique(&pNode->objectEntries, pObjectEntry);
-//			//remove the leaf nodes from the objects leaf node entries
-//			sphereTraceSortedIndexListRemove(pObjectEntry->pLeafNodes, pNode->children[i]);
-//			pild = pild->pNext;
-//		}
-//		//free the objects list
-//		sphereTraceOctTreeNodeFree(pNode->children[i]);
-//	}
-//	pNode->hasChildren = ST_FALSE;
-//	return ST_TRUE;
-//}
 
 //removes the object but will not restructure the oct tree
-void sphereTraceOctTreeRemoveObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree)
+void sphereTraceOctTreeRemoveCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree)
 {
 	ST_OctTreeNode* pNode;
-	ST_IndexListData* pild = pObjectEntry->leafNodes.pFirst;
-	for (ST_Index i = 0; i < pObjectEntry->leafNodes.count; i++)
+	ST_IndexListData* pild = pCollider->octTreeLeafs.pFirst;
+	for (ST_Index i = 0; i < pCollider->octTreeLeafs.count; i++)
 	{
 		pNode = pild->value;
-		sphereTraceSortedIndexListRemove(&pNode->objectEntries, pObjectEntry);
+		sphereTraceSortedIndexListRemove(&pNode->colliderEntries, pCollider);
 		pild = pild->pNext;
 	}
 
 	if (restructureTree)
 	{
 		ST_IndexList collapsedNodes = sphereTraceIndexListConstruct();
-		ST_IndexList uniqueObjects = sphereTraceIndexListConstruct();
-		pild = pObjectEntry->leafNodes.pFirst;
-		for (ST_Index i = 0; i < pObjectEntry->leafNodes.count; i++)
+		ST_IndexList uniqueColliders = sphereTraceIndexListConstruct();
+		pild = pCollider->octTreeLeafs.pFirst;
+		for (ST_Index i = 0; i < pCollider->octTreeLeafs.count; i++)
 		{
 			pNode = pild->value;
 			if (!sphereTraceSortedIndexListContains(&collapsedNodes, pNode))
 			{
-				sphereTraceOctTreeNodeCollapseUpwardUntilMinimumObjects(pNode, 1, &collapsedNodes, &uniqueObjects);
+				sphereTraceOctTreeNodeCollapseUpwardUntilMinimumColliders(pNode, 1, &collapsedNodes, &uniqueColliders);
 			}
 			pild = pild->pNext;
 		}
 
 
 		//releaf all remaining objects
-		pild = uniqueObjects.pFirst;
-		ST_SpaceObjectEntry* pAffectedObjectEntry;
+		pild = uniqueColliders.pFirst;
+		ST_Collider* pAffectedCollider;
 		ST_IndexListData* pild2;
-		for (ST_Index i = 0; i < uniqueObjects.count; i++)
+		for (ST_Index i = 0; i < uniqueColliders.count; i++)
 		{
-			pAffectedObjectEntry = pild->value;
-			sphereTraceIndexListFree(&pAffectedObjectEntry->leafNodes);
-			pAffectedObjectEntry->leafNodes = sphereTraceOctTreeSampleIntersectionLeafs(pTree, pAffectedObjectEntry->paabb);
-			pild2 = pAffectedObjectEntry->leafNodes.pFirst;
-			for (ST_Index j = 0; j < pAffectedObjectEntry->leafNodes.count; j++)
+			pAffectedCollider = pild->value;
+			sphereTraceIndexListFree(&pAffectedCollider->octTreeLeafs);
+			pAffectedCollider->octTreeLeafs = sphereTraceOctTreeSampleIntersectionLeafs(pTree, &pAffectedCollider->aabb);
+			pild2 = pAffectedCollider->octTreeLeafs.pFirst;
+			for (ST_Index j = 0; j < pAffectedCollider->octTreeLeafs.count; j++)
 			{
 				pNode = pild2->value;
-				sphereTraceIndexListAddUnique(&pNode->objectEntries, pAffectedObjectEntry);
+				sphereTraceIndexListAddUnique(&pNode->colliderEntries, pAffectedCollider);
 				pild2 = pild2->pNext;
 			}
 			pild = pild->pNext;
 		}
-		sphereTraceIndexListFree(&uniqueObjects);
+		sphereTraceIndexListFree(&uniqueColliders);
 
 		//free all collapsed nodes
 		pild = collapsedNodes.pFirst;;
@@ -744,20 +684,16 @@ void sphereTraceOctTreeRemoveObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObj
 		}
 		sphereTraceIndexListFree(&collapsedNodes);
 	}
-	sphereTraceIndexListFree(&pObjectEntry->leafNodes);
+	sphereTraceIndexListFree(&pCollider->octTreeLeafs);
 	//sphereTraceAllocatorFreeOctTreeObjectEntry(pObjectEntry);
 }
 
-void sphereTraceOctTreeReInsertObject(ST_OctTree* pTree, ST_SpaceObjectEntry* pObjectEntry, b32 restructureTree)
-{
-	sphereTraceOctTreeRemoveObject(pTree, pObjectEntry, restructureTree);
-	sphereTraceOctTreeInsertObject(pTree, pObjectEntry, restructureTree);
-}
+
 
 void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree)
 {
-	sphereTraceOctTreeRemoveObject(pTree, &pCollider->octTreeEntry, restructureTree);
-	sphereTraceOctTreeInsertObject(pTree, &pCollider->octTreeEntry, restructureTree);
+	sphereTraceOctTreeRemoveCollider(pTree, pCollider, restructureTree);
+	sphereTraceOctTreeInsertCollider(pTree, pCollider, restructureTree);
 }
 
 //ST_Index sphereTraceOctTreeGetMaxCollidersOnLeaf(ST_OctTree* pTree, ST_OctTreeNode** ppNodeWithMax)

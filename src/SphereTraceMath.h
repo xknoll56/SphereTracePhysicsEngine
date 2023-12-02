@@ -292,6 +292,8 @@ ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat);
 
 ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized);
 
+ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2);
+
 ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec);
 
 void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir);

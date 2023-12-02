@@ -1077,10 +1077,19 @@ ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized)
 	return allocateddir;
 }
 
+
 ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec)
 {
 	sphereTraceVector3NormalizeByRef(&vec);
 	allocateddir.v = vec;
+	allocateddir.normalized = 1;
+	return allocateddir;
+}
+
+ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2)
+{
+	allocateddir.v = sphereTraceVector3Add(dir1.v, dir2.v);
+	sphereTraceVector3NormalizeByRef(&allocateddir.v);
 	allocateddir.normalized = 1;
 	return allocateddir;
 }

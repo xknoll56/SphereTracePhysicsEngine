@@ -441,9 +441,8 @@ b32 sphereTraceColliderUniformTerrainImposedSphereFindMaxPenetratingTriangle(con
 {
 	ST_IndexListData* pIl;
 	ST_AABB imposedAABB;
-	imposedAABB.halfExtents = sphereTraceVector3Construct(imposedRadius, imposedRadius, imposedRadius);
-	imposedAABB.highExtent = sphereTraceVector3Add(imposedPosition, imposedAABB.halfExtents);
-	imposedAABB.lowExtent = sphereTraceVector3Subtract(imposedPosition, imposedAABB.halfExtents);
+	imposedAABB = sphereTraceAABBConstruct2(imposedPosition, 
+		sphereTraceVector3Construct(imposedRadius, imposedRadius, imposedRadius));
 	ST_IndexList il = sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(pTerrainCollider, imposedPosition, imposedRadius);
 	pIl = il.pFirst;
 	float maxPen = -FLT_MAX;

@@ -360,23 +360,113 @@ void sphereTraceColliderPlaneAABBSetTransformedVertices(ST_PlaneCollider* const 
 void sphereTraceColliderInfinitePlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Direction planeNormal, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
 {
 	pRaycastData->startPoint = from;
-	if (sphereTraceVector3Equal(from, pointOnPlane))
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	ST_Vector3 dp = sphereTraceVector3Subtract(pointOnPlane, from);
+	pRaycastData->contact.normal = planeNormal;
+	float dpDotNormal = sphereTraceVector3Dot(dp, pRaycastData->contact.normal.v);
+	if (sphereTraceAbs(dpDotNormal)<COLLIDER_TOLERANCE)
 	{
 		pRaycastData->contact.normal = planeNormal;
 		pRaycastData->distance = 0.0f;
 		pRaycastData->contact.point = pointOnPlane;
 		return;
 	}
-	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
-	ST_Vector3 dp = sphereTraceVector3Subtract(pointOnPlane, from);
-	pRaycastData->contact.normal = planeNormal;
 	float dirDotNormal = sphereTraceVector3Dot(dir.v, planeNormal.v);
-	pRaycastData->distance = sphereTraceVector3Dot(dp, pRaycastData->contact.normal.v) / dirDotNormal;
+	pRaycastData->distance = dpDotNormal / dirDotNormal;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	//sphereTraceVector3NormalizeByRef(&dp);
-	if (sphereTraceVector3Dot(sphereTraceVector3Subtract(pRaycastData->contact.point, from), pRaycastData->contact.normal.v) > 0.0f)
+	//if (sphereTraceVector3Dot(sphereTraceVector3Subtract(pRaycastData->contact.point, from), pRaycastData->contact.normal.v) > 0.0f)
+	//{
+	//	pRaycastData->contact.normal = sphereTraceDirectionNegative(planeNormal);
+	//}
+	if (dpDotNormal > 0.0f)
 	{
 		pRaycastData->contact.normal = sphereTraceDirectionNegative(planeNormal);
+	}
+}
+
+void sphereTraceColliderInfiniteZPlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
+{
+	pRaycastData->startPoint = from;
+	float dz = pointOnPlane.z - from.z;
+	if (dz==0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionForward;
+		pRaycastData->distance = 0.0f;
+		pRaycastData->contact.point = pointOnPlane;
+		return;
+	}
+	else if (dir.v.z == 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionForward;
+		pRaycastData->distance = FLT_MAX;
+		pRaycastData->contact.point = gVector3Max;
+		return;
+	}
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	pRaycastData->contact.normal = gDirectionForward;
+	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionForward.v);
+	pRaycastData->distance = dz / dirDotNormal;
+	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+	if (dz>0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionBack;
+	}
+}
+void sphereTraceColliderInfiniteYPlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
+{
+	pRaycastData->startPoint = from;
+	float dy = pointOnPlane.y - from.y;
+	if (dy == 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionUp;
+		pRaycastData->distance = 0.0f;
+		pRaycastData->contact.point = pointOnPlane;
+		return;
+	}
+	else if (dir.v.y == 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionUp;
+		pRaycastData->distance = FLT_MAX;
+		pRaycastData->contact.point = gVector3Max;
+		return;
+	}
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	pRaycastData->contact.normal = gDirectionUp;
+	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionUp.v);
+	pRaycastData->distance = dy / dirDotNormal;
+	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+	if (dy > 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionDown;
+	}
+}
+void sphereTraceColliderInfiniteXPlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
+{
+	pRaycastData->startPoint = from;
+	float dx = pointOnPlane.x - from.x;
+	if (dx == 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionRight;
+		pRaycastData->distance = 0.0f;
+		pRaycastData->contact.point = pointOnPlane;
+		return;
+	}
+	else if (dir.v.x == 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionRight;
+		pRaycastData->distance = FLT_MAX;
+		pRaycastData->contact.point = gVector3Max;
+		return;
+	}
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	pRaycastData->contact.normal = gDirectionRight;
+	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionRight.v);
+	pRaycastData->distance = dx / dirDotNormal;
+	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+	if (dx > 0.0f)
+	{
+		pRaycastData->contact.normal = gDirectionLeft;
 	}
 }
 
@@ -519,39 +609,58 @@ b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float
 			return 1;
 		}
 	}
-	float closestEdgePointDist = FLT_MAX;
 	ST_SphereTraceData datTest;
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[0], &datTest))
+	float dot = sphereTraceVector3Dot(dir.v, pPlaneCollider->normal.v);
+	if (dot < COLLIDER_TOLERANCE)
 	{
-		closestEdgePointDist = datTest.traceDistance;
-		*pSphereTraceData = datTest;
+		ST_PlaneEdgeDirection edgeDir = sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(pPlaneCollider, pSphereTraceData->rayTraceData.contact.point);
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[edgeDir], &datTest))
+		{
+			*pSphereTraceData = datTest;
+			pSphereTraceData->rayTraceData.contact.pOtherCollider = pPlaneCollider;
+			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_PLANE;
+			return 1;
+		}
+		return 0;
 	}
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[1], &datTest))
+	else
 	{
-		if (datTest.traceDistance < closestEdgePointDist)
+		float closestEdgePointDist = FLT_MAX;	
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[0], &datTest))
 		{
 			closestEdgePointDist = datTest.traceDistance;
 			*pSphereTraceData = datTest;
 		}
-	}
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[2], &datTest))
-	{
-		if (datTest.traceDistance < closestEdgePointDist)
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[1], &datTest))
 		{
-			closestEdgePointDist = datTest.traceDistance;
-			*pSphereTraceData = datTest;
+			if (datTest.traceDistance < closestEdgePointDist)
+			{
+				closestEdgePointDist = datTest.traceDistance;
+				*pSphereTraceData = datTest;
+			}
 		}
-	}
-	if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[3], &datTest))
-	{
-		if (datTest.traceDistance < closestEdgePointDist)
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[2], &datTest))
 		{
-			closestEdgePointDist = datTest.traceDistance;
-			*pSphereTraceData = datTest;
+			if (datTest.traceDistance < closestEdgePointDist)
+			{
+				closestEdgePointDist = datTest.traceDistance;
+				*pSphereTraceData = datTest;
+			}
 		}
+		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pPlaneCollider->transformedEdges[3], &datTest))
+		{
+			if (datTest.traceDistance < closestEdgePointDist)
+			{
+				closestEdgePointDist = datTest.traceDistance;
+				*pSphereTraceData = datTest;
+			}
+		}
+		if (closestEdgePointDist < FLT_MAX)
+			return 1;
 	}
-	if (closestEdgePointDist < FLT_MAX)
-		return 1;
+
+
+
 	return 0;
 }
 

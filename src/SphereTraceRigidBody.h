@@ -6,8 +6,6 @@ typedef struct ST_RigidBody
     //constants
     float mass;
     float inertia;
-    float massInv;
-    float inertiaInv;
 
     //state variables
     ST_Vector3 position;
@@ -54,4 +52,10 @@ void sphereTraceRigidBodySetVelocity(ST_RigidBody* const pRigidBody, const ST_Ve
 void sphereTraceRigidBodySetAngularVelocity(ST_RigidBody* const pRigidBody, const ST_Vector3 angularVelocity);
 
 float sphereTraceRigidBodyGetSpeed(ST_RigidBody* const pRigidBody);
+
+float sphereTraceRigidBodySetSpeed(ST_RigidBody* const pRigidBody, float speed);
+
+void sphereTraceRigidBodyResetMomentum(ST_RigidBody* const pRigidBody);
+
+void sphereTraceRigidBodyResetAngularMomentum(ST_RigidBody* const pRigidBody);
 
