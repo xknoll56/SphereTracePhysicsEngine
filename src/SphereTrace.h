@@ -13,8 +13,7 @@
 #include "SphereTraceColliderTerrain.h"
 #include "SphereTraceColliderSphere.h"
 #include "SphereTraceColliderTriangle.h"
-#include "SphereTraceColliderBowl.h"
-#include "SphereTraceColliderPipe.h"
+#include "SphereTraceColliderExperimental.h"
 #include "SphereTraceSpacialPartition.h"
 #include "SphereTraceAI.h"
 
@@ -36,8 +35,6 @@ typedef struct ST_SimulationSpace
 	ST_IndexList planeColliders;
 	ST_IndexList triangleColliders;
 	ST_IndexList uniformTerrainColliders;
-	ST_IndexList bowlColliders;
-	ST_IndexList pipeColliders;
 	ST_IndexList callbackColliders;
 	ST_Vector3 gravitationalAcceleration;
 	float minDeltaTime;
@@ -88,10 +85,6 @@ void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace);
 void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulationSpace, ST_PlaneCollider* const pPlaneCollider);
 
 void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimulationSpace, ST_TriangleCollider* const pTriangleCollider);
-
-void sphereTraceSimulationInsertBowlCollider(ST_SimulationSpace* const pSimulationSpace, ST_BowlCollider* const pBowlCollider);
-
-void sphereTraceSimulationInsertPipeCollider(ST_SimulationSpace* const pSimulationSpace, ST_PipeCollider* const pPipeCollider);
 
 void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 

@@ -289,6 +289,7 @@ ST_OctTreeNode* sphereTraceOctTreeNodePointIntersectionWithChildren(ST_OctTreeNo
 {
 
 	//we already know its in the aabb
+	//if its not its gonna return the nearest octant
 	ST_Vector3 mid = pNode->children[ST_LEFT_DOWN_BACK]->aabb.highExtent;
 	if (point.x < mid.x)
 	{
@@ -341,6 +342,181 @@ ST_OctTreeNode* sphereTraceOctTreeNodePointIntersectionWithChildren(ST_OctTreeNo
 		}
 	}
 
+}
+
+ST_Octant sphereTraceOctTreeNodePointToChildOctant(ST_OctTreeNode* const pNode, ST_Vector3 point)
+{
+
+	//we already know its in the aabb
+	//if its not its gonna return the nearest octant
+	ST_Vector3 mid = pNode->children[ST_LEFT_DOWN_BACK]->aabb.highExtent;
+	if (point.x < mid.x)
+	{
+		if (point.y < mid.y)
+		{
+			if (point.z < mid.z)
+			{
+				return ST_LEFT_DOWN_BACK;
+			}
+			else
+			{
+				return ST_LEFT_DOWN_FORWARD;
+			}
+		}
+		else
+		{
+			if (point.z < mid.z)
+			{
+				return ST_LEFT_UP_BACK;
+			}
+			else
+			{
+				return ST_LEFT_UP_FORWARD;
+			}
+		}
+	}
+	else
+	{
+		if (point.y < mid.y)
+		{
+			if (point.z < mid.z)
+			{
+				return ST_RIGHT_DOWN_BACK;
+			}
+			else
+			{
+				return ST_RIGHT_DOWN_FORWARD;
+			}
+		}
+		else
+		{
+			if (point.z < mid.z)
+			{
+				return ST_RIGHT_UP_BACK;
+			}
+			else
+			{
+				return ST_RIGHT_UP_FORWARD;
+			}
+		}
+	}
+}
+
+//this ensures added safety when raytracing so a octant is not skipped
+ST_Octant sphereTraceOctTreeNodePointToChildOctantWithDir(ST_OctTreeNode* const pNode, ST_Vector3 point, ST_Direction dir)
+{
+
+	//we already know its in the aabb
+	//if its not its gonna return the nearest octant
+	ST_Vector3 mid = pNode->children[ST_LEFT_DOWN_BACK]->aabb.highExtent;
+	b32 onMidX = sphereTraceAbs(point.x - mid.x)< ST_OCT_TREE_SKIN_WIDTH;
+	b32 onMidY = sphereTraceAbs(point.y - mid.y)<ST_OCT_TREE_SKIN_WIDTH;
+	b32 onMidZ = sphereTraceAbs(point.z - mid.z)<ST_OCT_TREE_SKIN_WIDTH;
+	ST_Octant toReturn;
+	if (point.x < mid.x)
+	{
+		if (point.y < mid.y)
+		{
+			if (point.z < mid.z)
+			{
+				toReturn= ST_LEFT_DOWN_BACK;
+			}
+			else
+			{
+				toReturn = ST_LEFT_DOWN_FORWARD;
+			}
+		}
+		else
+		{
+			if (point.z < mid.z)
+			{
+				toReturn = ST_LEFT_UP_BACK;
+			}
+			else
+			{
+				toReturn = ST_LEFT_UP_FORWARD;
+			}
+		}
+	}
+	else
+	{
+		if (point.y < mid.y)
+		{
+			if (point.z < mid.z)
+			{
+				toReturn = ST_RIGHT_DOWN_BACK;
+			}
+			else
+			{
+				toReturn = ST_RIGHT_DOWN_FORWARD;
+			}
+		}
+		else
+		{
+			if (point.z < mid.z)
+			{
+				toReturn = ST_RIGHT_UP_BACK;
+			}
+			else
+			{
+				toReturn = ST_RIGHT_UP_FORWARD;
+			}
+		}
+	}
+	if (onMidX)
+	{
+		if (dir.v.x >= 0)
+		{
+			if (!sphereTraceOctantIsOnRightSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_RIGHT);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnRightSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_LEFT);
+			}
+		}
+	}
+
+	if (onMidY)
+	{
+		if (dir.v.y >= 0)
+		{
+			if (!sphereTraceOctantIsOnUpSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_UP);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnUpSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_DOWN);
+			}
+		}
+	}
+
+	if (onMidZ)
+	{
+		if (dir.v.z >= 0)
+		{
+			if (!sphereTraceOctantIsOnForwardSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_FORWARD);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnForwardSide(toReturn))
+			{
+				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_BACK);
+			}
+		}
+	}
+	return toReturn;
 }
 
 ST_Index sphereTraceOctTreeCalculateMaxDepth(ST_OctTree* pTree)
@@ -694,6 +870,97 @@ void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollide
 {
 	sphereTraceOctTreeRemoveCollider(pTree, pCollider, restructureTree);
 	sphereTraceOctTreeInsertCollider(pTree, pCollider, restructureTree);
+}
+
+//b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Octant childOctant, ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTreeNode* const pNode, ST_RayTraceData* const pRayTraceData)
+//{
+//	if (pNode->hasChildren)
+//	{
+//		//ST_Octant childOctant = sphereTraceOctTreeNodePointToChildOctant(pNode, from);
+//		//if (sphereTraceOctTreeNodeRayTraceRecursive(from, dir, maxDist, pNode->children[childOctant], pRayTraceData))
+//		//	return 1;
+//		ST_RayTraceData traceOutRTD;
+//		ST_IndexList checkList = sphereTraceIndexListConstruct();
+//		while (childOctant != ST_OCTANT_NONE)
+//		{
+//			if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+//			{
+//				childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
+//				if (childOctant != ST_OCTANT_NONE && traceOutRTD.distance <= maxDist)
+//					sphereTraceIndexListAddLast(&checkList, childOctant);
+//			}
+//		}
+//		ST_IndexListData* pild = checkList.pFirst;
+//		for (int i = 0; i < checkList.count; i++)
+//		{
+//
+//			pild = pild->pNext;
+//		}
+//	}
+//	else
+//	{
+//		if (sphereTraceColliderListRayTrace(pRayTraceData->startPoint, dir, &pNode->colliderEntries, pRayTraceData))
+//			return 1;
+//	}
+//}
+
+b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Vector3 from, ST_Direction dir, float distTravelled, float maxDist, const ST_OctTreeNode* const pNode, ST_RayTraceData* const pRayTraceData)
+{
+	if (pNode->hasChildren)
+	{
+		ST_Octant childOctant = sphereTraceOctTreeNodePointToChildOctantWithDir(pNode, from, dir);
+		if (sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData))
+			return 1;
+		ST_RayTraceData traceOutRTD;
+		while (childOctant !=ST_OCTANT_NONE)
+		{
+			if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+			{
+				childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
+				if (childOctant == ST_OCTANT_NONE)
+					return 0;
+				distTravelled += traceOutRTD.distance;
+				if (distTravelled > maxDist)
+					return 0;
+				from = traceOutRTD.contact.point;
+				if (sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData))
+					return 1;
+
+			}
+		}
+	}
+	else
+	{
+		if (sphereTraceColliderListRayTrace(pRayTraceData->startPoint, dir, &pNode->colliderEntries, pRayTraceData))
+			return 1;
+	}
+}
+
+
+b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData)
+{
+
+	if (sphereTraceColliderAABBRayTrace(from, dir, &pTree->root->aabb, pRayTraceData))
+	{
+		if (pTree->root->hasChildren)
+		{
+			if (pRayTraceData->distance <= maxDist)
+			{
+				pRayTraceData->startPoint = from;
+				return sphereTraceOctTreeNodeRayTraceRecursive(pRayTraceData->contact.point, dir, pRayTraceData->distance, maxDist, pTree->root, pRayTraceData);
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			return sphereTraceColliderListRayTrace(from, dir, &pTree->root->colliderEntries, pRayTraceData);
+		}
+	}
+	return 0;
+
 }
 
 //ST_Index sphereTraceOctTreeGetMaxCollidersOnLeaf(ST_OctTree* pTree, ST_OctTreeNode** ppNodeWithMax)

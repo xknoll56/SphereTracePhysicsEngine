@@ -63,7 +63,8 @@ typedef enum ST_Octant
 	ST_LEFT_UP_BACK = 4,
 	ST_RIGHT_UP_BACK = 5,
 	ST_LEFT_UP_FORWARD = 6,
-	ST_RIGHT_UP_FORWARD = 7
+	ST_RIGHT_UP_FORWARD = 7,
+	ST_OCTANT_NONE = 8
 } ST_Octant;
 
 typedef struct ST_AABB
@@ -246,13 +247,27 @@ typedef enum ST_PlaneVertexDirection
 } ST_PlaneVertexDirection;
 
 
+typedef enum ST_DirectionType
+{
+	ST_DIRECTION_RIGHT = 0,
+	ST_DIRECTION_LEFT = 1,
+	ST_DIRECTION_UP = 2,
+	ST_DIRECTION_DOWN = 3,
+	ST_DIRECTION_FORWARD= 4,
+	ST_DIRECTION_BACK = 5,
+	ST_DIRECTION_COMBINATION = 6,
+	ST_DIRECTION_NONE = 7,
 
+} ST_DirectionType;
+
+ST_DirectionType sphereTraceDirectionTypeGetReverse(ST_DirectionType dirType);
 
 typedef struct ST_RayTraceData
 {
 	ST_SphereContact contact;
 	ST_Vector3 startPoint;
 	float distance;
+	ST_DirectionType directionType;
 } ST_RayTraceData;
 
 typedef struct ST_SphereTraceData
@@ -334,6 +349,18 @@ b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, c
 
 b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
 
+//b32 sphereTraceColliderAABBRayTraceThrough(ST_Vector3 contactStart, ST_DirectionType contactDirection, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+
+b32 sphereTraceColliderAABBRayTraceOut(ST_Vector3 pointWithin, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+
+ST_Octant sphereTraceOctantGetNextFromDirection(ST_Octant curOctant, ST_DirectionType dir);
+
+b32 sphereTraceOctantIsOnRightSide(ST_Octant curOctant);
+
+b32 sphereTraceOctantIsOnUpSide(ST_Octant curOctant);
+
+b32 sphereTraceOctantIsOnForwardSide(ST_Octant curOctant);
+
 ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb);
 
 ST_Vector3 sphereTraceColliderAABBGetExtentByOctant(const ST_AABB* const paabb, ST_Octant octant);
@@ -363,6 +390,10 @@ ST_PlaneCollider* sphereTraceColliderPlaneGetFromContact(const ST_SphereContact*
 ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_SphereContact* const pContact);
 
 const char* sphereTraceColliderGetColliderString(const ST_Collider* const pCollider);
+
+b32 sphereTraceColliderRayTrace(ST_Vector3 from, ST_Direction dir, const ST_Collider* const pCollider, ST_RayTraceData* const pRayTraceData);
+
+b32 sphereTraceColliderListRayTrace(ST_Vector3 from, ST_Direction dir, ST_IndexList* const pColliderList, ST_RayTraceData* const pRayTraceData);
 //ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_SphereContact* const pContact);
 
 typedef struct ST_UniformTerrainCollider

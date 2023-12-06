@@ -40,8 +40,6 @@ ST_SimulationSpace sphereTraceSimulationConstruct()
 	simulationSpace.planeColliders = sphereTraceIndexListConstruct();
 	simulationSpace.triangleColliders = sphereTraceIndexListConstruct();
 	simulationSpace.uniformTerrainColliders = sphereTraceIndexListConstruct();
-	simulationSpace.bowlColliders = sphereTraceIndexListConstruct();
-	simulationSpace.pipeColliders = sphereTraceIndexListConstruct();
 	simulationSpace.callbackColliders = sphereTraceIndexListConstruct();
 	simulationSpace.spacialPartitionContainer = sphereTraceSpacialPartitionStaticConstruct(20.0f);
 	simulationSpace.minDeltaTime = 1.0f / 60.0f;
@@ -56,8 +54,6 @@ void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace)
 	sphereTraceIndexListFree(&pSimulationSpace->sphereColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->planeColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->triangleColliders);
-	sphereTraceIndexListFree(&pSimulationSpace->bowlColliders);
-	sphereTraceIndexListFree(&pSimulationSpace->pipeColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->callbackColliders);
 	ST_IndexListData* pild = pSimulationSpace->uniformTerrainColliders.pFirst;
 	ST_UniformTerrainCollider* pTerrainCollider = NULL;
@@ -113,52 +109,6 @@ void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimu
 		ild = ild->pNext;
 	}
 	sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pSimulationSpace->worldAABB, &pTriangleCollider->collider.aabb);
-}
-
-void sphereTraceSimulationInsertBowlCollider(ST_SimulationSpace* const pSimulationSpace, ST_BowlCollider* const pBowlCollider)
-{
-	//ST_ColliderIndex index = pSimulationSpace->planeColliders.count;
-	pBowlCollider->collider.colliderIndex = pBowlCollider;
-	sphereTraceIndexListAddFirst(&pSimulationSpace->bowlColliders, pBowlCollider);
-	pBowlCollider->collider.bucketIndices = sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(&pSimulationSpace->spacialPartitionContainer, &pBowlCollider->collider.aabb);
-	ST_IndexListData* ild = pBowlCollider->collider.bucketIndices.pFirst;
-	for (int i = 0; i < pBowlCollider->collider.bucketIndices.count; i++)
-	{
-		if (ild->value != -1)
-		{
-			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.buckets[ild->value].bowlColliderIndices, pBowlCollider);
-
-		}
-		else
-		{
-			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.outsideBucket.bowlColliderIndices, pBowlCollider);
-		}
-		ild = ild->pNext;
-	}
-	sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pSimulationSpace->worldAABB, &pBowlCollider->collider.aabb);
-}
-
-void sphereTraceSimulationInsertPipeCollider(ST_SimulationSpace* const pSimulationSpace, ST_PipeCollider* const pPipeCollider)
-{
-	//ST_ColliderIndex index = pSimulationSpace->planeColliders.count;
-	pPipeCollider->collider.colliderIndex = pPipeCollider;
-	sphereTraceIndexListAddFirst(&pSimulationSpace->pipeColliders, pPipeCollider);
-	pPipeCollider->collider.bucketIndices = sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(&pSimulationSpace->spacialPartitionContainer, &pPipeCollider->collider.aabb);
-	ST_IndexListData* ild = pPipeCollider->collider.bucketIndices.pFirst;
-	for (int i = 0; i < pPipeCollider->collider.bucketIndices.count; i++)
-	{
-		if (ild->value != -1)
-		{
-			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.buckets[ild->value].pipeColliderIndices, pPipeCollider);
-
-		}
-		else
-		{
-			sphereTraceIndexListAddUnique(&pSimulationSpace->spacialPartitionContainer.outsideBucket.pipeColliderIndices, pPipeCollider);
-		}
-		ild = ild->pNext;
-	}
-	sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pSimulationSpace->worldAABB, &pPipeCollider->collider.aabb);
 }
 
 void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider)
@@ -780,31 +730,31 @@ void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSp
 				pOtherIndexData = pOtherIndexData->pNext;
 			}
 
-			pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
-			for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
-			{
-				ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
-				ST_SphereContact contactInfo;
-				if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
-				{
-					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
-					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt, &numImpulses);
-				}
-				pOtherIndexData = pOtherIndexData->pNext;
-			}
+			//pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
+			//for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
+			//{
+			//	ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
+			//	ST_SphereContact contactInfo;
+			//	if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
+			//	{
+			//		sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+			//		sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt, &numImpulses);
+			//	}
+			//	pOtherIndexData = pOtherIndexData->pNext;
+			//}
 
-			pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
-			for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
-			{
-				ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
-				ST_SphereContact contactInfo;
-				if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
-				{
-					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
-					sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt, &numImpulses);
-				}
-				pOtherIndexData = pOtherIndexData->pNext;
-			}
+			//pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
+			//for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
+			//{
+			//	ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
+			//	ST_SphereContact contactInfo;
+			//	if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
+			//	{
+			//		sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+			//		sphereTraceSimulationSphereContactResponse(pSimulationSpace, &contactInfo, substepDt, &numImpulses);
+			//	}
+			//	pOtherIndexData = pOtherIndexData->pNext;
+			//}
 
 			//check for all sphere sphere collisions
 			pOtherIndexData = pSimulationSpace->sphereColliders.pFirst->pNext;
@@ -1010,6 +960,7 @@ void sphereTraceSimulationSphereMultipleContactResponse(const ST_SimulationSpace
 	sphereTraceRigidBodyAddDeltaMomentum(&pSphereCollider->rigidBody, forceSum);
 	sphereTraceVector3ListFree(&impulses);
 	sphereTraceVector3ListFree(&restingContactNormals);
+	sphereTraceVector3ListFree(&restingContactPoints);
 
 }
 
@@ -1128,39 +1079,39 @@ void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulat
 			pOtherIndexData = pOtherIndexData->pNext;
 		}
 
-		pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
-		for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
-		{
-			ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
-			if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
-			{
-				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pBowlCollider))
-				{
-					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
-					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
-					ST_SphereContact* pAllocatedContact = sphereTraceLinearAllocatorAllocateSphereContact();
-					*pAllocatedContact = contactInfo;
-				}
-			}
-			pOtherIndexData = pOtherIndexData->pNext;
-		}
+		//pOtherIndexData = pSimulationSpace->bowlColliders.pFirst;
+		//for (int bowlColliderIndex = 0; bowlColliderIndex < pSimulationSpace->bowlColliders.count; bowlColliderIndex++)
+		//{
+		//	ST_BowlCollider* pBowlCollider = (ST_BowlCollider*)pOtherIndexData->value;
+		//	if (sphereTraceColliderBowlSphereCollisionTest(pBowlCollider, pSphereCollider, &contactInfo))
+		//	{
+		//		if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pBowlCollider))
+		//		{
+		//			sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+		//			sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+		//			ST_SphereContact* pAllocatedContact = sphereTraceLinearAllocatorAllocateSphereContact();
+		//			*pAllocatedContact = contactInfo;
+		//		}
+		//	}
+		//	pOtherIndexData = pOtherIndexData->pNext;
+		//}
 
-		pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
-		for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
-		{
-			ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
-			if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
-			{
-				if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pPipeCollider))
-				{
-					sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
-					sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
-					ST_SphereContact* pAllocatedContact = sphereTraceLinearAllocatorAllocateSphereContact();
-					*pAllocatedContact = contactInfo;
-				}
-			}
-			pOtherIndexData = pOtherIndexData->pNext;
-		}
+		//pOtherIndexData = pSimulationSpace->pipeColliders.pFirst;
+		//for (int pipeColliderIndex = 0; pipeColliderIndex < pSimulationSpace->pipeColliders.count; pipeColliderIndex++)
+		//{
+		//	ST_PipeCollider* pPipeCollider = (ST_PipeCollider*)pOtherIndexData->value;
+		//	if (sphereTraceColliderPipeSphereCollisionTest(pPipeCollider, pSphereCollider, &contactInfo))
+		//	{
+		//		if (!sphereTraceIndexListContains(&pSphereCollider->prevFrameContacts, pPipeCollider))
+		//		{
+		//			sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+		//			sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+		//			ST_SphereContact* pAllocatedContact = sphereTraceLinearAllocatorAllocateSphereContact();
+		//			*pAllocatedContact = contactInfo;
+		//		}
+		//	}
+		//	pOtherIndexData = pOtherIndexData->pNext;
+		//}
 
 		//check for all sphere sphere collisions
 		//pOtherIndexData = pSimulationSpace->sphereColliders.pFirst;

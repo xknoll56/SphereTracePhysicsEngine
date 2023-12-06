@@ -371,6 +371,693 @@ b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_
 	return 0;
 }
 
+ST_DirectionType sphereTraceDirectionTypeGetReverse(ST_DirectionType dirType)
+{
+	switch (dirType)
+	{
+	case ST_DIRECTION_RIGHT:
+		return ST_DIRECTION_LEFT;
+		break;
+	case ST_DIRECTION_LEFT:
+		return ST_DIRECTION_RIGHT;
+		break;
+	case ST_DIRECTION_UP:
+		return ST_DIRECTION_DOWN;
+		break;
+	case ST_DIRECTION_DOWN:
+		return ST_DIRECTION_UP;
+		break;
+	case ST_DIRECTION_FORWARD:
+		return ST_DIRECTION_BACK;
+		break;
+	case ST_DIRECTION_BACK:
+		return ST_DIRECTION_FORWARD;
+		break;
+	}
+}
+//
+//b32 sphereTraceColliderAABBRayTraceThrough(ST_Vector3 contactStart, ST_DirectionType contactDirection, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData)
+//{
+//	float tMin;
+//	float tentativeT;
+//	ST_DirectionType tMinDir;
+//	switch (contactDirection)
+//	{
+//	case ST_DIRECTION_RIGHT:
+//		if (dir.v.x >= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.x) / -dir.v.x;
+//			tMinDir = ST_DIRECTION_LEFT;
+//			pRaycastData->contact.normal = gDirectionLeft;
+//			if (dir.v.y > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_UP;
+//					pRaycastData->contact.normal = gDirectionUp;
+//				}
+//			} 
+//			else if (dir.v.y < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_DOWN;
+//					pRaycastData->contact.normal = gDirectionDown;
+//				}
+//			}
+//			if (dir.v.z > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_FORWARD;
+//					pRaycastData->contact.normal = gDirectionForward;
+//				}
+//			}
+//			else if (dir.v.z < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_BACK;
+//					pRaycastData->contact.normal = gDirectionBack;
+//				}
+//			}		
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	case ST_DIRECTION_LEFT:
+//		if (dir.v.x <= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.x) / dir.v.x;
+//			tMinDir = ST_DIRECTION_RIGHT;
+//			pRaycastData->contact.normal = gDirectionRight;
+//			if (dir.v.y > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_UP;
+//					pRaycastData->contact.normal = gDirectionUp;
+//				}
+//			}
+//			else if (dir.v.y < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_DOWN;
+//					pRaycastData->contact.normal = gDirectionDown;
+//				}
+//			}
+//			if (dir.v.z > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_FORWARD;
+//					pRaycastData->contact.normal = gDirectionForward;
+//				}
+//			}
+//			else if (dir.v.z < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_BACK;
+//					pRaycastData->contact.normal = gDirectionBack;
+//				}
+//			}
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	case ST_DIRECTION_UP:
+//		if (dir.v.y >= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.y) / -dir.v.y;
+//			tMinDir = ST_DIRECTION_DOWN;
+//			pRaycastData->contact.normal = gDirectionDown;
+//			if (dir.v.x > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.x < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//			if (dir.v.z > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_FORWARD;
+//					pRaycastData->contact.normal = gDirectionForward;
+//				}
+//			}
+//			else if (dir.v.z < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_BACK;
+//					pRaycastData->contact.normal = gDirectionBack;
+//				}
+//			}
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	case ST_DIRECTION_DOWN:
+//		if (dir.v.y <= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.y) / dir.v.y;
+//			tMinDir = ST_DIRECTION_UP;
+//			pRaycastData->contact.normal = gDirectionUp;
+//			if (dir.v.x > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.x < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//			if (dir.v.z > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_FORWARD;
+//					pRaycastData->contact.normal = gDirectionForward;
+//				}
+//			}
+//			else if (dir.v.z < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.z - contactStart.z) / dir.v.z;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_BACK;
+//					pRaycastData->contact.normal = gDirectionBack;
+//				}
+//			}
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	case ST_DIRECTION_FORWARD:
+//		if (dir.v.z >= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.z) / -dir.v.z;
+//			tMinDir = ST_DIRECTION_BACK;
+//			pRaycastData->contact.normal = gDirectionBack;
+//			if (dir.v.x > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.x < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//			if (dir.v.y > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.y < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	case ST_DIRECTION_BACK:
+//		if (dir.v.z <= 0.0f)
+//		{
+//			return 0;
+//		}
+//		else
+//		{
+//			tMin = (2.0f * paabb->halfExtents.z) / dir.v.z;
+//			tMinDir = ST_DIRECTION_FORWARD;
+//			pRaycastData->contact.normal = gDirectionForward;
+//			if (dir.v.x > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.x < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.x - contactStart.x) / dir.v.x;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//			if (dir.v.y > 0.0f)
+//			{
+//				tentativeT = (paabb->highExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_RIGHT;
+//					pRaycastData->contact.normal = gDirectionRight;
+//				}
+//			}
+//			else if (dir.v.y < 0.0f)
+//			{
+//				tentativeT = (paabb->lowExtent.y - contactStart.y) / dir.v.y;
+//				if (tentativeT < tMin)
+//				{
+//					tMin = tentativeT;
+//					tMinDir = ST_DIRECTION_LEFT;
+//					pRaycastData->contact.normal = gDirectionLeft;
+//				}
+//			}
+//		}
+//		pRaycastData->directionType = tMinDir;
+//		pRaycastData->distance = tMin;
+//		pRaycastData->startPoint = contactStart;
+//		pRaycastData->contact.point = sphereTraceVector3AddAndScale(contactStart, dir.v, tMin);
+//		break;
+//	}
+//	return 1;
+//}
+
+b32 sphereTraceColliderAABBRayTraceOut(ST_Vector3 pointWithin, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData)
+{
+	float t = FLT_MAX;
+	pRaycastData->startPoint = pointWithin;
+	if (dir.v.x > 0.0f)
+	{
+		t = (paabb->highExtent.x - pointWithin.x) / dir.v.x;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		{
+			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+			{
+				pRaycastData->directionType = ST_DIRECTION_RIGHT;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+	else if (dir.v.x < 0.0f)
+	{
+		t = (paabb->lowExtent.x - pointWithin.x) / dir.v.x;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		{
+			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+			{
+				pRaycastData->directionType = ST_DIRECTION_LEFT;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+	if (dir.v.y > 0.0f)
+	{
+		t = (paabb->highExtent.y - pointWithin.y) / dir.v.y;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		{
+			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+			{
+				pRaycastData->directionType = ST_DIRECTION_UP;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+	else if (dir.v.y < 0.0f)
+	{
+		t = (paabb->lowExtent.y - pointWithin.y) / dir.v.y;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		{
+			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+			{
+				pRaycastData->directionType = ST_DIRECTION_DOWN;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+	if (dir.v.z > 0.0f)
+	{
+		t = (paabb->highExtent.z - pointWithin.z) / dir.v.z;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		{
+			if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+			{
+				pRaycastData->directionType = ST_DIRECTION_FORWARD;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+	else if (dir.v.z < 0.0f)
+	{
+		t = (paabb->lowExtent.z - pointWithin.z) / dir.v.z;
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		{
+			if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+			{
+				pRaycastData->directionType = ST_DIRECTION_BACK;
+				pRaycastData->distance = t;
+				return ST_TRUE;
+			}
+		}
+	}
+
+	return ST_FALSE;
+}
+
+ST_Octant sphereTraceOctantGetNextFromDirection(ST_Octant curOctant, ST_DirectionType dir)
+{
+	switch (curOctant)
+	{
+	case ST_LEFT_DOWN_BACK:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_RIGHT_DOWN_BACK;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_LEFT_UP_BACK;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_LEFT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_OCTANT_NONE;
+			break;
+		}
+	}
+	break;
+	case ST_RIGHT_DOWN_BACK:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_LEFT_DOWN_BACK;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_RIGHT_UP_BACK;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_RIGHT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_OCTANT_NONE;
+			break;
+		}
+	}
+	break;
+	case ST_LEFT_DOWN_FORWARD:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_RIGHT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_LEFT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_LEFT_DOWN_BACK;
+			break;
+		}
+	}
+	break;
+	case ST_RIGHT_DOWN_FORWARD:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_LEFT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_RIGHT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_RIGHT_DOWN_BACK;
+			break;
+		}
+	}
+	break;
+
+	case ST_LEFT_UP_BACK:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_RIGHT_UP_BACK;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_LEFT_DOWN_BACK;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_LEFT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_OCTANT_NONE;
+			break;
+		}
+	}
+	break;
+	case ST_RIGHT_UP_BACK:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_LEFT_UP_BACK;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_RIGHT_DOWN_BACK;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_RIGHT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_OCTANT_NONE;
+			break;
+		}
+	}
+	break;
+	case ST_LEFT_UP_FORWARD:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_RIGHT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_LEFT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_LEFT_UP_BACK;
+			break;
+		}
+	}
+	break;
+	case ST_RIGHT_UP_FORWARD:
+	{
+		switch (dir)
+		{
+		case ST_DIRECTION_RIGHT:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_LEFT:
+			return ST_LEFT_UP_FORWARD;
+			break;
+		case ST_DIRECTION_UP:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_DOWN:
+			return ST_RIGHT_DOWN_FORWARD;
+			break;
+		case ST_DIRECTION_FORWARD:
+			return ST_OCTANT_NONE;
+			break;
+		case ST_DIRECTION_BACK:
+			return ST_RIGHT_UP_BACK;
+			break;
+		}
+	}
+	break;
+	}
+}
+
+b32 sphereTraceOctantIsOnRightSide(ST_Octant curOctant)
+{
+	return (curOctant % 2 == 1);
+}
+
+b32 sphereTraceOctantIsOnUpSide(ST_Octant curOctant)
+{
+	return curOctant > 3;
+}
+
+b32 sphereTraceOctantIsOnForwardSide(ST_Octant curOctant)
+{
+	return (curOctant % 4 > 1);
+}
+
 ST_Vector3 sphereTraceColliderAABBMidPoint(const ST_AABB* const aabb)
 {
 	return sphereTraceVector3Average(aabb->lowExtent, aabb->highExtent);
@@ -826,5 +1513,46 @@ ST_TriangleCollider* sphereTraceColliderTriangleGetFromContact(const ST_SphereCo
 const char* sphereTraceColliderGetColliderString(const ST_Collider* const pCollider)
 {
 	return ST_ColliderStrings[pCollider->colliderType];
+}
+
+b32 sphereTraceColliderRayTrace(ST_Vector3 from, ST_Direction dir, const ST_Collider* const pCollider, ST_RayTraceData* const pRayTraceData)
+{
+	switch (pCollider->colliderType)
+	{
+	case COLLIDER_PLANE:
+		return sphereTraceColliderPlaneRayTrace(from, dir, pCollider, pRayTraceData);
+		break;
+	case COLLIDER_SPHERE:
+		return sphereTraceColliderSphereRayTrace(from, dir, pCollider, pRayTraceData);
+		break;
+	case COLLIDER_TRIANGLE:
+		return sphereTraceColliderTriangleRayTrace(from, dir, pCollider, pRayTraceData);
+		break;
+	}
+}
+
+
+b32 sphereTraceColliderListRayTrace(ST_Vector3 from, ST_Direction dir, ST_IndexList* const pColliderList, ST_RayTraceData* const pRayTraceData)
+{
+	float minDist = FLT_MAX;
+	ST_RayTraceData rtd;
+	ST_Collider* pCollider;
+	ST_IndexListData* pild = pColliderList->pFirst;
+	for (ST_Index i = 0; i < pColliderList->count; i++)
+	{
+		pCollider = pild->value;
+		if (sphereTraceColliderRayTrace(from, dir, pCollider, &rtd))
+		{
+			if (rtd.distance < minDist)
+			{
+				*pRayTraceData = rtd;
+				minDist = rtd.distance;
+			}
+		}
+		pild = pild->pNext;
+	}
+	if (minDist != FLT_MAX)
+		return ST_TRUE;
+	return ST_FALSE;
 }
 //ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_SphereContact* const pContact);

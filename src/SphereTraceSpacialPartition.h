@@ -8,6 +8,7 @@
 #define SPACIAL_PARTITION_STATIC_SIZE SPACIAL_PARTITION_STATIC_DIMENSION*SPACIAL_PARTITION_STATIC_DIMENSION*SPACIAL_PARTITION_STATIC_DIMENSION
 #define ST_OCT_TREE_POINT_RADIUS_SQUARED 1.0f
 #define ST_OCT_TREE_SMALLEST_OCTANT_SIZE 1.0f
+#define ST_OCT_TREE_SKIN_WIDTH 1.0e-6f
 #define ST_OCT_TREE_MAX_DEPTH 7
 
 
@@ -59,7 +60,7 @@ ST_OctTreeNode* sphereTraceOctTreeSampleLeafNode(ST_OctTree* pTree, ST_Vector3 p
 void sphereTraceOctTreeInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
 void sphereTraceOctTreeRemoveCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
 void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
-
+b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData);
 
 typedef struct ST_SpacialPartitionBucket
 {

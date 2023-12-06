@@ -405,12 +405,14 @@ void sphereTraceColliderInfiniteZPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	}
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionForward;
+	pRaycastData->directionType = ST_DIRECTION_FORWARD;
 	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionForward.v);
 	pRaycastData->distance = dz / dirDotNormal;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dz>0.0f)
 	{
 		pRaycastData->contact.normal = gDirectionBack;
+		pRaycastData->directionType = ST_DIRECTION_BACK;
 	}
 }
 void sphereTraceColliderInfiniteYPlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
@@ -433,12 +435,14 @@ void sphereTraceColliderInfiniteYPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	}
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionUp;
+	pRaycastData->directionType = ST_DIRECTION_UP;
 	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionUp.v);
 	pRaycastData->distance = dy / dirDotNormal;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dy > 0.0f)
 	{
 		pRaycastData->contact.normal = gDirectionDown;
+		pRaycastData->directionType = ST_DIRECTION_DOWN;
 	}
 }
 void sphereTraceColliderInfiniteXPlaneRayTrace(ST_Vector3 from, ST_Direction dir, ST_Vector3 pointOnPlane, ST_RayTraceData* const pRaycastData)
@@ -461,12 +465,14 @@ void sphereTraceColliderInfiniteXPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	}
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionRight;
+	pRaycastData->directionType = ST_DIRECTION_RIGHT;
 	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionRight.v);
 	pRaycastData->distance = dx / dirDotNormal;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dx > 0.0f)
 	{
 		pRaycastData->contact.normal = gDirectionLeft;
+		pRaycastData->directionType = ST_DIRECTION_LEFT;
 	}
 }
 
