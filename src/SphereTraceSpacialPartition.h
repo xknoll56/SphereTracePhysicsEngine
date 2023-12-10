@@ -29,16 +29,17 @@ typedef struct ST_OctTree
 	ST_OctTreeNode* root;
 	ST_Index depth;
 	ST_Index maxDepth;
+	ST_Index gridIndex;
 } ST_OctTree;
 
 ST_OctTreeNode sphereTraceOctTreeNodeConstruct(ST_AABB aabb, ST_Index depth, ST_OctTreeNode* pParent);
 void sphereTraceOctTreeNodeFree(ST_OctTreeNode* const pNode);
 void sphereTraceOctTreeNodeSetChildAABBByIndex(ST_OctTreeNode* const pNode, ST_Index i, ST_AABB* paabb);
-void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode);
+void sphereTraceOctTreeNodePopulateChildren(ST_OctTreeNode* const pNode, ST_Index bucketIndex);
 //ST_Index sphereTraceOctTreeNodeCountObjectsBelow(ST_OctTreeNode* const pNode);
 ST_Index sphereTraceOctTreeNodeGetColliderCountBelow(ST_OctTreeNode* const pNode, ST_IndexList* pUniqueCollider, ST_IndexList* pNodesBelow);
 
-ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb);
+ST_OctTree sphereTraceOctTreeConstruct(ST_AABB aabb, ST_Index gridIndex);
 
 //will return pointers to all oct-tree leaf nodes that intersect with this aabb
 ST_IndexList sphereTraceOctTreeSampleIntersectionLeafs(ST_OctTree* const pOctTree, ST_AABB* const paabb);
@@ -47,7 +48,7 @@ void sphereTraceOctTreeReSampleIntersectionLeafsAndColliders(ST_OctTree* const p
 	ST_IndexList* const pLeafs, ST_IndexList* const pColliders, b32 sampleDynamicColliders, b32 sampleStaticColliders);
 //void sphereTraceOctTreeReSampleIntersectionLeafsAndSphereColliders(ST_OctTree* const pOctTree, ST_AABB* const paabb, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);
 //
-void sphereTraceOctTreeSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pCollider);
+void sphereTraceOctTreeSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTree* const pOctTree, ST_Vector3 from, ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);
 //will return pointers to all colliders intersecting in the tree
 //ST_IndexList sphereTraceOctTreeSampleIntersectionColliders(ST_OctTree* const pOctTree, ST_Collider* const pCollider);
 //will insert point into a node, there can only be one point in each node,
@@ -62,37 +63,40 @@ void sphereTraceOctTreeRemoveCollider(ST_OctTree* pTree, ST_Collider* pCollider,
 void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
 b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData);
 
-typedef struct ST_SpacialPartitionBucket
-{
-	ST_Vector3 centroid;
-	ST_AABB aabb;
-	//ST_VectorArrayPointers planeColliderPointers;
-	ST_IndexList planeColliderIndices;
-	ST_IndexList triangleColliderIndices;
-	ST_IndexList sphereColliderIndices;
-	ST_IndexList bowlColliderIndices;
-	ST_IndexList pipeColliderIndices;
-	ST_IndexList uniformTerrainColliderIndices;
-	ST_Index containerIndex;
-} ST_SpacialPartitionBucket;
+//typedef struct ST_SpacialPartitionBucket
+//{
+//	ST_Vector3 centroid;
+//	ST_AABB aabb;
+//	//ST_VectorArrayPointers planeColliderPointers;
+//	ST_IndexList planeColliderIndices;
+//	ST_IndexList triangleColliderIndices;
+//	ST_IndexList sphereColliderIndices;
+//	ST_IndexList uniformTerrainColliderIndices;
+//	ST_Index containerIndex;
+//} ST_SpacialPartitionBucket;
 
-typedef struct ST_SpacialPartitiononDynamicContainer
+typedef struct ST_OctTreeGrid
 {
-	ST_SpacialPartitionBucket* buckets;
-	float partitionSize;
-	ST_Index count;
+	ST_OctTree* treeBuckets;
+	ST_IndexList outsideColliders;
+	ST_AABB worldaabb;
+	ST_Vector3 bucketHalfExtents;
+	float minDim;
+	ST_Index xBuckets;
+	ST_Index yBuckets;
+	ST_Index zBuckets;
 	ST_Index capacity;
-} ST_SpacialPartitiononDynamicContainer;
+} ST_OctTreeGrid;
 
-typedef struct ST_SpacialPartitionStaticContainer
-{
-	ST_SpacialPartitionBucket* buckets;
-	ST_SpacialPartitionBucket outsideBucket;
-	float partitionSize;
-	ST_Index count;
-	ST_Index capacity;
-	ST_AABB aabb;
-}ST_SpacialPartitionStaticContainer;
+//typedef struct ST_SpacialPartitionStaticContainer
+//{
+//	ST_SpacialPartitionBucket* buckets;
+//	ST_SpacialPartitionBucket outsideBucket;
+//	float partitionSize;
+//	ST_Index count;
+//	ST_Index capacity;
+//	ST_AABB aabb;
+//}ST_SpacialPartitionStaticContainer;
 
 //typedef struct ST_SpacialPartititonHeightNode
 //{
@@ -108,14 +112,38 @@ typedef struct ST_SpacialPartitionStaticContainer
 
 //ST_SpacialPartitiononDynamicContainer sphereTraceSpacialPartitionStaticHorizontalCreate(float partitionSize);
 
-ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(float partitionSize);
+//ST_SpacialPartitionStaticContainer sphereTraceSpacialPartitionStaticConstruct(float partitionSize);
+//
+//ST_SpacialPartitionBucket sphereTraceSpacialPartitionGetBucketWithIndex(ST_SpacialPartitionStaticContainer* const pSpacialPartitionStaticContainer, ST_Index bucketIndex);
+//
+//ST_Index sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, ST_Vector3 position);
+//
+//ST_IndexList sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb);
+//
+//ST_IndexList sphereTraceSpacialPartitionStaticUpdateBucketIndicesFromAABBAndReturnDeletedBucketIndices(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb, ST_IndexList* const intList);
+//
+//ST_Vector3 sphereTraceSpacialPartitionStaticGetNearestBucketIntersectionFromPositionAndDirection(const ST_SpacialPartitionBucket* const pCurrentBucket, ST_Vector3 start, ST_Vector3 dir, ST_Vector3* const incomingDirection);
 
-ST_SpacialPartitionBucket sphereTraceSpacialPartitionGetBucketWithIndex(ST_SpacialPartitionStaticContainer* const pSpacialPartitionStaticContainer, ST_Index bucketIndex);
+ST_OctTreeGrid sphereTraceOctTreeGridConstruct(ST_AABB worldaabb, ST_Vector3 bucketHalfExtents);
 
-ST_Index sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, ST_Vector3 position);
+ST_Index sphereTraceOctTreeGridGetBucketIndexFromPosition(const ST_OctTreeGrid* const pOctTreeGrid, ST_Vector3 position);
 
-ST_IndexList sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb);
+ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid* const pOctTreeGrid, const ST_AABB* const aabb);
 
-ST_IndexList sphereTraceSpacialPartitionStaticUpdateBucketIndicesFromAABBAndReturnDeletedBucketIndices(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb, ST_IndexList* const intList);
+ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABBCorners(const ST_OctTreeGrid* const pOctTreeGrid, const ST_AABB* const aabb);
 
-ST_Vector3 sphereTraceSpacialPartitionStaticGetNearestBucketIntersectionFromPositionAndDirection(const ST_SpacialPartitionBucket* const pCurrentBucket, ST_Vector3 start, ST_Vector3 dir, ST_Vector3* const incomingDirection);
+ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData);
+
+void sphereTraceOctTreeGridInsertCollider(ST_OctTreeGrid* const pGrid, ST_Collider* pCollider, b32 restructureTrees);
+
+void sphereTraceOctTreeGridInsertDynamicCollider(ST_OctTreeGrid* const pGrid, ST_Collider* pCollider, b32 restructureTrees);
+
+void sphereTraceOctTreeGridRemoveCollider(ST_OctTreeGrid* const pGrid, ST_Collider* pCollider, b32 restructureTrees);
+
+void sphereTraceOctTreeGridReInsertCollider(ST_OctTreeGrid* const pGrid, ST_Collider* pCollider, b32 restructureTrees);
+
+void sphereTraceOctTreeGridReSampleIntersectionLeafsAndColliders(ST_OctTreeGrid* const pGrid, ST_AABB* const paabb,
+	ST_IndexList* const pLeafs, ST_IndexList* const pColliders, b32 sampleDynamicColliders, b32 sampleStaticColliders);
+
+void sphereTraceOctTreeGridSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTreeGrid* const pGrid, ST_Vector3 from, 
+	ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);

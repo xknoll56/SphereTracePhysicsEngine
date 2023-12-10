@@ -126,7 +126,8 @@ typedef struct ST_Collider
 	ST_ColliderType colliderType;
 	//bucket indices for the grid spacial partition
 	ST_IndexList bucketIndices;
-	ST_IndexList octTreeLeafs;
+	//ST_IndexList octTreeLeafs;
+	ST_IndexList* pLeafBucketLists;
 	ST_Index colliderIndex;
 	ST_SubscriberList subscriberList;
 	float boundingRadius;
@@ -322,6 +323,8 @@ ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float
 ST_AABB sphereTraceAABBConstruct1(ST_Vector3 lowExtent, ST_Vector3 highExtent);
 
 ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents);
+
+b32 sphereTraceAABBAssert(const ST_AABB* const paabb);
 
 float sphereTraceAABBGetVolume(const ST_AABB* const paabb);
 

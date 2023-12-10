@@ -39,9 +39,8 @@ typedef struct ST_SimulationSpace
 	ST_Vector3 gravitationalAcceleration;
 	float minDeltaTime;
 	ST_Material defaultMaterial;
-	ST_SpacialPartitionStaticContainer spacialPartitionContainer;
 	ST_AABB worldAABB;
-	ST_OctTree octTree;
+	ST_OctTreeGrid octTreeGrid;
 } ST_SimulationSpace;
 
 
@@ -80,6 +79,8 @@ void sphereTraceSubscriberListAddOnCollisionExitCallback(ST_SimulationSpace* pSi
 
 ST_SimulationSpace sphereTraceSimulationConstruct();
 
+ST_SimulationSpace sphereTraceSimulationConstruct1(ST_AABB worldaabb, ST_Vector3 gridHalfExtents);
+
 void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace);
 
 void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulationSpace, ST_PlaneCollider* const pPlaneCollider);
@@ -90,7 +91,7 @@ void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimula
 
 void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const pSimulationSpace, ST_UniformTerrainCollider* const pTerrainCollider);
 
-void sphereTraceSimulationConstructOctTree(ST_SimulationSpace* const pSimulationSpace);
+//void sphereTraceSimulationConstructOctTree(ST_SimulationSpace* const pSimulationSpace);
 
 void sphereTraceSimulationUpdateSphereColliderBucketIndices(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 
@@ -122,13 +123,13 @@ void sphereTraceSimulationGlobalSolveDiscreteFirstComeFirstServe(ST_SimulationSp
 
 void sphereTraceSimulationGlobalSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
 
-void sphereTraceSimulationOctTreeSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
+void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSimulationSpace, float dt);
 
-void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt);
+//void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt);
 
 void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const pSimulationSpace, float dt);
 
-b32 sphereTraceSimulationRayTrace(const ST_SimulationSpace* const pSimulationSpace, ST_Vector3 start, ST_Direction dir, ST_RayTraceData* const pRayCastData);
+//b32 sphereTraceSimulationRayTrace(const ST_SimulationSpace* const pSimulationSpace, ST_Vector3 start, ST_Direction dir, ST_RayTraceData* const pRayCastData);
 
-void sphereTraceSimulationSolveImposedPositionStaticSpacialPartition(ST_SimulationSpace* const pSimulationSpace, float dt);
+//void sphereTraceSimulationSolveImposedPositionStaticSpacialPartition(ST_SimulationSpace* const pSimulationSpace, float dt);
 

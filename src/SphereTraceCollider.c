@@ -36,7 +36,7 @@ ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float bou
 	else
 		collider.isDynamic = ST_FALSE;
 	collider.bucketIndices = sphereTraceIndexListConstruct();
-	collider.octTreeLeafs = sphereTraceIndexListConstruct();
+	collider.pLeafBucketLists = sphereTraceAllocatorAllocateIndexListArray();
 	//default, will be set later when the derrived collider is created
 	collider.colliderIndex = 0;
 	collider.subscriberList = sphereTraceSubscriberListConstruct();
@@ -97,6 +97,15 @@ ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents)
 	aabb.halfExtents = halfExtents;
 	sphereTraceAABBSetHighAndLowExtents(&aabb);
 	return aabb;
+}
+
+b32 sphereTraceAABBAssert(const ST_AABB* const paabb)
+{
+	if (paabb->highExtent.x >+ paabb->lowExtent.x)
+		if (paabb->highExtent.y >= paabb->lowExtent.y)
+			if (paabb->highExtent.z >= paabb->lowExtent.z)
+				return ST_TRUE;
+	return ST_FALSE;
 }
 
 void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb)
@@ -292,7 +301,7 @@ b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_
 	float dot = sphereTraceVector3Dot(dpDir, dir.v);
 	if (dot >= 0.0f)
 	{
-		if (dpDir.x >= 0.0f)
+		if (dir.v.x>=0.0f)
 		{
 			//check the left face
 			sphereTraceColliderInfiniteXPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);
@@ -317,7 +326,7 @@ b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_
 			}
 		}
 
-		if (dpDir.y >= 0.0f)
+		if (dir.v.y>=0.0f)
 		{
 			//check the left face
 			sphereTraceColliderInfiniteYPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);
@@ -342,7 +351,7 @@ b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_
 			}
 		}
 
-		if (dpDir.z >= 0.0f)
+		if (dir.v.z>=0.0f)
 		{
 			//check the left face
 			sphereTraceColliderInfiniteZPlaneRayTrace(from, dir, paabb->lowExtent, pRaycastData);

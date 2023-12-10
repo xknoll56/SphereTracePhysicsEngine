@@ -33,9 +33,23 @@ typedef struct ST_ObjectPool
 	ST_Index objectSize;
 } ST_ObjectPool;
 
+typedef struct ST_ArrayPool
+{
+	void** data;
+	ST_Index arraySize;
+	ST_FreeStack freeStack;
+	ST_Index occupied;
+	ST_Index capacity;
+	ST_Index objectSize;
+} ST_ArrayPool;
+
 ST_ObjectPool sphereTraceAllocatorObjectPoolConstruct(ST_Index capacity, ST_Index objectSize);
 void* sphereTraceAllocatorObjectPoolAllocateObject(ST_ObjectPool* const pObjectPool);
 void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, void* pObject);
+
+ST_ArrayPool sphereTraceAllocatorArrayPoolConstruct(ST_Index capacity, ST_Index objectSize, ST_Index arraySize);
+void* sphereTraceAllocatorArrayPoolAllocateObject(ST_ArrayPool* const pArrayPool);
+void sphereTraceAllocatorArrayPoolFreeObject(ST_ArrayPool* const pArrayPool, void* pObject);
 
 
 //linear object pools are really just pre-allocated arrays 
@@ -44,7 +58,7 @@ void sphereTraceAllocatorLinearObjectPoolReset(ST_ObjectPool* const pLinearObjec
 
 typedef struct ST_Allocator
 {
-	ST_ObjectPool** objectPools;
+	ST_ObjectPool* objectPools;
 	ST_ObjectPool* pCurrentObjectPool;
 	ST_Index numObjects;
 	ST_Index curPoolIndex;
@@ -92,3 +106,7 @@ ST_AABBContact* sphereTraceLinearAllocatorAllocateAABBContact();
 ST_Index sphereTraceLinearAllocatorGetAABBContactCount();
 ST_AABBContact* sphereTraceLinearAllocatorGetAABBContactByIndex(ST_Index index);
 void sphereTraceLinearAllocatorResetAABBContacts();
+
+//array allocators
+ST_IndexList* sphereTraceAllocatorAllocateIndexListArray();
+void sphereTraceAllocatorFreeIndexListArray(void* pArr);

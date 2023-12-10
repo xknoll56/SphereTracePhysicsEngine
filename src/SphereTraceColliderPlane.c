@@ -406,8 +406,8 @@ void sphereTraceColliderInfiniteZPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionForward;
 	pRaycastData->directionType = ST_DIRECTION_FORWARD;
-	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionForward.v);
-	pRaycastData->distance = dz / dirDotNormal;
+	//float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionForward.v);
+	pRaycastData->distance = dz / dir.v.z;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dz>0.0f)
 	{
@@ -436,8 +436,8 @@ void sphereTraceColliderInfiniteYPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionUp;
 	pRaycastData->directionType = ST_DIRECTION_UP;
-	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionUp.v);
-	pRaycastData->distance = dy / dirDotNormal;
+	//float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionUp.v);
+	pRaycastData->distance = dy / dir.v.y;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dy > 0.0f)
 	{
@@ -466,8 +466,7 @@ void sphereTraceColliderInfiniteXPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	pRaycastData->contact.normal = gDirectionRight;
 	pRaycastData->directionType = ST_DIRECTION_RIGHT;
-	float dirDotNormal = sphereTraceVector3Dot(dir.v, gDirectionRight.v);
-	pRaycastData->distance = dx / dirDotNormal;
+	pRaycastData->distance = dx / dir.v.x;
 	pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
 	if (dx > 0.0f)
 	{
