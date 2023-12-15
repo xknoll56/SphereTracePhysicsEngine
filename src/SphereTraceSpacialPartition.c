@@ -401,7 +401,66 @@ ST_Octant sphereTraceOctTreeNodePointToChildOctant(ST_OctTreeNode* const pNode, 
 		}
 	}
 }
+ST_Octant sphereTraceOctTreeNodeSettleMidPoint(ST_Vector3 mid, ST_Vector3 point, ST_Octant curOctant, ST_Direction dir)
+{
+	b32 onMidX = sphereTraceAbs(point.x - mid.x) < ST_OCT_TREE_SKIN_WIDTH;
+	b32 onMidY = sphereTraceAbs(point.y - mid.y) < ST_OCT_TREE_SKIN_WIDTH;
+	b32 onMidZ = sphereTraceAbs(point.z - mid.z) < ST_OCT_TREE_SKIN_WIDTH;
+	if (onMidX)
+	{
+		if (dir.v.x >= 0)
+		{
+			if (!sphereTraceOctantIsOnRightSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_RIGHT);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnRightSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_LEFT);
+			}
+		}
+	}
 
+	if (onMidY)
+	{
+		if (dir.v.y >= 0)
+		{
+			if (!sphereTraceOctantIsOnUpSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_UP);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnUpSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_DOWN);
+			}
+		}
+	}
+
+	if (onMidZ)
+	{
+		if (dir.v.z >= 0)
+		{
+			if (!sphereTraceOctantIsOnForwardSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_FORWARD);
+			}
+		}
+		else
+		{
+			if (sphereTraceOctantIsOnForwardSide(curOctant))
+			{
+				curOctant = sphereTraceOctantGetNextFromDirection(curOctant, ST_DIRECTION_BACK);
+			}
+		}
+	}
+	return curOctant;
+}
 //this ensures added safety when raytracing so a octant is not skipped
 ST_Octant sphereTraceOctTreeNodePointToChildOctantWithDir(ST_OctTreeNode* const pNode, ST_Vector3 point, ST_Direction dir)
 {
@@ -463,59 +522,8 @@ ST_Octant sphereTraceOctTreeNodePointToChildOctantWithDir(ST_OctTreeNode* const 
 			}
 		}
 	}
-	if (onMidX)
-	{
-		if (dir.v.x >= 0)
-		{
-			if (!sphereTraceOctantIsOnRightSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_RIGHT);
-			}
-		}
-		else
-		{
-			if (sphereTraceOctantIsOnRightSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_LEFT);
-			}
-		}
-	}
+	toReturn = sphereTraceOctTreeNodeSettleMidPoint(mid, point, toReturn, dir);
 
-	if (onMidY)
-	{
-		if (dir.v.y >= 0)
-		{
-			if (!sphereTraceOctantIsOnUpSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_UP);
-			}
-		}
-		else
-		{
-			if (sphereTraceOctantIsOnUpSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_DOWN);
-			}
-		}
-	}
-
-	if (onMidZ)
-	{
-		if (dir.v.z >= 0)
-		{
-			if (!sphereTraceOctantIsOnForwardSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_FORWARD);
-			}
-		}
-		else
-		{
-			if (sphereTraceOctantIsOnForwardSide(toReturn))
-			{
-				toReturn = sphereTraceOctantGetNextFromDirection(toReturn, ST_DIRECTION_BACK);
-			}
-		}
-	}
 	return toReturn;
 }
 
@@ -693,9 +701,12 @@ ST_OctTreeNode* sphereTraceOctTreeNodeSampleLeafNodeRecursive(ST_OctTreeNode* pN
 
 ST_OctTreeNode* sphereTraceOctTreeSampleLeafNode(ST_OctTree* pTree, ST_Vector3 point)
 {
-	if (sphereTraceColliderAABBContainsPoint(pTree->root, point))
+	if (pTree->root != NULL)
 	{
-		return sphereTraceOctTreeNodeSampleLeafNodeRecursive(pTree->root, point);
+		if (sphereTraceColliderAABBContainsPoint(pTree->root, point))
+		{
+			return sphereTraceOctTreeNodeSampleLeafNodeRecursive(pTree->root, point);
+		}
 	}
 	return NULL;
 }
@@ -907,33 +918,51 @@ void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollide
 
 b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Vector3 from, ST_Direction dir, float distTravelled, float maxDist, const ST_OctTreeNode* const pNode, ST_RayTraceData* const pRayTraceData)
 {
-	if (pNode->hasChildren)
+	if (distTravelled < maxDist)
 	{
-		ST_Octant childOctant = sphereTraceOctTreeNodePointToChildOctantWithDir(pNode, from, dir);
-		if (sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData))
-			return 1;
-		ST_RayTraceData traceOutRTD;
-		while (childOctant !=ST_OCTANT_NONE)
+		if (pNode->hasChildren)
 		{
-			if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+			ST_Octant childOctant = sphereTraceOctTreeNodePointToChildOctantWithDir(pNode, from, dir);
+			if (distTravelled < pRayTraceData->distance)
+				sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData);
+			ST_RayTraceData traceOutRTD;
+			while (childOctant != ST_OCTANT_NONE)
 			{
-				childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
-				if (childOctant == ST_OCTANT_NONE)
-					return 0;
-				distTravelled += traceOutRTD.distance;
-				if (distTravelled > maxDist)
-					return 0;
-				from = traceOutRTD.contact.point;
-				if (sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData))
-					return 1;
+				if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+				{
+					childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
+					distTravelled += traceOutRTD.distance;
+					from = traceOutRTD.contact.point;
+					if (childOctant != ST_OCTANT_NONE && distTravelled < maxDist)
+						sphereTraceOctTreeNodeRayTraceRecursive(from, dir, distTravelled, maxDist, pNode->children[childOctant], pRayTraceData);
 
+				}
+				else
+				{
+					sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD);
+					childOctant = ST_OCTANT_NONE;
+				}
+			}
+		}
+		else
+		{
+			ST_RayTraceData rtd;
+			if (sphereTraceColliderListRayTrace(pRayTraceData->startPoint, dir, &pNode->colliderEntries, &rtd))
+			{
+				if (rtd.distance <= pRayTraceData->distance)
+				{
+					*pRayTraceData = rtd;
+				}
 			}
 		}
 	}
+	if (pRayTraceData->distance < maxDist)
+	{
+		return ST_TRUE;
+	}
 	else
 	{
-		if (sphereTraceColliderListRayTrace(pRayTraceData->startPoint, dir, &pNode->colliderEntries, pRayTraceData))
-			return 1;
+		return ST_FALSE;
 	}
 }
 
@@ -948,7 +977,18 @@ b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist,
 			if (pRayTraceData->distance <= maxDist)
 			{
 				pRayTraceData->startPoint = from;
-				return sphereTraceOctTreeNodeRayTraceRecursive(pRayTraceData->contact.point, dir, pRayTraceData->distance, maxDist, pTree->root, pRayTraceData);
+				float distTravelled = pRayTraceData->distance;
+				pRayTraceData->distance = maxDist;
+				//maxDist = maxDist - pRayTraceData->distance;
+				//float distance = pRayTraceData->distance;
+				if (sphereTraceOctTreeNodeRayTraceRecursive(pRayTraceData->contact.point, dir, distTravelled, maxDist, pTree->root, pRayTraceData))
+				{
+					//pRayTraceData->startPoint = from;
+					//pRayTraceData->distance += distance;
+					return ST_TRUE;
+				}
+				else
+					return ST_FALSE;
 			}
 			else
 			{
@@ -961,6 +1001,81 @@ b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist,
 		}
 	}
 	return 0;
+
+}
+
+
+//same as raytrace but aleady assumes within tree
+b32 sphereTraceOctTreeRayTraceFromWithin(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData)
+{
+	if (pTree->root->hasChildren)
+	{
+		b32 maxReached = ST_FALSE;
+		pRayTraceData->distance = maxDist;
+		pRayTraceData->startPoint = from;
+		return sphereTraceOctTreeNodeRayTraceRecursive(from, dir, 0.0f, maxDist, pTree->root, pRayTraceData);
+	}
+	else
+	{
+		return sphereTraceColliderListRayTrace(from, dir, &pTree->root->colliderEntries, pRayTraceData);
+	}
+	return 0;
+
+}
+
+b32 sphereTraceOctTreeNodeVerifyNonLeafsHaveNoCollidersRecursive(ST_OctTreeNode* pNode)
+{
+	if (pNode->hasChildren)
+	{
+		if (pNode->colliderEntries.count > 0)
+		{
+			return ST_FALSE;
+		}
+		for (int i = 0; i < 8; i++)
+		{
+			return sphereTraceOctTreeNodeVerifyNonLeafsHaveNoCollidersRecursive(pNode->children[i]);
+		}
+	}
+}
+b32 sphereTraceOctTreeVerifyNonLeafsHaveNoColliders(ST_OctTree* pTree)
+{
+	if (pTree->root->hasChildren)
+		return sphereTraceOctTreeNodeVerifyNonLeafsHaveNoCollidersRecursive(pTree->root);
+	else
+		return ST_TRUE;
+}
+
+b32 sphereTraceOctTreeVerifyColliderListHaveProperLeafs(ST_OctTree* const pTree, ST_Index treeIndex, ST_Collider* const pCollider)
+{
+	if (treeIndex == (ST_Index)-1)
+		return ST_TRUE;
+	ST_IndexList leafs = sphereTraceIndexListConstruct();
+	ST_IndexListData* pild2;
+
+	ST_OctTreeNode* pNode;
+
+	leafs = sphereTraceIndexListConstruct();
+
+	sphereTraceOctTreeReSampleIntersectionLeafsAndColliders(pTree, &pCollider->aabb, &leafs, NULL, ST_FALSE, ST_FALSE);
+	if (leafs.count == 0)
+	{
+		printf("wtf");
+	}
+	if (!sphereTraceIndexListEqual(&pCollider->pLeafBucketLists[treeIndex], &leafs))
+	{
+		return ST_FALSE;
+	}
+	pild2 = leafs.pFirst;
+	for (int j = 0; j < leafs.count; j++)
+	{
+		pNode = pild2->value;
+		if (!sphereTraceSortedIndexListContains(&pNode->colliderEntries, pCollider))
+		{
+			return ST_FALSE;
+		}
+		pild2 = pild2->pNext;
+	}
+	sphereTraceIndexListFree(&leafs);
 
 }
 
@@ -1095,6 +1210,8 @@ ST_OctTreeGrid sphereTraceOctTreeGridConstruct(ST_AABB worldaabb, ST_Vector3 buc
 			octTreeGrid.yBuckets * (2.0f * bucketHalfExtents.y), octTreeGrid.zBuckets * (2.0f * bucketHalfExtents.z))));
 	octTreeGrid.outsideColliders = sphereTraceIndexListConstruct();
 	octTreeGrid.capacity = octTreeGrid.xBuckets * octTreeGrid.yBuckets * octTreeGrid.zBuckets;
+	if (octTreeGrid.capacity > 125)
+		sphereTraceAllocatorIndexListArrayResize(octTreeGrid.capacity);
 	octTreeGrid.treeBuckets = (ST_OctTree*)malloc(sizeof(ST_OctTree) * octTreeGrid.capacity);
 	for (ST_Index z = 0; z < octTreeGrid.zBuckets; z++)
 	{
@@ -1132,9 +1249,105 @@ ST_Index sphereTraceOctTreeGridGetBucketIndexFromPosition(const ST_OctTreeGrid* 
 		return -1;
 }
 
+ST_Index sphereTraceOctTreeGridGetBucketXIndexFromXPosition(const ST_OctTreeGrid* const pOctTreeGrid, float x)
+{
+	ST_Index xi = (ST_Index)((x - pOctTreeGrid->worldaabb.lowExtent.x) / (2.0f * pOctTreeGrid->bucketHalfExtents.x));
+	//if (x == pOctTreeGrid->worldaabb.highExtent.x)
+	//	return pOctTreeGrid->xBuckets-1;
+	//if (xi < 0 || xi >= pOctTreeGrid->xBuckets)
+	//	return -1;
+	if (xi >= pOctTreeGrid->xBuckets)
+		return pOctTreeGrid->xBuckets - 1;
+	return xi;
+}
+
+ST_Index sphereTraceOctTreeGridGetBucketYIndexFromYPosition(const ST_OctTreeGrid* const pOctTreeGrid, float y)
+{
+	ST_Index yi = (ST_Index)((y - pOctTreeGrid->worldaabb.lowExtent.y) / (2.0f * pOctTreeGrid->bucketHalfExtents.y));
+	//if (y == pOctTreeGrid->worldaabb.highExtent.y)
+	//	return pOctTreeGrid->yBuckets-1;
+	//if (yi < 0 || yi >= pOctTreeGrid->yBuckets)
+	//	return -1;
+	if (yi >= pOctTreeGrid->yBuckets)
+		return pOctTreeGrid->yBuckets - 1;
+	return yi;
+}
+
+ST_Index sphereTraceOctTreeGridGetBucketZIndexFromZPosition(const ST_OctTreeGrid* const pOctTreeGrid, float z)
+{
+	ST_Index zi = (ST_Index)((z - pOctTreeGrid->worldaabb.lowExtent.z) / (2.0f * pOctTreeGrid->bucketHalfExtents.z));
+	//if (z == pOctTreeGrid->worldaabb.highExtent.z)
+	//	return pOctTreeGrid->zBuckets-1;
+	//if (zi < 0 || zi >= pOctTreeGrid->zBuckets)
+	//	return -1;
+	if (zi >= pOctTreeGrid->zBuckets)
+		return pOctTreeGrid->zBuckets - 1;
+	return zi;
+}
+
+ST_Index sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(const ST_OctTreeGrid* const pOctTreeGrid, ST_Vector3 position, ST_Direction dir)
+{
+	if (sphereTraceColliderAABBContainsPoint(&pOctTreeGrid->worldaabb, position))
+	{
+		ST_Index z = (ST_Index)((position.z - pOctTreeGrid->worldaabb.lowExtent.z) / (2.0f * pOctTreeGrid->bucketHalfExtents.z));
+		ST_Index y = (ST_Index)((position.y - pOctTreeGrid->worldaabb.lowExtent.y) / (2.0f * pOctTreeGrid->bucketHalfExtents.y));
+		ST_Index x = (ST_Index)((position.x - pOctTreeGrid->worldaabb.lowExtent.x) / (2.0f * pOctTreeGrid->bucketHalfExtents.x));
+		ST_Vector3 nearestMid = sphereTraceVector3Add(pOctTreeGrid->worldaabb.lowExtent,
+			sphereTraceVector3Construct(x * (2.0f * pOctTreeGrid->bucketHalfExtents.x),
+				y * (2.0f * pOctTreeGrid->bucketHalfExtents.y),
+				z * (2.0f * pOctTreeGrid->bucketHalfExtents.z)));
+		ST_Vector3 absdp = sphereTraceVector3SubtractAbsolute(nearestMid, position);
+		if (absdp.x < ST_OCT_TREE_SKIN_WIDTH)
+		{
+			if (dir.v.x > 0.0f)
+				x++;
+			else if (dir.v.x < 0.0f)
+				x--;
+		}
+		if (absdp.y < ST_OCT_TREE_SKIN_WIDTH)
+		{
+			if (dir.v.y > 0.0f)
+				y++;
+			else if (dir.v.y < 0.0f)
+				y--;
+		}
+		if (absdp.z < ST_OCT_TREE_SKIN_WIDTH)
+		{
+			if (dir.v.z > 0.0f)
+				z++;
+			else if (dir.v.z < 0.0f)
+				z--;
+		}
+		ST_Index index = z * pOctTreeGrid->xBuckets * pOctTreeGrid->yBuckets + y * pOctTreeGrid->xBuckets + x;
+		if (x < 0 || x >= pOctTreeGrid->xBuckets)
+			return -1;
+		if (y < 0 || y >= pOctTreeGrid->yBuckets)
+			return -1;
+		if (z < 0 || z >= pOctTreeGrid->zBuckets)
+			return -1;
+		if (index >= 0 && index < pOctTreeGrid->capacity)
+			return index;
+		else
+			return -1;
+	}
+	else
+		return -1;
+}
+
 ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid* const pOctTreeGrid, const ST_AABB* const aabb)
 {
+	if (!sphereTraceAABBAssert(aabb))
+	{
+		//printf("uh oh...");
+	}
 	ST_IndexList intList = sphereTraceIndexListConstruct();
+	if (aabb->lowExtent.x > pOctTreeGrid->worldaabb.highExtent.x
+		|| aabb->lowExtent.y > pOctTreeGrid->worldaabb.highExtent.y
+		|| aabb->lowExtent.z > pOctTreeGrid->worldaabb.highExtent.z)
+	{
+		sphereTraceSortedIndexListAddUnique(&intList, -1);
+		return intList;
+	}
 	float xExtent = aabb->highExtent.x;
 	if (xExtent > pOctTreeGrid->worldaabb.highExtent.x)
 	{
@@ -1154,7 +1367,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid
 		sphereTraceSortedIndexListAddUnique(&intList, -1);
 	}
 	ST_Vector3 start = aabb->lowExtent;
-	float xIncrement = sphereTraceMin(aabb->halfExtents.x, 2.0f*pOctTreeGrid->bucketHalfExtents.x);
+	float xIncrement = sphereTraceMin(2.0f * aabb->halfExtents.x, 2.0f*pOctTreeGrid->bucketHalfExtents.x);
 	if (xIncrement == 0.0f)
 		xIncrement = 2.0f * pOctTreeGrid->bucketHalfExtents.x;
 	if (start.x < pOctTreeGrid->worldaabb.lowExtent.x)
@@ -1162,7 +1375,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid
 		start.x = pOctTreeGrid->worldaabb.lowExtent.x;
 		sphereTraceSortedIndexListAddUnique(&intList, -1);
 	}
-	float yIncrement = sphereTraceMin(aabb->halfExtents.y, 2.0f * pOctTreeGrid->bucketHalfExtents.y);
+	float yIncrement = sphereTraceMin(2.0f * aabb->halfExtents.y, 2.0f * pOctTreeGrid->bucketHalfExtents.y);
 	if (yIncrement == 0.0f)
 		yIncrement = 2.0f * pOctTreeGrid->bucketHalfExtents.y;
 	if (start.y < pOctTreeGrid->worldaabb.lowExtent.y)
@@ -1170,7 +1383,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid
 		start.y = pOctTreeGrid->worldaabb.lowExtent.y;
 		sphereTraceSortedIndexListAddUnique(&intList, -1);
 	}
-	float zIncrement = sphereTraceMin(aabb->halfExtents.z, 2.0f * pOctTreeGrid->bucketHalfExtents.z);
+	float zIncrement = sphereTraceMin(2.0f * aabb->halfExtents.z, 2.0f * pOctTreeGrid->bucketHalfExtents.z);
 	if (zIncrement == 0.0f)
 		zIncrement = 2.0f * pOctTreeGrid->bucketHalfExtents.z;
 	if (start.z < pOctTreeGrid->worldaabb.lowExtent.z)
@@ -1178,17 +1391,38 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromAABB(const ST_OctTreeGrid
 		start.z = pOctTreeGrid->worldaabb.lowExtent.z;
 		sphereTraceSortedIndexListAddUnique(&intList, -1);
 	}
-
-	for (float x = start.x; x <= xExtent; x += xIncrement)
+	ST_Index lowxi, lowyi, lowzi, highxi, highyi, highzi;
+	lowxi = sphereTraceOctTreeGridGetBucketXIndexFromXPosition(pOctTreeGrid, start.x);
+	lowyi = sphereTraceOctTreeGridGetBucketYIndexFromYPosition(pOctTreeGrid, start.y);
+	lowzi = sphereTraceOctTreeGridGetBucketZIndexFromZPosition(pOctTreeGrid, start.z);
+	highxi = sphereTraceOctTreeGridGetBucketXIndexFromXPosition(pOctTreeGrid, xExtent);
+	highyi = sphereTraceOctTreeGridGetBucketYIndexFromYPosition(pOctTreeGrid, yExtent);
+	highzi = sphereTraceOctTreeGridGetBucketZIndexFromZPosition(pOctTreeGrid, zExtent);
+	
+	for (ST_Index xi = lowxi; xi <= highxi; xi++)
 	{
-		for (float y = start.y; y <= yExtent; y += yIncrement)
+		for (ST_Index yi = lowyi; yi <= highyi; yi++)
 		{
-			for (float z = start.z; z <= zExtent; z += zIncrement)
+			for (ST_Index zi = lowzi; zi <= highzi; zi++)
 			{
-				sphereTraceSortedIndexListAddUnique(&intList, sphereTraceOctTreeGridGetBucketIndexFromPosition(pOctTreeGrid, sphereTraceVector3Construct(x, y, z)));
+				ST_Index index = zi * pOctTreeGrid->xBuckets * pOctTreeGrid->yBuckets + yi * pOctTreeGrid->xBuckets + xi;
+				if(index<pOctTreeGrid->capacity)
+					sphereTraceSortedIndexListAddUnique(&intList, index);
 			}
 		}
 	}
+
+	//for (float x = start.x; x <= xExtent; x += xIncrement)
+	//{
+	//	for (float y = start.y; y <= yExtent; y += yIncrement)
+	//	{
+	//		for (float z = start.z; z <= zExtent; z += zIncrement)
+	//		{
+	//			ST_Index index = sphereTraceOctTreeGridGetBucketIndexFromPosition(pOctTreeGrid, sphereTraceVector3Construct(x, y, z));
+	//			sphereTraceSortedIndexListAddUnique(&intList, index);
+	//		}
+	//	}
+	//}
 	return intList;
 }
 
@@ -1239,7 +1473,7 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 	{
 		ST_Index yInd = (curIndex % (pGrid->xBuckets * pGrid->yBuckets))/pGrid->xBuckets;
 		if (yInd < pGrid->yBuckets - 1)
-			return curIndex+=pGrid->xBuckets;
+			return curIndex+pGrid->xBuckets;
 		else
 			return -1;
 	}
@@ -1248,7 +1482,7 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 	{
 		ST_Index yInd = (curIndex % (pGrid->xBuckets * pGrid->yBuckets)) / pGrid->xBuckets;
 		if (yInd > 0)
-			return curIndex -= pGrid->xBuckets;
+			return curIndex - pGrid->xBuckets;
 		else
 			return -1;
 	}
@@ -1257,7 +1491,7 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 	{
 		ST_Index zInd = curIndex / (pGrid->xBuckets * pGrid->yBuckets);
 		if (zInd < pGrid->zBuckets - 1)
-			return curIndex += pGrid->xBuckets * pGrid->yBuckets;
+			return curIndex + pGrid->xBuckets * pGrid->yBuckets;
 		else
 			return -1;
 	}
@@ -1266,7 +1500,7 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 	{
 		ST_Index zInd = curIndex / (pGrid->xBuckets * pGrid->yBuckets);
 		if (zInd >0)
-			return curIndex -= pGrid->xBuckets * pGrid->yBuckets;
+			return curIndex - pGrid->xBuckets * pGrid->yBuckets;
 		else
 			return -1;
 	}
@@ -1274,7 +1508,31 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 
 	}
 }
-
+//ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData)
+//{
+//	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+//	ST_IndexList indices = sphereTraceIndexListConstruct();
+//	ST_RayTraceData rtd;
+//	if (sphereTraceColliderAABBRayTrace(start, dir, &pGrid->worldaabb, &rtd))
+//	{
+//		ST_Index curIndex;
+//		if (pData->distance == 0.0f)
+//			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, rtd.contact.point, dir);
+//		else
+//		{
+//			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid,
+//				sphereTraceVector3AddAndScale(rtd.contact.point, rtd.contact.normal.v, -pGrid->minDim), dir);
+//		}
+//		while (curIndex != -1)
+//		{
+//			sphereTraceIndexListAddLast(&indices, curIndex);
+//			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, curStart, dir);
+//			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
+//			{
+//
+//			}
+//		}
+//}
 ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData)
 {
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
@@ -1286,11 +1544,11 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start
 	{
 		ST_Index curIndex;
 		if(pData->distance==0.0f)
-			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPosition(pGrid, pData->contact.point);
+			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, pData->contact.point, dir);
 		else
 		{
-			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPosition(pGrid, 
-				sphereTraceVector3AddAndScale(pData->contact.point, pData->contact.normal.v, -pGrid->minDim));
+			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, 
+				sphereTraceVector3AddAndScale(pData->contact.point, pData->contact.normal.v, -pGrid->minDim), dir);
 		}
 		curStart = pData->contact.point;
 		float cumDist = pData->distance;
@@ -1299,194 +1557,126 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start
 		while (curIndex != breakCond)
 		{
 			sphereTraceIndexListAddLast(&indices, curIndex);
+			//curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, curStart, dir);
 			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
-			{
+			{			
 				curIndex = sphereTraceOctTreeGridGetNextIndexByDirection(pGrid, curIndex, rtd.directionType);
 				curStart = rtd.contact.point;
 				cumDist += rtd.distance;
 				if (cumDist > maxDist)
+				{
+					sphereTraceIndexListAddLast(&indices, curIndex);
 					return indices;
+				}
 			}
 			else
+			{
+				sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd);
 				return indices;
+			}
 		}
 		sphereTraceIndexListAddLast(&indices, -1);
 	}
 	return indices;
 }
 
+b32 sphereTraceOctTreeGridRayTrace(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	pData->startPoint = start;
+	ST_RayTraceData rtd;
+	ST_Vector3 curStart;
+	ST_Index breakCond = (ST_Index)-1;
+	float minDist = maxDist;
+	b32 retVal = ST_FALSE;
+	ST_RayTraceData rtdReturn;
+	if (sphereTraceColliderAABBRayTrace(start, dir, &pGrid->worldaabb, &rtd))
+	{
+		ST_Index curIndex;
+		if (rtd.distance == 0.0f)
+			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPosition(pGrid, rtd.contact.point);
+		else
+		{
+			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPosition(pGrid,
+				sphereTraceVector3AddAndScale(rtd.contact.point, rtd.contact.normal.v, -pGrid->minDim));
+		}
+		curStart = rtd.contact.point;
+		float cumDist = rtd.distance;
+		if (rtd.distance > maxDist)
+			return 0;
+		while (curIndex != breakCond)
+		{
+			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
+			{
+				if (sphereTraceOctTreeRayTraceFromWithin(curStart, dir, rtd.distance, &pGrid->treeBuckets[curIndex], &rtdReturn))
+				{
+					float fullDist = rtdReturn.distance + cumDist;
+					if (fullDist < minDist)
+					{
+						minDist = fullDist;
+						*pData = rtdReturn;
+						pData->startPoint = start;
+						pData->distance = fullDist;
+						retVal = ST_TRUE;
+					}
+				}
+				curIndex = sphereTraceOctTreeGridGetNextIndexByDirection(pGrid, curIndex, rtd.directionType);
+				curStart = rtd.contact.point;
+				cumDist += rtd.distance;
+				if (cumDist > minDist)
+					return retVal;
+			}
+			else
+				return ST_FALSE;
+		}
+		//if (sphereTraceColliderListRayTrace(start, dir, &pGrid->outsideColliders, pData))
+		//	return ST_TRUE;
+		return ST_FALSE;
+	}
+	return ST_FALSE;
+}
 
+b32 sphereTraceOctTreeGridRayTrace_(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	ST_RayTraceData rtd;
+	ST_IndexList grids = sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(start, dir, maxDist, pGrid, &rtd);
+	ST_IndexListData* pild = grids.pFirst;
+	b32 retVal = ST_FALSE;
+	float minDist = maxDist;
+	for (int i = 0; i < grids.count; i++)
+	{
+		if (pild->value != -1)
+		{
+			if (sphereTraceOctTreeRayTrace(start, dir, minDist, &pGrid->treeBuckets[pild->value], &rtd))
+			{
+				//float dist = sphereTraceVector3Distance(rtd.contact.)
+				if (rtd.distance < minDist)
+				{
+					if (!retVal)
+					{
+						retVal = ST_TRUE;
+						*pData = rtd;
+						//pData->dista
+					}
+					else if (rtd.distance < minDist)
+					{
+						*pData = rtd;
+					}
+					minDist = rtd.distance;
+				}
+			}
+		}
+		else
+		{
+			printf("outside collider");
+		}
+		pild = pild->pNext;
+	}
+	sphereTraceIndexListFree(&grids);
+	return retVal;
+}
 
-//ST_SpacialPartitionBucket sphereTraceSpacialPartitionGetBucketWithIndex(ST_SpacialPartitionStaticContainer* const pSpacialPartitionStaticContainer, ST_Index bucketIndex)
-//{
-//	ST_SpacialPartitionBucket bucket;
-//	if (bucketIndex == -1)
-//	{
-//		bucket = pSpacialPartitionStaticContainer->outsideBucket;
-//	}
-//	else
-//	{
-//		bucket = pSpacialPartitionStaticContainer->buckets[bucketIndex];
-//	}
-//	return bucket;
-//}
-//
-//ST_Index sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, ST_Vector3 position)
-//{
-//	if (sphereTraceColliderAABBContainsPoint(&pSpacialPartitionContainer->aabb, position))
-//	{
-//		ST_Index z = (ST_Index)((position.z + pSpacialPartitionContainer->aabb.halfExtents.z) / pSpacialPartitionContainer->partitionSize);
-//		ST_Index y = (ST_Index)((position.y + pSpacialPartitionContainer->aabb.halfExtents.y) / pSpacialPartitionContainer->partitionSize);
-//		ST_Index x = (ST_Index)((position.x + pSpacialPartitionContainer->aabb.halfExtents.x) / pSpacialPartitionContainer->partitionSize);
-//		ST_Index index = z * SPACIAL_PARTITION_STATIC_DIMENSION * SPACIAL_PARTITION_STATIC_DIMENSION + y * SPACIAL_PARTITION_STATIC_DIMENSION + x;
-//		if (index >= 0 && index < pSpacialPartitionContainer->count)
-//			return index;
-//		else
-//			return -1;
-//	}
-//	else
-//		return -1;
-//}
-//
-//ST_IndexList sphereTraceSpacialPartitionStaticGetBucketIndicesFromAABB(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb)
-//{
-//	ST_IndexList intList = sphereTraceIndexListConstruct();
-//	float xExtent = sphereTraceMin(aabb->highExtent.x, pSpacialPartitionContainer->aabb.highExtent.x);
-//	float yExtent = sphereTraceMin(aabb->highExtent.y, pSpacialPartitionContainer->aabb.highExtent.y);
-//	float zExtent = sphereTraceMin(aabb->highExtent.z, pSpacialPartitionContainer->aabb.highExtent.z);
-//	ST_Vector3 start = aabb->lowExtent;
-//	float xIncrement = sphereTraceMin(aabb->halfExtents.x, pSpacialPartitionContainer->partitionSize);
-//	if (xIncrement == 0.0f)
-//		xIncrement = pSpacialPartitionContainer->partitionSize;
-//	if (start.x < pSpacialPartitionContainer->aabb.lowExtent.x)
-//	{
-//		start.x = pSpacialPartitionContainer->aabb.lowExtent.x;
-//	}
-//	float yIncrement = sphereTraceMin(aabb->halfExtents.y, pSpacialPartitionContainer->partitionSize);
-//	if (yIncrement == 0.0f)
-//		yIncrement = pSpacialPartitionContainer->partitionSize;
-//	if ( start.y < pSpacialPartitionContainer->aabb.lowExtent.y)
-//	{
-//		start.y = pSpacialPartitionContainer->aabb.lowExtent.y;
-//	}
-//	float zIncrement = sphereTraceMin(aabb->halfExtents.z, pSpacialPartitionContainer->partitionSize);
-//	if (zIncrement == 0.0f)
-//		zIncrement = pSpacialPartitionContainer->partitionSize;
-//	if (start.z < pSpacialPartitionContainer->aabb.lowExtent.z)
-//	{
-//		start.z = pSpacialPartitionContainer->aabb.lowExtent.z;
-//	}
-//
-//	for (float x = start.x; x <= xExtent; x += xIncrement)
-//	{
-//		for (float y = start.y; y <= yExtent; y += yIncrement)
-//		{
-//			for (float z = start.z; z <= zExtent; z += zIncrement)
-//			{
-//				sphereTraceIndexListAddUnique(&intList, sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(x, y, z)));
-//			}
-//		}
-//	}
-//	return intList;
-//}
-//
-//ST_IndexList sphereTraceSpacialPartitionStaticUpdateBucketIndicesFromAABBAndReturnDeletedBucketIndices(const ST_SpacialPartitionStaticContainer* const pSpacialPartitionContainer, const ST_AABB* const aabb, ST_IndexList* const intList)
-//{
-//	ST_IndexList intListToRemove = sphereTraceIndexListConstruct();
-//	for (float x = aabb->lowExtent.x; x <= aabb->highExtent.x; x += pSpacialPartitionContainer->partitionSize)
-//	{
-//		for (float y = aabb->lowExtent.y; y <= aabb->highExtent.y; y += pSpacialPartitionContainer->partitionSize)
-//		{
-//			for (float z = aabb->lowExtent.z; z <= aabb->highExtent.z; z += pSpacialPartitionContainer->partitionSize)
-//			{
-//				int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(x, y, z));
-//				sphereTraceIndexListAddUnique(intList, bucket);
-//			}
-//		}
-//	}
-//	int bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->highExtent.x, aabb->lowExtent.y, aabb->lowExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->lowExtent.x, aabb->highExtent.y, aabb->lowExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->lowExtent.x, aabb->lowExtent.y, aabb->highExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->highExtent.x, aabb->lowExtent.y, aabb->highExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->highExtent.x, aabb->highExtent.y, aabb->lowExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, sphereTraceVector3Construct(aabb->lowExtent.x, aabb->highExtent.y, aabb->highExtent.z));
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//	bucket = sphereTraceSpacialPartitionStaticGetBucketIndexFromPosition(pSpacialPartitionContainer, aabb->highExtent);
-//	sphereTraceIndexListAddUnique(intList, bucket);
-//
-//	return intListToRemove;
-//}
-//
-//ST_Vector3 sphereTraceSpacialPartitionStaticGetNearestBucketIntersectionFromPositionAndDirection(const ST_SpacialPartitionBucket* const pCurrentBucket, ST_Vector3 start, ST_Vector3 dir, ST_Vector3* const incomingDirection)
-//{
-//	//ST_Vector3 t = gVector3Max;
-//	float t = FLT_MAX;
-//	if (dir.x > 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.highExtent.x - start.x) / dir.x;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Right;
-//		}
-//	}
-//	else if (dir.x < 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.lowExtent.x - start.x) / dir.x;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Left;
-//		}
-//	}
-//
-//	if (dir.y > 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.highExtent.y - start.y) / dir.y;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Up;
-//		}
-//	}
-//	else if (dir.y < 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.lowExtent.y - start.y) / dir.y;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Down;
-//		}
-//	}
-//
-//	if (dir.z > 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.highExtent.z - start.z) / dir.z;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Forward;
-//		}
-//	}
-//	else if (dir.z < 0.0f)
-//	{
-//		float tentative = (pCurrentBucket->aabb.lowExtent.z - start.z) / dir.z;
-//		if (tentative < t && tentative>0.0f)
-//		{
-//			t = tentative;
-//			*incomingDirection = gVector3Back;
-//		}
-//	}
-//
-//	//float tMin = sphereTraceMin(sphereTraceMin(t.x, t.y), t.z) + FLT_MIN;
-//	ST_Vector3 intersection = sphereTraceVector3AddAndScale(start, dir, t);
-//	return intersection;
-//}
 
 void sphereTraceOctTreeGridInsertCollider(ST_OctTreeGrid* const pGrid, ST_Collider* pCollider, b32 restructureTrees)
 {
@@ -1559,4 +1749,12 @@ void sphereTraceOctTreeGridSampleIntersectionLeafsAndCollidersFromPerspective(ST
 		pild = pild->pNext;
 	}
 	sphereTraceIndexListFree(&indices);
+}
+
+ST_Index sphereTraceOctTreeGridGetLargestDepth(const ST_OctTreeGrid* const pGrid)
+{
+	for (int i = 0; i < pGrid->capacity; i++)
+	{
+
+	}
 }

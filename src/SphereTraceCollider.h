@@ -135,6 +135,9 @@ typedef struct ST_Collider
 	ST_Tag tag;
 	b32 isDynamic;
 	ST_Index pWhatever;
+	//if the colliders aabb is moved, the collider
+	//needs to be reinserted into the tree grid
+	b32 reInsertCollider;
 } ST_Collider;
 
 //void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider);
@@ -318,11 +321,15 @@ typedef struct ST_SphereTraceData
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2);
 
+void sphereTraceEdgeTranslate(ST_Edge* pEdge, ST_Vector3 translation);
+
 ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float radius);
 
 ST_AABB sphereTraceAABBConstruct1(ST_Vector3 lowExtent, ST_Vector3 highExtent);
 
 ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents);
+
+void sphereTraceAABBTranslate(ST_AABB* paabb, ST_Vector3 translation);
 
 b32 sphereTraceAABBAssert(const ST_AABB* const paabb);
 

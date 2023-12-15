@@ -14,6 +14,7 @@
 #define ST_CONTACT_LINEAR_ALLOCATOR_SIZE 10
 #define ST_COLLIDER_ALLOCATOR_SIZE 50
 #define ST_LIST_ARRAY_SIZE 125
+ST_Index listArraySize;
 
 
 static ST_Allocator indexListAllocator;
@@ -63,6 +64,11 @@ void sphereTraceAllocatorFreeStackSell(ST_FreeStack* const pFreeStack, ST_Index*
 	}
 }
 
+void sphereTraceAllocatorFreeStackDelete(ST_FreeStack* const pFreeStack)
+{
+	free(pFreeStack->pStack);
+}
+
 
 ST_ObjectPool sphereTraceAllocatorObjectPoolConstruct(ST_Index capacity, ST_Index objectSize)
 {
@@ -94,6 +100,12 @@ void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, 
 		sphereTraceAllocatorFreeStackSell(&pObjectPool->freeStack, pObject);
 		pObjectPool->occupied--;
 	}
+}
+
+void sphereTraceAllocatorObjectPoolDelete(ST_ObjectPool* const pObjectPool)
+{
+	sphereTraceAllocatorFreeStackDelete(&pObjectPool->freeStack);
+	free(pObjectPool->data);
 }
 
 ST_ArrayPool sphereTraceAllocatorArrayPoolConstruct(ST_Index capacity, ST_Index objectSize, ST_Index arraySize)
@@ -205,6 +217,13 @@ void sphereTraceAllocatorFreeObject(ST_Allocator* const pAllocator, void* pObjec
 	}
 }
 
+void sphereTraceAllocatorDelete(ST_Allocator* const pAllocator)
+{
+	for (int i = 0; i < pAllocator->maxPools; i++)
+		sphereTraceAllocatorObjectPoolDelete(&pAllocator->objectPools[i]);
+	free(pAllocator->objectPools);
+}
+
 ST_Allocator sphereTraceLinearAllocatorConstruct(ST_Index poolCapacity, ST_Index objectSize, ST_Index maxPools)
 {
 	ST_Allocator linearAllocator;
@@ -268,6 +287,7 @@ void sphereTraceAllocatorInitialize()
 	planeColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_PlaneCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	triangleColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_TriangleCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	listArrayAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_IndexList) * ST_LIST_ARRAY_SIZE, ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	listArraySize = ST_LIST_ARRAY_SIZE;
 }
 
 ST_OctTreeNode* sphereTraceAllocatorAllocateOctTreeNode()
@@ -423,11 +443,18 @@ void sphereTraceLinearAllocatorResetAABBContacts()
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray()
 {
 	ST_IndexList* pil = sphereTraceAllocatorAllocateObject(&listArrayAllocator);
-	for (int i = 0; i < ST_LIST_ARRAY_SIZE; i++)
+	for (int i = 0; i < listArraySize; i++)
 		pil[i] = sphereTraceIndexListConstruct();
 	return pil;
 }
 void sphereTraceAllocatorFreeIndexListArray(void* pArr)
 {
 	sphereTraceAllocatorFreeObject(&listArrayAllocator, pArr);
+}
+
+void sphereTraceAllocatorIndexListArrayResize(ST_Index size)
+{
+	sphereTraceAllocatorDelete(&listArrayAllocator);
+	listArrayAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_IndexList) * size, ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	listArraySize = size;
 }

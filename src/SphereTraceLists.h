@@ -23,6 +23,7 @@ b32 sphereTraceIndexListAddUnique(ST_IndexList* const pIntList, ST_Index value);
 void sphereTraceIndexListRemoveFirstInstance(ST_IndexList* const pIntList, ST_Index value);
 void sphereTraceIndexListFree(ST_IndexList* const pIntList);
 void sphereTraceIndexListReset(ST_IndexList* const pIntList);
+b32 sphereTraceIndexListEqual(ST_IndexList* const pIntListA, ST_IndexList* const pIntListB);
 b32 sphereTraceIndexListContains(const ST_IndexList* const pIntList, ST_Index value);
 ST_IndexList sphereTraceIndexListConstructForDeletedValues(const ST_IndexList* const pOldIntList, const ST_IndexList* const pNewIntList);
 void sphereTraceIndexListPrint(const ST_IndexList* const pIntList);

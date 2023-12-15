@@ -6,6 +6,8 @@ ST_SphereCollider sphereTraceColliderSphereConstruct(float radius);
 //
 void sphereTraceColliderSphereSetPosition(ST_SphereCollider* pSphere, ST_Vector3 position);
 //
+void sphereTraceColliderSphereSetRadius(ST_SphereCollider* pSphere, float radius);
+//
 void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* const pSphereCollider);
 //
 b32 sphereTraceColliderAABBIntersectImposedSphere(const ST_AABB* const aabb, ST_Vector3 imposedPosition, float imposedRadius);

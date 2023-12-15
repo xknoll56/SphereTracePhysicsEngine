@@ -63,6 +63,10 @@ void sphereTraceOctTreeRemoveCollider(ST_OctTree* pTree, ST_Collider* pCollider,
 void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollider, b32 restructureTree);
 b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData);
 
+//verification functions
+b32 sphereTraceOctTreeVerifyNonLeafsHaveNoColliders(ST_OctTree* pTree);
+b32 sphereTraceOctTreeVerifyColliderListHaveProperLeafs(ST_OctTree* const pTree, ST_Index treeIndex, ST_Collider* const pColliders);
+
 //typedef struct ST_SpacialPartitionBucket
 //{
 //	ST_Vector3 centroid;
@@ -147,3 +151,9 @@ void sphereTraceOctTreeGridReSampleIntersectionLeafsAndColliders(ST_OctTreeGrid*
 
 void sphereTraceOctTreeGridSampleIntersectionLeafsAndCollidersFromPerspective(ST_OctTreeGrid* const pGrid, ST_Vector3 from, 
 	ST_Direction dir, float fov, float f, ST_IndexList* const pLeafs, ST_IndexList* const pColliders);
+
+b32 sphereTraceOctTreeGridRayTrace(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData);
+
+b32 sphereTraceOctTreeGridRayTrace_(ST_Vector3 start, ST_Direction dir, float maxDist, const ST_OctTreeGrid* const pGrid, ST_RayTraceData* const pData);
+
+ST_Index sphereTraceOctTreeGridGetLargestDepth(const ST_OctTreeGrid* const pGrid);

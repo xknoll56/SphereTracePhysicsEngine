@@ -14,6 +14,16 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereT
 //
 ST_PlaneVertexDirection sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point);
 //
+void sphereTraceColliderPlaneTranslate(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 translation);
+//
+void sphereTraceColliderPlaneRotateAround(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point, ST_Quaternion rotation);
+//
+void sphereTraceColliderPlaneSetPosition(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 position);
+//
+void sphereTraceColliderPlaneSetRotation(ST_PlaneCollider* const pPlaneCollider, ST_Quaternion rotation);
+//
+void sphereTraceColliderPlaneSetAABB(ST_PlaneCollider* const pPlaneCollider);
+//
 void sphereTraceColliderPlaneSetAABBExtents(ST_PlaneCollider* const pPlaneCollider);
 //
 void sphereTraceColliderPlaneAABBSetTransformedVertices(ST_PlaneCollider* const pPlaneCollider);

@@ -32,9 +32,10 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float a
 	planeCollider.normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 1);
 	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 1);
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
-	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
-	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
-	planeCollider.collider.aabb.center = planeCollider.position;
+	sphereTraceColliderPlaneSetAABB(&planeCollider);
+	//sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
+	//sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
+	//planeCollider.collider.aabb.center = planeCollider.position;
 	//planeCollider.collider.colliderType = COLLIDER_PLANE;
 	return planeCollider;
 }
@@ -51,8 +52,9 @@ ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 
 	planeCollider.forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 0);
 	planeCollider.rotation = sphereTraceMatrixQuaternionFromRotationMatrix(rotMat);
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(&planeCollider);
-	sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
-	sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
+	sphereTraceColliderPlaneSetAABB(&planeCollider);
+	//sphereTraceColliderPlaneSetAABBExtents(&planeCollider);
+	//sphereTraceColliderPlaneAABBSetTransformedVertices(&planeCollider);
 	//planeCollider.collider.colliderType = COLLIDER_PLANE;
 	return planeCollider;
 }
@@ -342,6 +344,50 @@ ST_PlaneVertexDirection sphereTraceColliderPlaneGetClosestTransformedVertexToPoi
 	}
 }
 
+void sphereTraceColliderPlaneTranslate(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 translation)
+{
+	sphereTraceVector3AddByRef(&pPlaneCollider->position, translation);
+	sphereTraceAABBTranslate(&pPlaneCollider->collider.aabb, translation);
+	for (int i = 0; i < 4; i++)
+	{
+		sphereTraceVector3AddByRef(&pPlaneCollider->transformedVertices[i], translation);
+		sphereTraceEdgeTranslate(&pPlaneCollider->transformedEdges[i], translation);
+	}
+}
+
+//not the most efficient, not meant to be run every frame, pretty much same as calling the constructor
+void sphereTraceColliderPlaneRotateAround(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point, ST_Quaternion rotation)
+{
+	pPlaneCollider->right = sphereTraceDirectionRotateDir(pPlaneCollider->right, rotation);
+	pPlaneCollider->normal = sphereTraceDirectionRotateDir(pPlaneCollider->normal, rotation);
+	pPlaneCollider->forward = sphereTraceDirectionRotateDir(pPlaneCollider->forward, rotation);
+	pPlaneCollider->position = sphereTraceVector3RotatePoint(pPlaneCollider->position, rotation);
+	pPlaneCollider->rotation = sphereTraceQuaternionMultiply(rotation, pPlaneCollider->rotation);
+	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(pPlaneCollider);
+	sphereTraceColliderPlaneSetAABB(pPlaneCollider);
+}
+
+void sphereTraceColliderPlaneSetPosition(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 position)
+{
+	ST_Vector3 translation = sphereTraceVector3Subtract(position, pPlaneCollider->position);
+	sphereTraceColliderPlaneTranslate(pPlaneCollider, translation);
+}
+
+void sphereTraceColliderPlaneSetRotation(ST_PlaneCollider* const pPlaneCollider, ST_Quaternion rotation)
+{
+	ST_Quaternion toRotation = sphereTraceQuaternionMultiply(pPlaneCollider->rotation, sphereTraceQuaternionConjugate(rotation));
+	sphereTraceColliderPlaneRotateAround(pPlaneCollider, pPlaneCollider->position, toRotation);
+}
+
+
+void sphereTraceColliderPlaneSetAABB(ST_PlaneCollider* const pPlaneCollider)
+{
+	sphereTraceColliderPlaneSetAABBExtents(pPlaneCollider);
+	sphereTraceColliderPlaneAABBSetTransformedVertices(pPlaneCollider);
+	pPlaneCollider->collider.aabb.center = pPlaneCollider->position;
+}
+
+
 void sphereTraceColliderPlaneSetAABBExtents(ST_PlaneCollider* const pPlaneCollider)
 {
 	//set aabb extents
@@ -393,7 +439,7 @@ void sphereTraceColliderInfiniteZPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	{
 		pRaycastData->contact.normal = gDirectionForward;
 		pRaycastData->distance = 0.0f;
-		pRaycastData->contact.point = pointOnPlane;
+		pRaycastData->contact.point = from;
 		return;
 	}
 	else if (dir.v.z == 0.0f)
@@ -423,7 +469,7 @@ void sphereTraceColliderInfiniteYPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	{
 		pRaycastData->contact.normal = gDirectionUp;
 		pRaycastData->distance = 0.0f;
-		pRaycastData->contact.point = pointOnPlane;
+		pRaycastData->contact.point = from;
 		return;
 	}
 	else if (dir.v.y == 0.0f)
@@ -453,7 +499,7 @@ void sphereTraceColliderInfiniteXPlaneRayTrace(ST_Vector3 from, ST_Direction dir
 	{
 		pRaycastData->contact.normal = gDirectionRight;
 		pRaycastData->distance = 0.0f;
-		pRaycastData->contact.point = pointOnPlane;
+		pRaycastData->contact.point = from;
 		return;
 	}
 	else if (dir.v.x == 0.0f)
@@ -479,7 +525,7 @@ b32 sphereTraceColliderPlaneRayTrace(ST_Vector3 from, ST_Direction dir, const ST
 {
 	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
 	sphereTraceColliderInfinitePlaneRayTrace(from, dir, pPlaneCollider->normal, pPlaneCollider->position, pRaycastData);
-	if (pRaycastData->distance >= 0.0f)
+	if (pRaycastData->distance > 0.0f)
 	{
 		if (fpclassify(pRaycastData->distance) == FP_INFINITE)
 			return 0;
@@ -491,6 +537,7 @@ b32 sphereTraceColliderPlaneRayTrace(ST_Vector3 from, ST_Direction dir, const ST
 		float zDist = sphereTraceVector3Dot(vectorFromCenter, pPlaneCollider->forward.v);
 		if (sphereTraceAbs(zDist) > pPlaneCollider->zHalfExtent)
 			return 0;
+		pRaycastData->contact.pOtherCollider = pPlaneCollider;
 		return 1;
 	}
 	return 0;

@@ -91,6 +91,14 @@ float sphereTraceMax(float a, float b)
 	}
 }
 
+float sphereTraceSign(float f)
+{
+	if (f >= 0.0f)
+		return 1.0f;
+	else
+		return -1.0f;
+}
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	allocatedv2.x = x;
@@ -635,6 +643,32 @@ ST_Matrix4 sphereTraceMatrixRotateZ(float rad)
 	);
 }
 
+ST_Vector4 sphereTraceMatrixVector4Mult(ST_Matrix4 mat, ST_Vector4 vec)
+{
+	allocatedv4.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z + mat.m03 * vec.w;
+	allocatedv4.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z + mat.m13 * vec.w;
+	allocatedv4.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z + mat.m23 * vec.w;
+	allocatedv4.w = mat.m30 * vec.x + mat.m31 * vec.y + mat.m32 * vec.z + mat.m33 * vec.w;
+	return allocatedv4;
+}
+
+ST_Vector3 sphereTraceMatrixVector3Mult(ST_Matrix4 mat, ST_Vector3 vec)
+{
+	allocatedv3.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z;
+	allocatedv3.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z;
+	allocatedv3.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z;
+	return allocatedv3;
+}
+
+ST_Vector4 sphereTraceVector4MatrixMult(ST_Vector4 vec, ST_Matrix4 mat)
+{
+	allocatedv4.x = mat.m00 * vec.x + mat.m10 * vec.y + mat.m20 * vec.z + mat.m30 * vec.w;
+	allocatedv4.y = mat.m01 * vec.x + mat.m11 * vec.y + mat.m21 * vec.z + mat.m31 * vec.w;
+	allocatedv4.z = mat.m02 * vec.x + mat.m12 * vec.y + mat.m22 * vec.z + mat.m32 * vec.w;
+	allocatedv4.w = mat.m03 * vec.x + mat.m13 * vec.y + mat.m23 * vec.z + mat.m33 * vec.w;
+	return allocatedv4;
+}
+
 //ST_Matrix4 sphereTraceMatrixTranspose(ST_Matrix4 mat)
 //{
 //	return sphereTraceMatrixConstruct(
@@ -1017,6 +1051,12 @@ ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotatio
 {
 	ST_Quaternion rotatedQuat = sphereTraceQuaternionMultiply(sphereTraceQuaternionMultiply(rotation, sphereTraceQuaternionConstruct(0.0f, point.x, point.y, point.z )), sphereTraceQuaternionConjugate(rotation));
 	return sphereTraceVector3Construct(rotatedQuat.x, rotatedQuat.y, rotatedQuat.z );
+}
+
+ST_Direction sphereTraceDirectionRotateDir(ST_Direction dir, ST_Quaternion rotation)
+{
+	ST_Quaternion rotatedQuat = sphereTraceQuaternionMultiply(sphereTraceQuaternionMultiply(rotation, sphereTraceQuaternionConstruct(0.0f, dir.v.x, dir.v.y, dir.v.z)), sphereTraceQuaternionConjugate(rotation));
+	return sphereTraceDirectionConstruct(sphereTraceVector3Construct(rotatedQuat.x, rotatedQuat.y, rotatedQuat.z), dir.normalized);
 }
 
 ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vector3 up, ST_Vector3 forward)

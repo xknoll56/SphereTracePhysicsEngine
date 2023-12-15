@@ -61,6 +61,13 @@ ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 	return edge;
 }
 
+//direction and distance stay the same
+void sphereTraceEdgeTranslate(ST_Edge* pEdge, ST_Vector3 translation)
+{
+	sphereTraceVector3AddByRef(&pEdge->point1, translation);
+	sphereTraceVector3AddByRef(&pEdge->point2, translation);
+}
+
 ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float radius)
 {
 	ST_Ring ring;
@@ -97,6 +104,13 @@ ST_AABB sphereTraceAABBConstruct2(ST_Vector3 position, ST_Vector3 halfExtents)
 	aabb.halfExtents = halfExtents;
 	sphereTraceAABBSetHighAndLowExtents(&aabb);
 	return aabb;
+}
+
+void sphereTraceAABBTranslate(ST_AABB* paabb, ST_Vector3 translation)
+{
+	sphereTraceVector3AddByRef(&paabb->center, translation);
+	sphereTraceVector3AddByRef(&paabb->highExtent, translation);
+	sphereTraceVector3AddByRef(&paabb->lowExtent, translation);
 }
 
 b32 sphereTraceAABBAssert(const ST_AABB* const paabb)
@@ -283,11 +297,11 @@ b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, c
 b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData)
 {
 	ST_Vector3 dp = sphereTraceVector3Subtract(paabb->center, from);
-	if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+	if (sphereTraceAbs(dp.x) <= paabb->halfExtents.x)
 	{
-		if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+		if (sphereTraceAbs(dp.y) <= paabb->halfExtents.y)
 		{
-			if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+			if (sphereTraceAbs(dp.z) <= paabb->halfExtents.z)
 			{
 				pRaycastData->distance = 0.0f;
 				pRaycastData->startPoint = from;
@@ -755,93 +769,129 @@ ST_DirectionType sphereTraceDirectionTypeGetReverse(ST_DirectionType dirType)
 b32 sphereTraceColliderAABBRayTraceOut(ST_Vector3 pointWithin, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData)
 {
 	float t = FLT_MAX;
+	float tentativeT = FLT_MAX;
 	pRaycastData->startPoint = pointWithin;
 	if (dir.v.x > 0.0f)
 	{
 		t = (paabb->highExtent.x - pointWithin.x) / dir.v.x;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
-		{
-			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
-			{
-				pRaycastData->directionType = ST_DIRECTION_RIGHT;
-				pRaycastData->distance = t;
-				return ST_TRUE;
-			}
-		}
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		pRaycastData->directionType = ST_DIRECTION_RIGHT;
+		//if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		//{
+		//	if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+		//	{
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
 	}
 	else if (dir.v.x < 0.0f)
 	{
 		t = (paabb->lowExtent.x - pointWithin.x) / dir.v.x;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
-		{
-			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
-			{
-				pRaycastData->directionType = ST_DIRECTION_LEFT;
-				pRaycastData->distance = t;
-				return ST_TRUE;
-			}
-		}
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		pRaycastData->directionType = ST_DIRECTION_LEFT;
+		//if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		//{
+		//	if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+		//	{
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
 	}
 	if (dir.v.y > 0.0f)
 	{
-		t = (paabb->highExtent.y - pointWithin.y) / dir.v.y;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		tentativeT = (paabb->highExtent.y - pointWithin.y) / dir.v.y;
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		if (tentativeT < t)
 		{
-			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
-			{
-				pRaycastData->directionType = ST_DIRECTION_UP;
-				pRaycastData->distance = t;
-				return ST_TRUE;
-			}
+			pRaycastData->directionType = ST_DIRECTION_UP;
+			t = tentativeT;
 		}
+		//if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		//{
+		//	if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+		//	{
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
 	}
 	else if (dir.v.y < 0.0f)
 	{
-		t = (paabb->lowExtent.y - pointWithin.y) / dir.v.y;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		tentativeT = (paabb->lowExtent.y - pointWithin.y) / dir.v.y;
+		if (tentativeT < t)
 		{
-			if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
-			{
-				pRaycastData->directionType = ST_DIRECTION_DOWN;
-				pRaycastData->distance = t;
-				return ST_TRUE;
-			}
+			pRaycastData->directionType = ST_DIRECTION_DOWN;
+			t = tentativeT;
 		}
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		//if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		//{
+		//	if (pRaycastData->contact.point.z >= paabb->lowExtent.z && pRaycastData->contact.point.z <= paabb->highExtent.z)
+		//	{
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
 	}
 	if (dir.v.z > 0.0f)
 	{
-		t = (paabb->highExtent.z - pointWithin.z) / dir.v.z;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		tentativeT = (paabb->highExtent.z - pointWithin.z) / dir.v.z;
+		if (tentativeT < t)
 		{
-			if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
-			{
-				pRaycastData->directionType = ST_DIRECTION_FORWARD;
-				pRaycastData->distance = t;
-				return ST_TRUE;
-			}
+			pRaycastData->directionType = ST_DIRECTION_FORWARD;
+			t = tentativeT;
 		}
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		//if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		//{
+		//	if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		//	{
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
 	}
 	else if (dir.v.z < 0.0f)
 	{
-		t = (paabb->lowExtent.z - pointWithin.z) / dir.v.z;
-		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
-		if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		tentativeT = (paabb->lowExtent.z - pointWithin.z) / dir.v.z;
+		if (tentativeT < t)
 		{
-			if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+			pRaycastData->directionType = ST_DIRECTION_BACK;
+			t = tentativeT;
+		}
+		//pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		//if (pRaycastData->contact.point.x >= paabb->lowExtent.x && pRaycastData->contact.point.x <= paabb->highExtent.x)
+		//{
+		//	if (pRaycastData->contact.point.y >= paabb->lowExtent.y && pRaycastData->contact.point.y <= paabb->highExtent.y)
+		//	{
+		//		pRaycastData->directionType = ST_DIRECTION_BACK;
+		//		pRaycastData->distance = t;
+		//		return ST_TRUE;
+		//	}
+		//}
+	}
+	if (t < FLT_MAX)
+	{
+		pRaycastData->contact.point = sphereTraceVector3AddAndScale(pointWithin, dir.v, t);
+		pRaycastData->distance = t;
+		//test if the point is within bounds
+		ST_Vector3 absdp = sphereTraceVector3SubtractAbsolute(pRaycastData->contact.point, paabb->center);
+		if (absdp.x <= (paabb->halfExtents.x + 0.0005 ))
+		{
+			if (absdp.y <= (paabb->halfExtents.y + 0.0005))
 			{
-				pRaycastData->directionType = ST_DIRECTION_BACK;
-				pRaycastData->distance = t;
-				return ST_TRUE;
+				if (absdp.z <= (paabb->halfExtents.z + 0.0005))
+				{
+					return ST_TRUE;
+				}
 			}
 		}
-	}
 
-	return ST_FALSE;
+		return ST_FALSE;
+		
+	}
 }
 
 ST_Octant sphereTraceOctantGetNextFromDirection(ST_Octant curOctant, ST_DirectionType dir)

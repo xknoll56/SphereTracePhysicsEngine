@@ -76,6 +76,8 @@ float sphereTraceMin(float a, float b);
 
 float sphereTraceMax(float a, float b);
 
+float sphereTraceSign(float f);
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
 
 ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);
@@ -253,6 +255,12 @@ void sphereTraceMatrixSetLocalYAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Ve
 
 void sphereTraceMatrixSetLocalZAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 zAxis);
 
+ST_Vector4 sphereTraceMatrixVector4Mult(ST_Matrix4 mat, ST_Vector4 vec);
+
+ST_Vector3 sphereTraceMatrixVector3Mult(ST_Matrix4 mat, ST_Vector3 vec);
+
+ST_Vector4 sphereTraceVector4MatrixMult(ST_Vector4 vec, ST_Matrix4 mat);
+
 //ST_Vector3 sphereTrace
 
 ST_Quaternion sphereTraceQuaternionConstruct(float w, float x, float y, float z);
@@ -285,6 +293,8 @@ ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vect
 void sphereTraceQuaternionPrint(ST_Quaternion quat);
 
 ST_Vector3 sphereTraceVector3RotatePoint(ST_Vector3 point, ST_Quaternion rotation);
+
+ST_Direction sphereTraceDirectionRotateDir(ST_Direction dir, ST_Quaternion rotation);
 
 ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vector3 up, ST_Vector3 forward);
 

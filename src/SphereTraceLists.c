@@ -184,6 +184,22 @@ void sphereTraceIndexListPrint(const ST_IndexList* const pIntList)
 	printf("\n");
 }
 
+b32 sphereTraceIndexListEqual(ST_IndexList* const pIntListA, ST_IndexList* const pIntListB)
+{
+	if (pIntListA->count == pIntListB->count)
+	{
+		ST_IndexListData* pild = pIntListA->pFirst;
+		for (int i = 0; i < pIntListA->count; i++)
+		{
+			if (!sphereTraceIndexListContains(pIntListB, pild->value))
+				return ST_FALSE;
+			pild = pild->pNext;
+		}
+		return ST_TRUE;
+	}
+	return ST_FALSE;
+}
+
 void sphereTraceSortedIndexListAdd(ST_IndexList* const pIntList, ST_Index value)
 {
 	if (pIntList->pFirst == NULL)

@@ -36,6 +36,7 @@ typedef struct ST_SimulationSpace
 	ST_IndexList triangleColliders;
 	ST_IndexList uniformTerrainColliders;
 	ST_IndexList callbackColliders;
+	//ST_IndexList translatedStaticColliders;
 	ST_Vector3 gravitationalAcceleration;
 	float minDeltaTime;
 	ST_Material defaultMaterial;
@@ -91,7 +92,9 @@ void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimula
 
 void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const pSimulationSpace, ST_UniformTerrainCollider* const pTerrainCollider);
 
-//void sphereTraceSimulationConstructOctTree(ST_SimulationSpace* const pSimulationSpace);
+void sphereTraceSimulationSpaceTranslateStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 translation, b32 restructureTree);
+
+void sphereTraceSimulationSpaceMoveStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 newPosition, b32 restructureTree);
 
 void sphereTraceSimulationUpdateSphereColliderBucketIndices(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 
@@ -100,7 +103,6 @@ void sphereTraceSimulationApplyForcesAndTorques(const ST_SimulationSpace* const 
 void sphereTraceSimulationStepQuantity(const ST_SimulationSpace* const pSimulationSpace, ST_RigidBody* const pRigidBody, float dt);
 
 ST_Vector3 sphereTraceSimulationImposedStepPosition(const ST_SimulationSpace* const pSimulationSpace, ST_RigidBody* const pRigidBody, float dt);
-
 
 
 void sphereTraceSimulationStepQuantities(const ST_SimulationSpace* const pSimulationSpace, float dt);

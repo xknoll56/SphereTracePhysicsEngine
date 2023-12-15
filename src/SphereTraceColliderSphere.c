@@ -22,6 +22,13 @@ void sphereTraceColliderSphereSetPosition(ST_SphereCollider* pSphere, ST_Vector3
 	sphereTraceColliderSphereAABBSetTransformedVertices(pSphere);
 }
 
+void sphereTraceColliderSphereSetRadius(ST_SphereCollider* pSphere, float radius)
+{
+	pSphere->radius = radius;
+	pSphere->collider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
+	sphereTraceColliderSphereAABBSetTransformedVertices(pSphere);
+}
+
 void sphereTraceColliderSphereAABBSetTransformedVertices(ST_SphereCollider* const pSphereCollider)
 {
 	pSphereCollider->collider.aabb.highExtent = sphereTraceVector3Add(pSphereCollider->rigidBody.position, pSphereCollider->collider.aabb.halfExtents);
@@ -101,6 +108,7 @@ b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const 
 				return 0;
 			pData->startPoint = start;
 			pData->distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->contact.point, start));
+			pData->contact.pOtherCollider = pSphere;
 			sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pData->contact.normal);
 		}
 	}

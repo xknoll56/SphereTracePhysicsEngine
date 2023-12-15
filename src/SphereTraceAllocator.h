@@ -22,6 +22,7 @@ typedef struct ST_FreeStack
 ST_FreeStack sphereTraceAllocatorFreeStackConstruct(ST_Index capacity, void* pArr, ST_Index objectSize);
 ST_Index* sphereTraceAllocatorFreeStackPurchase(ST_FreeStack* const pFreeStack);
 void sphereTraceAllocatorFreeStackSell(ST_FreeStack* const pFreeStack, ST_Index* pIndex);
+void sphereTraceAllocatorFreeStackDelete(ST_FreeStack* const pFreeStack);
 
 
 typedef struct ST_ObjectPool
@@ -46,6 +47,7 @@ typedef struct ST_ArrayPool
 ST_ObjectPool sphereTraceAllocatorObjectPoolConstruct(ST_Index capacity, ST_Index objectSize);
 void* sphereTraceAllocatorObjectPoolAllocateObject(ST_ObjectPool* const pObjectPool);
 void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, void* pObject);
+void sphereTraceAllocatorObjectPoolDelete(ST_ObjectPool* const pObjectPool);
 
 ST_ArrayPool sphereTraceAllocatorArrayPoolConstruct(ST_Index capacity, ST_Index objectSize, ST_Index arraySize);
 void* sphereTraceAllocatorArrayPoolAllocateObject(ST_ArrayPool* const pArrayPool);
@@ -68,6 +70,7 @@ typedef struct ST_Allocator
 ST_Allocator sphereTraceAllocatorConstruct(ST_Index poolCapacity, ST_Index objectSize, ST_Index maxPools);
 void* sphereTraceAllocatorAllocateObject(ST_Allocator* const pAllocator);
 void sphereTraceAllocatorFreeObject(ST_Allocator* const pAllocator, void* pObject);
+void sphereTraceAllocatorDelete(ST_Allocator* const pAllocator);
 
 //Linear allocaters are different in that they can only be free'd all at once (ie reset)
 //and elements can be accessed by index
@@ -110,3 +113,4 @@ void sphereTraceLinearAllocatorResetAABBContacts();
 //array allocators
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray();
 void sphereTraceAllocatorFreeIndexListArray(void* pArr);
+void sphereTraceAllocatorIndexListArrayResize(ST_Index size);

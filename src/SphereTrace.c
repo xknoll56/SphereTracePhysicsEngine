@@ -116,6 +116,30 @@ void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const
 	sphereTraceOctTreeGridInsertCollider(&pSimulationSpace->octTreeGrid, pTerrainCollider, ST_TRUE);
 }
 
+void sphereTraceSimulationSpaceTranslateStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 translation, b32 restructureTree)
+{
+	switch (pStaticCollider->colliderType)
+	{
+	case COLLIDER_PLANE:
+		sphereTraceColliderPlaneTranslate(pStaticCollider, translation);
+		sphereTraceOctTreeGridReInsertCollider(&pSimulationSpace->octTreeGrid, pStaticCollider, restructureTree);
+		break;
+	}
+}
+
+void sphereTraceSimulationSpaceMoveStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 newPosition, b32 restructureTree)
+{
+	switch (pStaticCollider->colliderType)
+	{
+	case COLLIDER_PLANE:;
+		ST_PlaneCollider* pPlaneCollider = pStaticCollider;
+		ST_Vector3 translation = sphereTraceVector3Subtract(newPosition, pPlaneCollider->position);
+		sphereTraceColliderPlaneTranslate(pStaticCollider, translation);
+		sphereTraceOctTreeGridReInsertCollider(&pSimulationSpace->octTreeGrid, pStaticCollider, restructureTree);
+		break;
+	}
+}
+
 
 
 void sphereTraceSimulationApplyForcesAndTorques(const ST_SimulationSpace* const pSimulationSpace, ST_RigidBody* const pRigidBody, float dt, b32 incrementGravity)
@@ -1086,6 +1110,15 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 		pSphereIndexData = pSphereIndexData->pNext;
 	}
 
+	ST_Collider* pOtherCollider;
+	////move all static colliders that have moved
+	//pOtherIndexData = pSimulationSpace->planeColliders.pFirst;
+	//for (int i = 0; i < pSimulationSpace->planeColliders.count; i++)
+	//{
+
+	//	pOtherIndexData = pOtherIndexData->pNext;
+	//}
+
 	//check for all sphere plane collisions
 	pSphereIndexData = pSimulationSpace->sphereColliders.pFirst;
 	for (int sphereColliderIndex = 0; sphereColliderIndex < pSimulationSpace->sphereColliders.count; sphereColliderIndex++)
@@ -1102,7 +1135,7 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 		sphereTraceOctTreeGridReSampleIntersectionLeafsAndColliders(&pSimulationSpace->octTreeGrid, &pSphereCollider->collider.aabb, NULL, &sampledColliders, ST_FALSE, ST_TRUE);
 		sphereTraceSortedIndexListRemove(&sampledColliders, &pSphereCollider->collider);
 		pOtherIndexData = sampledColliders.pFirst;
-		ST_Collider* pOtherCollider;
+		
 		for (ST_Index i = 0; i < sampledColliders.count; i++)
 		{
 			pOtherCollider = pOtherIndexData->value;
@@ -1111,6 +1144,21 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 				if (pOtherCollider->colliderType == COLLIDER_TERRAIN)
 				{
 					//handle terrain behavior
+					if (sphereTraceColliderUniformTerrainSphereFindMaxPenetratingTriangle(pOtherCollider, pSphereCollider, &contactInfo))
+					{
+						sphereTraceSimulationAddCurFrameContactEntry(&contactInfo);
+						sphereTraceSimulationResolvePenetration(pSphereCollider, &contactInfo, &penetrationRestriction);
+						ST_SphereContact* pAllocatedContact = sphereTraceLinearAllocatorAllocateSphereContact();
+						*pAllocatedContact = contactInfo;
+						sphereTraceColliderSphereAABBSetTransformedVertices(pSphereCollider);
+						sphereTraceOctTreeGridReInsertCollider(&pSimulationSpace->octTreeGrid, &pSphereCollider->collider, ST_FALSE);
+						sphereTraceIndexListFree(&sampledColliders);
+						sphereTraceOctTreeGridReSampleIntersectionLeafsAndColliders(&pSimulationSpace->octTreeGrid, &pSphereCollider->collider.aabb, NULL, &sampledColliders, ST_FALSE, ST_TRUE);
+						sphereTraceSortedIndexListRemove(&sampledColliders, &pSphereCollider->collider);
+						sphereTraceSortedIndexListAddUnique(&handledCollisionList, pOtherCollider);
+						i = 0;
+						pOtherIndexData = sampledColliders.pFirst;
+					}
 				}
 				else if (sphereTraceColliderSphereCollisionTest(pSphereCollider, pOtherCollider, &contactInfo))
 				{
@@ -1152,16 +1200,18 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 		//printf("contacts count: %i\n", contactsCount);
 		sphereTraceSimulationSphereMultipleContactResponse(pSimulationSpace, pSphereCollider, dt);
 
-		rbSpeed = sphereTraceRigidBodyGetSpeed(&pSphereCollider->rigidBody);
-		if (rbSpeed < ST_RESTING_SPEED_SQUARED)
-		{
-			sphereTraceVector3ScaleByRef(&pSphereCollider->rigidBody.linearMomentum, 0.0f);
-		}
-		if (wannabeSpeed < ST_RESTING_SPEED_SQUARED && rbSpeed>0.0f)
-		{
-			sphereTraceVector3ScaleByRef(&pSphereCollider->rigidBody.linearMomentum, wannabeSpeed / rbSpeed);
-		}
-
+		//if (sphereTraceLinearAllocatorGetSphereContactCount() > 0)
+		//{
+		//	rbSpeed = sphereTraceRigidBodyGetSpeed(&pSphereCollider->rigidBody);
+		//	if (rbSpeed < ST_RESTING_SPEED_SQUARED)
+		//	{
+		//		sphereTraceVector3ScaleByRef(&pSphereCollider->rigidBody.linearMomentum, 0.0f);
+		//	}
+		//	if (wannabeSpeed < ST_RESTING_SPEED_SQUARED && rbSpeed>0.0f)
+		//	{
+		//		sphereTraceVector3ScaleByRef(&pSphereCollider->rigidBody.linearMomentum, wannabeSpeed / rbSpeed);
+		//	}
+		//}
 		pSphereIndexData = pSphereIndexData->pNext;
 	}
 

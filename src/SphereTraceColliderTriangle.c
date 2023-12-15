@@ -7,7 +7,7 @@ ST_TriangleCollider sphereTraceColliderTriangleConstruct(ST_Vector3 v1, ST_Vecto
 	triangleCollider.ignoreCollisions = 0;
 	triangleCollider.collider = sphereTraceColliderConstruct(COLLIDER_TRIANGLE, sphereTraceMax(sphereTraceMax(triangleCollider.vertexDists[0], triangleCollider.vertexDists[1]), triangleCollider.vertexDists[2]));
 	sphereTraceColliderTriangleSetAABB(&triangleCollider);
-	triangleCollider.collider.aabb.center = sphereTraceVector3Average(triangleCollider.collider.aabb.lowExtent, triangleCollider.collider.aabb.highExtent);
+	
 	return triangleCollider;
 }
 
@@ -67,6 +67,8 @@ void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleColl
 
 	pTriangleCollider->collider.aabb.halfExtents = sphereTraceVector3Subtract(pTriangleCollider->collider.aabb.highExtent,
 		sphereTraceVector3Average(pTriangleCollider->collider.aabb.highExtent, pTriangleCollider->collider.aabb.lowExtent));
+
+	pTriangleCollider->collider.aabb.center = sphereTraceVector3Average(pTriangleCollider->collider.aabb.lowExtent, pTriangleCollider->collider.aabb.highExtent);
 }
 
 void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3)
@@ -169,6 +171,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const
 			return 0;
 		pRaycastData->startPoint = from;
 		pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
+		pRaycastData->contact.pOtherCollider = pTriangleCollider;
 
 		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->contact.point, pTriangleCollider);
 

@@ -75,7 +75,7 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
 			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
 			sphereTraceColliderTriangleSetVertexAndEdgeData(pTC, sphereTraceVector3Add(v1, position), sphereTraceVector3Add(v2, position), sphereTraceVector3Add(v3, position));
-			//sphereTraceColliderTriangleSetAABB(pTC);
+			sphereTraceColliderTriangleSetAABB(pTC);
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->collider.aabb, &pTerrainCollider->triangles[triangleIndex].collider.aabb);
 
 			triangleIndex++;
@@ -92,8 +92,8 @@ void sphereTraceColliderUniformTerrainSetTransform(ST_UniformTerrainCollider* co
 			v1 = sphereTraceVector3Construct(cosf(angle) * v1.x + sinf(angle) * v1.z, v1.y, -sinf(angle) * v1.x + cosf(angle) * v1.z);
 			v2 = sphereTraceVector3Construct(cosf(angle) * v2.x + sinf(angle) * v2.z, v2.y, -sinf(angle) * v2.x + cosf(angle) * v2.z);
 			v3 = sphereTraceVector3Construct(cosf(angle) * v3.x + sinf(angle) * v3.z, v3.y, -sinf(angle) * v3.x + cosf(angle) * v3.z);
-			sphereTraceColliderTriangleSetVertexAndEdgeData(pTC, sphereTraceVector3Add(v1, position), sphereTraceVector3Add(v2, position), sphereTraceVector3Add(v3, position)); sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->collider.aabb, &pTerrainCollider->triangles[triangleIndex].collider.aabb);
-			//sphereTraceColliderTriangleSetAABB(pTC);
+			sphereTraceColliderTriangleSetVertexAndEdgeData(pTC, sphereTraceVector3Add(v1, position), sphereTraceVector3Add(v2, position), sphereTraceVector3Add(v3, position)); 
+			sphereTraceColliderTriangleSetAABB(pTC);
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&pTerrainCollider->collider.aabb, &pTerrainCollider->triangles[triangleIndex].collider.aabb);
 		}
 	}
