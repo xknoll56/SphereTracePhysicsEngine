@@ -166,6 +166,8 @@ ST_SubscriberList sphereTraceSubscriberListConstruct();
 
 ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float boundingRadius);
 
+void sphereTraceColliderFree(ST_Collider* const pCollider);
+
 typedef struct ST_PlaneCollider
 {
 	ST_Collider collider;
@@ -196,7 +198,7 @@ typedef struct ST_TriangleCollider
 	ST_Vector3 centroid;
 
 	//members needed for terrain optimizations
-	ST_Index terrainIndex;
+	ST_Index index;
 	ST_Vector2Integer terrainCoords;
 	ST_Index lowestVertIndex;
 	ST_Index highestVertIndex;
@@ -334,6 +336,8 @@ void sphereTraceAABBTranslate(ST_AABB* paabb, ST_Vector3 translation);
 b32 sphereTraceAABBAssert(const ST_AABB* const paabb);
 
 float sphereTraceAABBGetVolume(const ST_AABB* const paabb);
+
+float sphereTraceAABBGetSizeMetric(const ST_AABB* const paabb);
 
 void sphereTraceAABBSetCenterAndHalfExtents(ST_AABB* paabb);
 

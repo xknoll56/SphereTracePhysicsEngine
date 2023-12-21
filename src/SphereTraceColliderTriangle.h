@@ -9,7 +9,13 @@ int sphereTraceColliderTriangleGetClosestTransformedVertexIndexToPoint(const ST_
 //
 void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleCollider);
 //
+void sphereTraceColliderTriangleTranslate(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 translation);
+//
+void sphereTraceColliderTriangleSetPosition(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 position);
+//
 void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3);
+//
+void sphereTraceColliderTriangleUpdateVertexData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3);
 //
 b32 sphereTraceColliderTriangleIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_TriangleCollider* const pTriangleCollider);
 //

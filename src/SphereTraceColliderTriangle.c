@@ -69,6 +69,8 @@ void sphereTraceColliderTriangleSetAABB(ST_TriangleCollider* const pTriangleColl
 		sphereTraceVector3Average(pTriangleCollider->collider.aabb.highExtent, pTriangleCollider->collider.aabb.lowExtent));
 
 	pTriangleCollider->collider.aabb.center = sphereTraceVector3Average(pTriangleCollider->collider.aabb.lowExtent, pTriangleCollider->collider.aabb.highExtent);
+
+	//pTriangleCollider->collider.boundingRadius = sphereTraceMax(sphereTraceMax(pTriangleCollider->vertexDists[0], pTriangleCollider->vertexDists[1]), pTriangleCollider->vertexDists[2]);
 }
 
 void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3)
@@ -87,15 +89,6 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->vertexDists[0] = sphereTraceVector3Length(sphereTraceVector3Subtract(v1, pTriangleCollider->centroid));
 	pTriangleCollider->vertexDists[1] = sphereTraceVector3Length(sphereTraceVector3Subtract(v2, pTriangleCollider->centroid));
 	pTriangleCollider->vertexDists[2] = sphereTraceVector3Length(sphereTraceVector3Subtract(v3, pTriangleCollider->centroid));
-	//pTriangleCollider->edgeCenterDists[0] = sphereTraceVector3Length(sphereTraceVector3Subtract(sphereTraceVector3Average(pTriangleCollider->transformedEdges[0].point1, pTriangleCollider->transformedEdges[0].point2), pTriangleCollider->centroid));
-	//pTriangleCollider->edgeCenterDists[1] = sphereTraceVector3Length(sphereTraceVector3Subtract(sphereTraceVector3Average(pTriangleCollider->transformedEdges[1].point1, pTriangleCollider->transformedEdges[1].point2), pTriangleCollider->centroid));
-	//pTriangleCollider->edgeCenterDists[2] = sphereTraceVector3Length(sphereTraceVector3Subtract(sphereTraceVector3Average(pTriangleCollider->transformedEdges[2].point1, pTriangleCollider->transformedEdges[2].point2), pTriangleCollider->centroid));
-	//pTriangleCollider->edgeDirs[0] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[0].point2, pTriangleCollider->transformedEdges[0].point1));
-	//pTriangleCollider->edgeDirs[1] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[1].point2, pTriangleCollider->transformedEdges[1].point1));
-	//pTriangleCollider->edgeDirs[2] = sphereTraceVector3Normalize(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[2].point2, pTriangleCollider->transformedEdges[2].point1));
-	//pTriangleCollider->edgeDists[0] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[0].point2, pTriangleCollider->transformedEdges[0].point1));
-	//pTriangleCollider->edgeDists[1] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[1].point2, pTriangleCollider->transformedEdges[1].point1));
-	//pTriangleCollider->edgeDists[2] = sphereTraceVector3Length(sphereTraceVector3Subtract(pTriangleCollider->transformedEdges[2].point2, pTriangleCollider->transformedEdges[2].point1));
 	pTriangleCollider->edgeOrthogonalDirs[0] = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(pTriangleCollider->transformedEdges[0].dir.v, pTriangleCollider->normal.v));
 	pTriangleCollider->edgeOrthogonalDirs[1] = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(pTriangleCollider->transformedEdges[1].dir.v, pTriangleCollider->normal.v));
 	pTriangleCollider->edgeOrthogonalDirs[2] = sphereTraceDirectionConstructNormalized(sphereTraceVector3Cross(pTriangleCollider->transformedEdges[2].dir.v, pTriangleCollider->normal.v));
@@ -140,6 +133,33 @@ void sphereTraceColliderTriangleSetVertexAndEdgeData(ST_TriangleCollider* const 
 	pTriangleCollider->circularRadius = sphereTraceVector3HorizontalDistance(v1, pTriangleCollider->centroid);
 	pTriangleCollider->circularRadius = sphereTraceMax(pTriangleCollider->circularRadius, sphereTraceVector3HorizontalDistance(v2, pTriangleCollider->centroid));
 	pTriangleCollider->circularRadius = sphereTraceMax(pTriangleCollider->circularRadius, sphereTraceVector3HorizontalDistance(v3, pTriangleCollider->centroid));
+}
+
+void sphereTraceColliderTriangleUpdateVertexData(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 v1, ST_Vector3 v2, ST_Vector3 v3)
+{
+	sphereTraceColliderTriangleSetVertexAndEdgeData(pTriangleCollider, v1, v2, v3);
+	pTriangleCollider->collider.boundingRadius = sphereTraceMax(sphereTraceMax(pTriangleCollider->vertexDists[0], 
+		pTriangleCollider->vertexDists[1]), pTriangleCollider->vertexDists[2]);
+	sphereTraceColliderTriangleSetAABB(pTriangleCollider);
+}
+
+void sphereTraceColliderTriangleTranslate(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 translation)
+{
+	sphereTraceVector3AddByRef(&pTriangleCollider->centroid, translation);
+	for (int i = 0; i < 3; i++)
+	{
+		sphereTraceVector3AddByRef(&pTriangleCollider->transformedVertices[i], translation);
+		sphereTraceEdgeTranslate(&pTriangleCollider->transformedEdges[i], translation);
+	}
+	//ST_Vector3 centroidTranslation = sphereTraceVector3Subtract(pTriangleCollider)
+	sphereTraceAABBTranslate(&pTriangleCollider->collider.aabb, translation);
+	//pTriangleCollider->collider.aabb = sphereTraceAABBConstruct2(pTriangleCollider->centroid, pTriangleCollider->collider.aabb.halfExtents);
+}
+
+void sphereTraceColliderTriangleSetPosition(ST_TriangleCollider* const pTriangleCollider, ST_Vector3 position)
+{
+	ST_Vector3 translation = sphereTraceVector3Subtract(position, pTriangleCollider->centroid);
+	sphereTraceColliderTriangleTranslate(pTriangleCollider, translation);
 }
 
 

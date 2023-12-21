@@ -3,6 +3,8 @@
 #include "SphereTraceLists.h"
 //#include "SphereTraceCollider.h"
 
+#define ST_DEBUG
+
 typedef uintptr_t ST_Index;
 typedef struct ST_CallbackFunction ST_CallbackFunction;
 typedef struct ST_SphereContactEntry ST_SphereContactEntry;
@@ -114,3 +116,8 @@ void sphereTraceLinearAllocatorResetAABBContacts();
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray();
 void sphereTraceAllocatorFreeIndexListArray(void* pArr);
 void sphereTraceAllocatorIndexListArrayResize(ST_Index size);
+
+//debug functions
+#ifdef ST_DEBUG
+	ST_Index sphereTraceAllocatorGetBytesAllocated();
+#endif

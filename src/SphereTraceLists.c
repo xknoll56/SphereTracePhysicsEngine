@@ -651,15 +651,18 @@ void sphereTraceVector3ListRemoveFirst(ST_Vector3List* const pVector3List)
 
 void sphereTraceVector3ListRemoveLast(ST_Vector3List* const pVector3List)
 {
-	if (pVector3List->pFirst != NULL)
+	if (pVector3List->count>1)
 	{
 		ST_Vector3ListData* pLast = pVector3List->pFirst;
+		ST_Vector3ListData* pPrev = pVector3List->pFirst;
 		for (int i = 0; i < pVector3List->count - 1; i++)
 		{
+			if (i > 0)
+				pPrev = pLast;
 			pLast = pLast->pNext;
 		}
 		sphereTraceAllocatorFreeVector3ListData(pLast);
-		pLast = NULL;
+		pPrev->pNext = NULL;
 		pVector3List->count--;
 	}
 }

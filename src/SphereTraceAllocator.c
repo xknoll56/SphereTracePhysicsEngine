@@ -15,6 +15,7 @@
 #define ST_COLLIDER_ALLOCATOR_SIZE 50
 #define ST_LIST_ARRAY_SIZE 125
 ST_Index listArraySize;
+ST_Index bytesAllocated;
 
 
 static ST_Allocator indexListAllocator;
@@ -85,6 +86,9 @@ void* sphereTraceAllocatorObjectPoolAllocateObject(ST_ObjectPool* const pObjectP
 {
 	if (pObjectPool->occupied < pObjectPool->capacity)
 	{
+#ifdef ST_DEBUG
+		bytesAllocated += pObjectPool->objectSize;
+#endif
 		ST_Index* pIndex = sphereTraceAllocatorFreeStackPurchase(&pObjectPool->freeStack);
 		pObjectPool->occupied++;
 		return pIndex;
@@ -97,6 +101,9 @@ void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, 
 {
 	if (pObjectPool->occupied > 0)
 	{
+#ifdef ST_DEBUG
+		bytesAllocated -= pObjectPool->objectSize;
+#endif
 		sphereTraceAllocatorFreeStackSell(&pObjectPool->freeStack, pObject);
 		pObjectPool->occupied--;
 	}
@@ -104,6 +111,9 @@ void sphereTraceAllocatorObjectPoolFreeObject(ST_ObjectPool* const pObjectPool, 
 
 void sphereTraceAllocatorObjectPoolDelete(ST_ObjectPool* const pObjectPool)
 {
+#ifdef ST_DEBUG
+	bytesAllocated -= pObjectPool->occupied * pObjectPool->objectSize;
+#endif
 	sphereTraceAllocatorFreeStackDelete(&pObjectPool->freeStack);
 	free(pObjectPool->data);
 }
@@ -145,6 +155,9 @@ void sphereTraceAllocatorArrayPoolFreeObject(ST_ArrayPool* const pArrayPool, voi
 
 void sphereTraceAllocatorLinearObjectPoolReset(ST_ObjectPool* const pLinearObjectPool)
 {
+#ifdef ST_DEBUG
+	bytesAllocated -= pLinearObjectPool->occupied * pLinearObjectPool->objectSize;
+#endif
 	pLinearObjectPool->occupied = 0;
 	pLinearObjectPool->freeStack.head = 0;
 }
@@ -245,6 +258,9 @@ void* sphereTraceLinearAllocatorAllocateObject(ST_Allocator* const pAllocator)
 	ST_Index* pObject = pAllocator->pCurrentObjectPool->freeStack.pStack[pAllocator->pCurrentObjectPool->occupied++];
 	if (!sphereTraceAllocatorIncrementObject(pAllocator))
 		exit(0);
+#ifdef ST_DEBUG
+	bytesAllocated += pAllocator->objectPools[0].objectSize;
+#endif
 	return pObject;
 }
 
@@ -383,6 +399,7 @@ ST_Collider* sphereTraceAllocatorAllocateCollider(ST_ColliderType colliderType)
 
 void sphereTraceAllocatorFreeCollider(ST_ColliderType colliderType, void* pIndex)
 {
+	sphereTraceColliderFree(pIndex);
 	switch (colliderType)
 	{
 	case COLLIDER_SPHERE:
@@ -442,7 +459,7 @@ void sphereTraceLinearAllocatorResetAABBContacts()
 
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray()
 {
-	ST_IndexList* pil = sphereTraceAllocatorAllocateObject(&listArrayAllocator);
+ 	ST_IndexList* pil = sphereTraceAllocatorAllocateObject(&listArrayAllocator);
 	for (int i = 0; i < listArraySize; i++)
 		pil[i] = sphereTraceIndexListConstruct();
 	return pil;
@@ -458,3 +475,10 @@ void sphereTraceAllocatorIndexListArrayResize(ST_Index size)
 	listArrayAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_IndexList) * size, ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	listArraySize = size;
 }
+
+#ifdef ST_DEBUG
+ST_Index sphereTraceAllocatorGetBytesAllocated()
+{
+	return bytesAllocated;
+}
+#endif

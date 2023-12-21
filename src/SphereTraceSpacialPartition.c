@@ -261,15 +261,19 @@ b32 sphereTraceOctTreeNodeVolumeRequirements(ST_OctTreeNode* const pNode, float 
 	ST_IndexListData* pild = pNode->colliderEntries.pFirst;
 	ST_Collider* pCollider;
 	float commulativeVolume = 0.0f;
-	float volumeOfNode = sphereTraceAABBGetVolume(&pNode->aabb);
+	float volumeOfNode = sphereTraceAABBGetSizeMetric(&pNode->aabb);
+	//float volumeOfNode = pNode->aabb.halfExtents.x+pNode->aabb.halfExtents.y+pNode->aabb.halfExtents.z;
 	float maxVolumeOfSelf = 0.0f;
 	for (ST_Index i = 0; i < pNode->colliderEntries.count; i++)
 	{
 		pCollider = pild->value;
 		ST_AABB intersectionRegion = gAABBOne;
 		sphereTraceColliderAABBIntersectAABBIntersectionRegion(&pNode->aabb, &pCollider->aabb, &intersectionRegion);
-		commulativeVolume += sphereTraceAABBGetVolume(&intersectionRegion);
-		float volumeOfSelf = sphereTraceAABBGetVolume(&intersectionRegion) / sphereTraceAABBGetVolume(&pCollider->aabb);
+		commulativeVolume += sphereTraceAABBGetSizeMetric(&intersectionRegion);
+		//commulativeVolume += intersectionRegion.halfExtents.x+ intersectionRegion.halfExtents.y + intersectionRegion.halfExtents.z;
+		float volumeOfSelf = sphereTraceAABBGetSizeMetric(&intersectionRegion) / sphereTraceAABBGetSizeMetric(&pCollider->aabb);
+		//float volumeOfSelf = (intersectionRegion.halfExtents.x + intersectionRegion.halfExtents.y + intersectionRegion.halfExtents.z) / 
+		//	(pCollider->aabb.halfExtents.x+ pCollider->aabb.halfExtents.y + pCollider->aabb.halfExtents.z);
 		if (volumeOfSelf > maxVolumeOfSelf)
 		{
 			maxVolumeOfSelf = volumeOfSelf;
@@ -735,7 +739,7 @@ void sphereTraceOctTreeNodeInsertColliderRecursive(ST_OctTreeNode* const pNode, 
 			sphereTraceSortedIndexListAddUnique(&pNode->colliderEntries, pCollider);
 			hasBeenAdded = ST_TRUE;
 		}
-		if (restructureTree && pNode->colliderEntries.count > 1 && pNode->depth < maxDepth
+		if (restructureTree && pNode->colliderEntries.count > 2 && pNode->depth < maxDepth
 			&& sphereTraceOctTreeNodeVolumeRequirements(pNode, 0.80f, 0.20f))
 		{
 			sphereTraceOctTreeNodePopulateChildren(pNode, bucketIndex);
@@ -798,6 +802,8 @@ void sphereTraceOctTreeNodeCollapseUpwardUntilMinimumColliders(ST_OctTreeNode* p
 
 	ST_IndexListData* pild;
 	ST_Index count = sphereTraceOctTreeNodeGetColliderCountBelow(pNode, &uniqueCollidersCheck, &collapsedNodesCheck);
+	//dont include self
+	//count -= 1;
 	while (count <= minObjects && pNode != NULL)
 	{
 		sphereTraceSortedIndexListMergeUnique(&uniqueCollidersCheck, pUniqueColliders);
@@ -807,7 +813,7 @@ void sphereTraceOctTreeNodeCollapseUpwardUntilMinimumColliders(ST_OctTreeNode* p
 		pNode->hasChildren = ST_FALSE;
 		pNode = pNode->pParant;
 		if(pNode)
-			count = sphereTraceOctTreeNodeGetColliderCountBelow(pNode, &uniqueCollidersCheck, &collapsedNodesCheck);
+			count += sphereTraceOctTreeNodeGetColliderCountBelow(pNode, &uniqueCollidersCheck, &collapsedNodesCheck);
 	}
 	sphereTraceIndexListFree(&uniqueCollidersCheck);
 	sphereTraceIndexListFree(&collapsedNodesCheck);
@@ -1749,6 +1755,19 @@ void sphereTraceOctTreeGridSampleIntersectionLeafsAndCollidersFromPerspective(ST
 		pild = pild->pNext;
 	}
 	sphereTraceIndexListFree(&indices);
+}
+
+b32 sphereTraceOctTreeGridVerifyColliderListHaveProperLeafs(ST_OctTreeGrid* const pGrid, ST_Collider* const pCollider)
+{
+	ST_IndexListData* pild = pCollider->bucketIndices.pFirst;
+	for (int i = 0; i < pCollider->bucketIndices.count; i++)
+	{
+		if (pild->value != -1)
+		{
+			sphereTraceOctTreeVerifyColliderListHaveProperLeafs(&pGrid->treeBuckets[pild->value], pild->value, pCollider);
+		}
+		pild = pild->pNext;
+	}
 }
 
 ST_Index sphereTraceOctTreeGridGetLargestDepth(const ST_OctTreeGrid* const pGrid)

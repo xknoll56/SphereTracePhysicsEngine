@@ -6,6 +6,8 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normal, float angl
 //
 ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position);
 //
+void sphereTraceColliderPlaneSetTransformWithRotationMatrix(ST_PlaneCollider* const pPlaneCollider, ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position);
+//
 void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* const pPlaneCollider);
 //
 ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point);
@@ -21,6 +23,8 @@ void sphereTraceColliderPlaneRotateAround(ST_PlaneCollider* const pPlaneCollider
 void sphereTraceColliderPlaneSetPosition(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 position);
 //
 void sphereTraceColliderPlaneSetRotation(ST_PlaneCollider* const pPlaneCollider, ST_Quaternion rotation);
+//
+void sphereTraceColliderPlaneSetRotationWithMatrix(ST_PlaneCollider* const pPlaneCollider, ST_Matrix4 rotMat);
 //
 void sphereTraceColliderPlaneSetAABB(ST_PlaneCollider* const pPlaneCollider);
 //

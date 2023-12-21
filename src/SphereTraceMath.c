@@ -26,6 +26,10 @@ const ST_Vector4 gVector4ColorBlack = { 0.0f, 0.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorYellow = { 1.0f, 1.0f, 0.0f, 1.0f };
 const ST_Vector4 gVector4ColorMagenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 const ST_Vector4 gVector4ColorCyan = { 0.0f, 1.0f, 1.0f, 1.0f };
+const ST_Vector4 gVector4ColorGold = { 218.0f / 255.0f, 165.0f / 255.0f, 32.0f / 255.0f, 1.0f };
+const ST_Vector4 gVector4ColorSilver = { 192.0f / 255.0f, 192.0f / 255.0f, 192.0f / 255.0f, 1.0f };
+const ST_Vector4 gVector4ColorSaphire = { 15.0f / 255.0f, 82.0f / 255.0f, 186.0f / 255.0f, 1.0f };
+const ST_Vector4 gVector4ColorEmerald = { 80.0f / 255.0f, 200.0f / 255.0f, 120.0f / 255.0f, 1.0f };
 const ST_Direction gDirectionRight = { 1.0f, 0.0f, 0.0f, 1 };
 const ST_Direction gDirectionLeft = { -1.0f, 0.0f, 0.0f, 1 };
 const ST_Direction gDirectionUp = { 0.0f, 1.0f, 0.0f, 1 };
@@ -99,10 +103,29 @@ float sphereTraceSign(float f)
 		return -1.0f;
 }
 
+float sphereTraceRound(float f)
+{
+	if (f > 0.0f)
+	{
+		return (int)(f + 0.5f);
+	}
+	else
+	{
+		return (int)(f - 0.5f);
+	}
+}
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
 	allocatedv2.x = x;
 	allocatedv2.y = y;
+	return allocatedv2;
+}
+
+ST_Vector2 sphereTraceVector2ConstructWithVector3(ST_Vector3 v)
+{
+	allocatedv2.x = v.x;
+	allocatedv2.y = v.y;
 	return allocatedv2;
 }
 
@@ -154,6 +177,14 @@ ST_Vector4 sphereTraceVector4ConstructWithVector3(ST_Vector3 v, float w)
 	allocatedv4.z = v.z;
 	allocatedv4.w = w;
 	return allocatedv4;
+}
+
+ST_Vector3 sphereTraceVector3ConstructWithVector2(ST_Vector2 v, float z)
+{
+	allocatedv3.x = v.x;
+	allocatedv3.y = v.y;
+	allocatedv3.z = z;
+	return allocatedv3;
 }
 
 ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
@@ -247,6 +278,11 @@ ST_Vector2 sphereTraceVector2Lerp(ST_Vector2 v1, ST_Vector2 v2, float t)
 	allocatedv2.x = (v2.x - v1.x) * t + v1.x;
 	allocatedv2.y = (v2.y - v1.y) * t + v1.y;
 	return allocatedv2;
+}
+
+float sphereTraceVector2Length(ST_Vector2 v)
+{
+	return sqrtf(v.x * v.x + v.y * v.y);
 }
 
 

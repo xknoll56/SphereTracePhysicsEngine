@@ -43,6 +43,13 @@ ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float bou
 	collider.boundingRadius = boundingRadius;
 	return collider;
 }
+
+void sphereTraceColliderFree(ST_Collider* const pCollider)
+{
+	//ST_IndexListData* pild = pCollider->buc
+	sphereTraceIndexListFree(&pCollider->bucketIndices);
+	sphereTraceAllocatorFreeIndexListArray(pCollider->pLeafBucketLists);
+}
 //void sphereTraceColliderSetOctTreeEntry(ST_Collider* const pCollider)
 //{
 //	pCollider->octTreeEntry.leafNodes = sphereTraceIndexListConstruct();
@@ -137,6 +144,17 @@ void sphereTraceAABBSetHighAndLowExtents(ST_AABB* paabb)
 float sphereTraceAABBGetVolume(const ST_AABB* const paabb)
 {
 	return 2.0f * paabb->halfExtents.x * 2.0f * paabb->halfExtents.y * 2.0f * paabb->halfExtents.z;
+}
+
+float sphereTraceAABBGetSizeMetric(const ST_AABB* const paabb)
+{
+	return (2.0f * paabb->halfExtents.x * 2.0f * paabb->halfExtents.y * 2.0f * paabb->halfExtents.z) +
+		(2.0f * paabb->halfExtents.x * 2.0f * paabb->halfExtents.y) +
+		(2.0f * paabb->halfExtents.y * 2.0f * paabb->halfExtents.z) +
+		(2.0f * paabb->halfExtents.x * 2.0f * paabb->halfExtents.z) +
+		(2.0f * paabb->halfExtents.x) +
+		(2.0f * paabb->halfExtents.y) +
+		(2.0f * paabb->halfExtents.z);
 }
 
 float sphereTraceAABBGetBoundingRadius(ST_AABB* paabb)

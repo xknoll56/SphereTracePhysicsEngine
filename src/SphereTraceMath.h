@@ -78,7 +78,11 @@ float sphereTraceMax(float a, float b);
 
 float sphereTraceSign(float f);
 
+float sphereTraceRound(float f);
+
 ST_Vector2 sphereTraceVector2Construct(float x, float y);
+
+ST_Vector2 sphereTraceVector2ConstructWithVector3(ST_Vector3 v);
 
 ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y);
 
@@ -87,6 +91,8 @@ ST_Vector3 sphereTraceVector3Construct(float x, float y, float z);
 ST_Vector4 sphereTraceVector4Construct(float x, float y, float z, float w);
 
 ST_Vector4 sphereTraceVector4ConstructWithVector3(ST_Vector3 v, float w);
+
+ST_Vector3 sphereTraceVector3ConstructWithVector2(ST_Vector2 v, float z);
 
 ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
@@ -105,6 +111,10 @@ ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2);
 float sphereTraceVector2Dot(ST_Vector2 v1, ST_Vector2 v2);
 
 ST_Vector2 sphereTraceVector2Lerp(ST_Vector2 v1, ST_Vector2 v2, float t);
+
+float sphereTraceVector2Length(ST_Vector2 v);
+
+//ST_Vector2 sphereTraceVector2Cross()
 
 
 

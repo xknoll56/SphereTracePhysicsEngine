@@ -84,6 +84,8 @@ ST_SimulationSpace sphereTraceSimulationConstruct1(ST_AABB worldaabb, ST_Vector3
 
 void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace);
 
+void sphereTraceSimulationInsertCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider, b32 restructureTree);
+
 void sphereTraceSimulationInsertPlaneCollider(ST_SimulationSpace* const pSimulationSpace, ST_PlaneCollider* const pPlaneCollider);
 
 void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimulationSpace, ST_TriangleCollider* const pTriangleCollider);
@@ -92,11 +94,13 @@ void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimula
 
 void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const pSimulationSpace, ST_UniformTerrainCollider* const pTerrainCollider);
 
+void sphereTraceSimulationRemoveCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider, b32 restructureTree);
+
 void sphereTraceSimulationSpaceTranslateStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 translation, b32 restructureTree);
 
 void sphereTraceSimulationSpaceMoveStaticCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pStaticCollider, ST_Vector3 newPosition, b32 restructureTree);
 
-void sphereTraceSimulationUpdateSphereColliderBucketIndices(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
+//void sphereTraceSimulationUpdateSphereColliderBucketIndices(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 
 void sphereTraceSimulationApplyForcesAndTorques(const ST_SimulationSpace* const pSimulationSpace, ST_RigidBody* const pRigidBody, float dt, b32 incrementGravity);
 
@@ -130,6 +134,8 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 //void sphereTraceSimulationSolveDiscreteFirstComeFirstServe(ST_SimulationSpace* const pSimulationSpace, float dt);
 
 void sphereTraceSimulationGlobalSolveImposedPosition(ST_SimulationSpace* const pSimulationSpace, float dt);
+
+b32 sphereTraceSimulationRayTrace(ST_SimulationSpace* const pSimulationSpace, ST_Vector3 start, ST_Direction dir, float maxDist, ST_RayTraceData* const pData);
 
 //b32 sphereTraceSimulationRayTrace(const ST_SimulationSpace* const pSimulationSpace, ST_Vector3 start, ST_Direction dir, ST_RayTraceData* const pRayCastData);
 

@@ -40,6 +40,20 @@ ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normalDir, float a
 	return planeCollider;
 }
 
+void sphereTraceColliderPlaneSetTransformWithRotationMatrix(ST_PlaneCollider* const pPlaneCollider, ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
+{
+	pPlaneCollider->position = position;
+	pPlaneCollider->xHalfExtent = xHalfExtent;
+	pPlaneCollider->zHalfExtent = zHalfExtent;
+	pPlaneCollider->right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->rotation = sphereTraceMatrixQuaternionFromRotationMatrix(rotMat);
+	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(pPlaneCollider);
+	sphereTraceColliderPlaneSetAABB(pPlaneCollider);
+	pPlaneCollider->collider.boundingRadius = sqrtf(xHalfExtent * xHalfExtent + zHalfExtent * zHalfExtent);
+}
+
 ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 rotMat, float xHalfExtent, float zHalfExtent, ST_Vector3 position)
 {
 	ST_PlaneCollider planeCollider;
@@ -58,6 +72,7 @@ ST_PlaneCollider sphereTraceColliderPlaneConstructWithRotationMatrix(ST_Matrix4 
 	//planeCollider.collider.colliderType = COLLIDER_PLANE;
 	return planeCollider;
 }
+
 
 void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* const pPlaneCollider)
 {
@@ -377,6 +392,16 @@ void sphereTraceColliderPlaneSetRotation(ST_PlaneCollider* const pPlaneCollider,
 {
 	ST_Quaternion toRotation = sphereTraceQuaternionMultiply(pPlaneCollider->rotation, sphereTraceQuaternionConjugate(rotation));
 	sphereTraceColliderPlaneRotateAround(pPlaneCollider, pPlaneCollider->position, toRotation);
+}
+
+void sphereTraceColliderPlaneSetRotationWithMatrix(ST_PlaneCollider* const pPlaneCollider, ST_Matrix4 rotMat)
+{
+	pPlaneCollider->right = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalXAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->normal = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalYAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->forward = sphereTraceDirectionConstruct(sphereTraceVector3GetLocalZAxisFromRotationMatrix(rotMat), 0);
+	pPlaneCollider->rotation = sphereTraceMatrixQuaternionFromRotationMatrix(rotMat);
+	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(pPlaneCollider);
+	sphereTraceColliderPlaneSetAABB(pPlaneCollider);
 }
 
 

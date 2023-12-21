@@ -145,7 +145,7 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrai
 					x2, fxz(x2, z1), z1
 				));
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->collider.aabb, &terrainCollider->triangles[triangleIndex].collider.aabb);
-			terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+			terrainCollider->triangles[triangleIndex].index = triangleIndex;
 			terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 			triangleIndex++;
 			//(1,0), (1,1), (0,1)
@@ -157,7 +157,7 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunction(ST_UniformTerrai
 					x2, fxz(x2, z2), z2
 				));
 			sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->collider.aabb, &terrainCollider->triangles[triangleIndex].collider.aabb);
-			terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+			terrainCollider->triangles[triangleIndex].index = triangleIndex;
 			terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 		}
 	}
@@ -194,7 +194,7 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 						x2, fxz(x2, z1, terrainCollider), z1
 					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->collider.aabb, &terrainCollider->triangles[triangleIndex].collider.aabb);
-				terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+				terrainCollider->triangles[triangleIndex].index = triangleIndex;
 				terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 				triangleIndex++;
 				//(1,0), (1,1), (0,1)
@@ -206,17 +206,17 @@ void sphereTraceColliderUniformTerrainFillTrianglesWithFunctionAndConditionalFun
 						x2, fxz(x2, z2, terrainCollider), z2
 					));
 				sphereTraceColliderAABBResizeAABBToContainAnotherAABB(&terrainCollider->collider.aabb, &terrainCollider->triangles[triangleIndex].collider.aabb);
-				terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+				terrainCollider->triangles[triangleIndex].index = triangleIndex;
 				terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 			}
 			else
 			{
 				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(terrainCollider->position, terrainCollider->position, terrainCollider->position);
-				terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+				terrainCollider->triangles[triangleIndex].index = triangleIndex;
 				terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 				terrainCollider->triangles[triangleIndex++].ignoreCollisions = 1;
 				terrainCollider->triangles[triangleIndex] = sphereTraceColliderTriangleConstruct(terrainCollider->position, terrainCollider->position, terrainCollider->position);
-				terrainCollider->triangles[triangleIndex].terrainIndex = triangleIndex;
+				terrainCollider->triangles[triangleIndex].index = triangleIndex;
 				terrainCollider->triangles[triangleIndex].terrainCoords = (ST_Vector2Integer){ x, z };
 				terrainCollider->triangles[triangleIndex].ignoreCollisions = 1;
 			}

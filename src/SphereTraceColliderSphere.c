@@ -26,6 +26,7 @@ void sphereTraceColliderSphereSetRadius(ST_SphereCollider* pSphere, float radius
 {
 	pSphere->radius = radius;
 	pSphere->collider.aabb.halfExtents = sphereTraceVector3Construct(radius, radius, radius);
+	pSphere->collider.boundingRadius = radius;
 	sphereTraceColliderSphereAABBSetTransformedVertices(pSphere);
 }
 
