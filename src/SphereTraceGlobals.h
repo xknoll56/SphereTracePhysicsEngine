@@ -42,6 +42,12 @@ extern const ST_Direction gDirectionDown;
 extern const ST_Direction gDirectionForward;
 extern const ST_Direction gDirectionBack;
 extern const ST_AABB gAABBOne;
+extern const ST_BoxFace gFaceRight;
+extern const ST_BoxFace gFaceLeft;
+extern const ST_BoxFace gFaceUp;
+extern const ST_BoxFace gFaceDown;
+extern const ST_BoxFace gFaceForward;
+extern const ST_BoxFace gFaceBack;
 
 #define ST_VECTOR3(x, y, z) sphereTraceVector3Construct(x,y,z)
 //#define ST_VECTOR3() gVector3Zero

@@ -965,7 +965,7 @@ b32 sphereTraceColliderUniformTerrainSphereTraceByStartEndPoint(const ST_Uniform
 		*ppTriangleCollider = sphereTraceColliderTriangleGetFromContact(&sttci);;
 		pSphereTraceData->rayTraceData.startPoint = startPoint;
 		pSphereTraceData->radius = radius;
-		pSphereTraceData->rayTraceData.contact = sttci;
+		pSphereTraceData->rayTraceData.contact = sphereTraceContactPointFromSphereContact(&sttci);
 		pSphereTraceData->traceDistance = 0.0f;
 		pSphereTraceData->sphereCenter = startPoint;
 		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(startPoint, sttci.point);

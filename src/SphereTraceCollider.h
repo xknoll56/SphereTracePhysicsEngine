@@ -5,7 +5,7 @@
 #include "SphereTraceTag.h"
 
 
-#define COLLIDER_TOLERANCE 1e-6
+#define ST_COLLIDER_TOLERANCE 1e-5
 #define ST_COLLIDER_SKIN 0.05f
 #define ST_SPHERE_RESTING_CONTACTS_COUNT 4
 #define ST_CONTACT_MAX 6
@@ -18,7 +18,9 @@ typedef enum ST_ColliderType
 	COLLIDER_TERRAIN = 2,
 	COLLIDER_TRIANGLE = 3,
 	COLLIDER_BOWL = 4,
-	COLLIDER_PIPE = 5
+	COLLIDER_PIPE = 5,
+	COLLIDER_AABB = 6,
+	COLLIDER_BOX = 7
 } ST_ColliderType;
 
 const char* ST_ColliderStrings[];
@@ -38,6 +40,18 @@ typedef enum ST_CollisionType
 
 typedef struct ST_SphereCollider ST_SphereCollider;
 
+typedef struct ST_BoxCollider ST_BoxCollider;
+
+typedef struct ST_Collider ST_Collider;
+
+typedef struct ST_ContactPoint
+{
+	float penetrationDistance;
+	ST_Direction normal;
+	ST_Vector3 point;
+	enum ST_CollisionType collisionType;
+} ST_ContactPoint;
+
 typedef struct ST_SphereContact
 {
 	float penetrationDistance;
@@ -50,6 +64,14 @@ typedef struct ST_SphereContact
 	float radiusOfCurvature;
 	ST_Direction bitangent;
 } ST_SphereContact;
+
+typedef struct ST_BoxContact
+{
+	int numContacts;
+	ST_ContactPoint contactPoints[8];
+	ST_BoxCollider* pBoxCollider;
+	ST_Collider* pOtherCollider;
+} ST_BoxContact;
 
 
 typedef int ST_ColliderIndex;
@@ -87,6 +109,14 @@ typedef struct ST_Edge
 	ST_Direction dir;
 	float dist;
 } ST_Edge;
+
+typedef struct ST_DynamicEdge
+{
+	ST_Vector3* pPoint1;
+	ST_Vector3* pPoint2;
+	ST_Direction* pDir;
+	float* pDist;
+} ST_DynamicEdge;
 
 typedef struct ST_Ring
 {
@@ -166,6 +196,8 @@ ST_SubscriberList sphereTraceSubscriberListConstruct();
 
 ST_Collider sphereTraceColliderConstruct(ST_ColliderType colliderType, float boundingRadius);
 
+ST_Collider sphereTraceColliderAABBConstruct(ST_AABB aabb);
+
 void sphereTraceColliderFree(ST_Collider* const pCollider);
 
 typedef struct ST_PlaneCollider
@@ -216,6 +248,36 @@ typedef struct ST_SphereCollider
 	b32 ignoreCollisions;
 	ST_IndexList prevFrameContacts;
 } ST_SphereCollider;
+
+typedef struct ST_BoxFace
+{
+	enum ST_DirectionType dir;
+	ST_Octant vertexIndices[4];
+	ST_Index edgeIndices[4];
+} ST_BoxFace;
+
+
+const ST_BoxFace gFaceRight;
+const ST_BoxFace gFaceLeft;
+const ST_BoxFace gFaceUp;
+const ST_BoxFace gFaceDown;
+const ST_BoxFace gFaceForward;
+const ST_BoxFace gFaceBack;
+
+
+typedef struct ST_BoxCollider
+{
+	ST_Collider collider;
+	ST_RigidBody rigidBody;
+	b32 restingContact;
+	ST_Vector3 halfExtents;
+	ST_Direction localRight;
+	ST_Direction localUp;
+	ST_Direction localForward;
+	ST_Vector3 transformedVertices[8];
+	ST_DynamicEdge edges[12];
+	b32 ignoreCollisions;
+} ST_BoxCollider;
 
 typedef struct ST_BowlCollider
 {
@@ -270,11 +332,39 @@ ST_DirectionType sphereTraceDirectionTypeGetReverse(ST_DirectionType dirType);
 
 typedef struct ST_RayTraceData
 {
-	ST_SphereContact contact;
+	ST_ContactPoint contact;
+	void* pOtherCollider;
 	ST_Vector3 startPoint;
 	float distance;
 	ST_DirectionType directionType;
 } ST_RayTraceData;
+
+typedef struct ST_EdgeTraceData
+{
+	ST_ContactPoint contact1;
+	ST_ContactPoint contact2;
+	b32 usesBothContacts;
+	ST_Collider* pOtherCollider;
+	float distance;
+	ST_DirectionType directionType;
+} ST_EdgeTraceData;
+
+//ST_EdgeTraceData sphereTraceEdgeTraceDataConstruct();
+ST_EdgeTraceData sphereTraceEdgeTraceDataFrom1RayTraceData(const ST_RayTraceData* const prtd);
+ST_EdgeTraceData sphereTraceEdgeTraceDataFrom2RayTraceData(const ST_RayTraceData* const prtd, const ST_RayTraceData* const prtd1);
+
+
+ST_ContactPoint sphereTraceContactPointFromSphereContact(const ST_SphereContact* const psc);
+
+typedef struct ST_BoxTraceData
+{
+	int numContacts;
+	ST_ContactPoint contacts[8];
+	ST_Collider* pOtherCollider;
+	ST_Vector3 boxCenter;
+	float traceDistance;
+} ST_BoxTraceData;
+
 
 typedef struct ST_SphereTraceData
 {
@@ -323,6 +413,12 @@ typedef struct ST_SphereTraceData
 
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2);
 
+ST_Edge sphereTraceEdgeConstruct1(ST_Vector3 p1, ST_Vector3 p2, float dist, ST_Direction dir);
+
+ST_DynamicEdge sphereTraceDynamicEdgeConstruct(ST_Vector3* pp1, ST_Vector3* pp2, float* pdist, ST_Direction* pdir);
+
+ST_Edge sphereTraceEdgeFromDynamicEdge(const ST_DynamicEdge* const pde);
+
 void sphereTraceEdgeTranslate(ST_Edge* pEdge, ST_Vector3 translation);
 
 ST_Ring sphereTraceRingConstruct(ST_Vector3 centroid, ST_Direction normal, float radius);
@@ -361,11 +457,23 @@ b32 sphereTraceColliderAABBIntersectAABBHorizontally(const ST_AABB* const aabb1,
 
 b32 sphereTraceColliderAABBIntersectAABBVertically(const ST_AABB* const aabb1, const ST_AABB* const aabb2);
 
-b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+b32 sphereTraceColliderEmptyAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+b32 sphereTraceColliderAABBRayTrace(ST_Vector3 from, ST_Direction dir, const ST_Collider* const pCollider, ST_RayTraceData* const pRaycastData);
 
 //b32 sphereTraceColliderAABBRayTraceThrough(ST_Vector3 contactStart, ST_DirectionType contactDirection, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
 
-b32 sphereTraceColliderAABBRayTraceOut(ST_Vector3 pointWithin, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+b32 sphereTraceColliderAABBRayTraceThrough(ST_Vector3 pointWithin, ST_Direction dir, const ST_AABB* const paabb, ST_RayTraceData* const pRaycastData);
+
+b32 sphereTraceColliderEmptyAABBSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pRaycastData);
+b32 sphereTraceColliderAABBSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_Collider* const pCollider, ST_SphereTraceData* const pRaycastData);
+b32 sphereTraceColliderAABBSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_Collider* const pCollider, ST_SphereTraceData* const pSphereCastData);
+
+b32 sphereTraceColliderAABBFrontFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
+b32 sphereTraceColliderAABBBackFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
+b32 sphereTraceColliderAABBRightFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
+b32 sphereTraceColliderAABBLeftFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
+b32 sphereTraceColliderAABBUpFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
+b32 sphereTraceColliderAABBDownFaceSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, const ST_AABB* const paabb, ST_SphereTraceData* const pData);
 
 ST_Octant sphereTraceOctantGetNextFromDirection(ST_Octant curOctant, ST_DirectionType dir);
 
@@ -396,6 +504,7 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 b32 sphereTraceColliderPointSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 point, ST_SphereTraceData* const pSphereTraceData);
 
 b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData);
+b32 sphereTraceColliderEdgeEdgeTrace(ST_Edge* const pEdgeTrace, ST_Direction dir, ST_Edge* const pEdge, ST_EdgeTraceData* const pEdgeTraceData);
 
 b32 sphereTraceColliderRingSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Ring* const pRing, ST_SphereTraceData* const pSphereTraceData);
 

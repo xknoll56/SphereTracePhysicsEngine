@@ -109,7 +109,7 @@ b32 sphereTraceColliderSphereRayTrace(ST_Vector3 start, ST_Direction dir, const 
 				return 0;
 			pData->startPoint = start;
 			pData->distance = sphereTraceVector3Length(sphereTraceVector3Subtract(pData->contact.point, start));
-			pData->contact.pOtherCollider = pSphere;
+			pData->pOtherCollider = pSphere;
 			sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pData->contact.normal);
 		}
 	}
@@ -383,6 +383,389 @@ b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCo
 		contactInfo->pSphereCollider = pSphereCollider;
 		return 1;
 	}
+	return 0;
+}
+
+b32 sphereTraceColliderAABBSphereCollisionTest(ST_Collider* const pCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const contactInfo)
+{
+	if (sphereTraceColliderAABBImposedSphereCollisionTest(&pCollider->aabb, pSphereCollider->rigidBody.position, pSphereCollider->radius, contactInfo))
+	{
+		contactInfo->otherColliderType = COLLIDER_AABB;
+		contactInfo->pOtherCollider = pCollider;
+		contactInfo->pSphereCollider = pSphereCollider;
+		return 1;
+	}
+	return 0;
+}
+
+b32 sphereTraceColliderAABBImposedSphereCollisionTest(ST_AABB* const paabb, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const contactInfo)
+{
+	ST_Vector3 dp = sphereTraceVector3Subtract(imposedPosition, paabb->center);
+	ST_Vector3 absdp = sphereTraceVector3SubtractAbsolute(paabb->center, imposedPosition);
+	float maxPen = FLT_MAX;
+	float minPen = 0.0f;
+	ST_DirectionType dirMax;
+	ST_DirectionType dirMin;
+	ST_Vector3 maxDists = sphereTraceVector3Add(paabb->halfExtents, sphereTraceVector3UniformSize(imposedRadius));
+	b32 insideBox = ST_TRUE;
+	if (absdp.x <= maxDists.x)
+	{
+		maxPen = absdp.x / paabb->halfExtents.x;
+		minPen = absdp.x / paabb->halfExtents.x;
+		if (dp.x >= 0.0f)
+		{
+			dirMax = ST_DIRECTION_RIGHT;
+		}
+		else
+		{
+			dirMax = ST_DIRECTION_LEFT;
+		}
+		dirMin = ST_DIRECTION_RIGHT;
+	}
+	else
+	{
+		return 0;
+	}
+	if (absdp.y <= maxDists.y)
+	{
+		if (absdp.y / paabb->halfExtents.y > maxPen)
+		{
+			maxPen = absdp.y / paabb->halfExtents.y;
+			if (dp.y >= 0.0f)
+			{
+				dirMax = ST_DIRECTION_UP;
+			}
+			else
+			{
+				dirMax = ST_DIRECTION_DOWN;
+			}
+		}
+		if (absdp.y / paabb->halfExtents.y < minPen)
+		{
+			minPen = absdp.y / paabb->halfExtents.y;
+			dirMin = ST_DIRECTION_UP;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+	if (absdp.z <= maxDists.z)
+	{
+		if (absdp.z/paabb->halfExtents.z > maxPen)
+		{
+			maxPen = absdp.z / paabb->halfExtents.z;
+			if (dp.z >= 0.0f)
+			{
+				dirMax = ST_DIRECTION_FORWARD;
+			}
+			else
+			{
+				dirMax = ST_DIRECTION_BACK;
+			}
+		}
+		if (absdp.z / paabb->halfExtents.z < minPen)
+		{
+			minPen = absdp.z / paabb->halfExtents.z;
+			dirMin = ST_DIRECTION_FORWARD;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+
+	ST_Vector3 closestVertex = sphereTraceVector3Construct(sphereTraceSign(dp.x) * paabb->halfExtents.x,
+		sphereTraceSign(dp.y) * paabb->halfExtents.y,
+		sphereTraceSign(dp.z) * paabb->halfExtents.z);
+	sphereTraceVector3AddByRef(&closestVertex, paabb->center);
+	ST_Vector3 dv = sphereTraceVector3Subtract(imposedPosition, closestVertex);
+	//collision with a face
+	switch (dirMax)
+	{
+	case ST_DIRECTION_RIGHT:
+	{
+		if (absdp.y <= paabb->halfExtents.y && absdp.z <= paabb->halfExtents.z)
+		{
+			contactInfo->normal = gDirectionRight;
+			contactInfo->penetrationDistance = paabb->highExtent.x - (imposedPosition.x - imposedRadius);
+			contactInfo->point = sphereTraceVector3Construct(paabb->highExtent.x, imposedPosition.y, imposedPosition.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{			
+			if (dirMin == ST_DIRECTION_UP)
+			{
+				if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, 0.0f, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, imposedPosition.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.y * dv.y);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, dv.y, 0.0f));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, closestVertex.z, imposedPosition.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case ST_DIRECTION_LEFT:
+	{
+		if (absdp.y <= paabb->halfExtents.y && absdp.z <= paabb->halfExtents.z)
+		{
+			contactInfo->normal = gDirectionLeft;
+			contactInfo->penetrationDistance = (imposedPosition.x + imposedRadius) - paabb->lowExtent.x;
+			contactInfo->point = sphereTraceVector3Construct(paabb->lowExtent.x, imposedPosition.y, imposedPosition.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{
+			if (dirMin == ST_DIRECTION_UP)
+			{
+				if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, 0.0f, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, imposedPosition.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.y * dv.y);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, dv.y, 0.0f));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, closestVertex.y, imposedPosition.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+
+	}
+	break;
+	case ST_DIRECTION_UP:
+	{
+		if (absdp.x <= paabb->halfExtents.x && absdp.z <= paabb->halfExtents.z)
+		{
+			contactInfo->normal = gDirectionUp;
+			contactInfo->penetrationDistance = paabb->highExtent.y - (imposedPosition.y - imposedRadius);
+			contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, paabb->highExtent.y, imposedPosition.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{
+			if (dirMin == ST_DIRECTION_RIGHT)
+			{
+				if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+				{
+					float edgeDist = sqrtf(dv.y * dv.y + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(0.0f, dv.y, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, closestVertex.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.y * dv.y);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, dv.y, 0.0f));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, closestVertex.y, imposedPosition.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case ST_DIRECTION_DOWN:
+	{
+		if (absdp.x <= paabb->halfExtents.x && absdp.z <= paabb->halfExtents.z)
+		{
+			contactInfo->normal = gDirectionDown;
+			contactInfo->penetrationDistance = (imposedPosition.y + imposedRadius) - paabb->lowExtent.y;
+			contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, paabb->lowExtent.y, imposedPosition.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{
+			if (dirMin == ST_DIRECTION_RIGHT)
+			{
+				if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+				{
+					float edgeDist = sqrtf(dv.y * dv.y + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(0.0f, dv.y, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, closestVertex.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.z) < paabb->halfExtents.z)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.y * dv.y);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, dv.y, 0.0f));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, closestVertex.y, imposedPosition.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case ST_DIRECTION_FORWARD:
+	{
+		if (absdp.x <= paabb->halfExtents.x && absdp.y <= paabb->halfExtents.y)
+		{
+			contactInfo->normal = gDirectionForward;
+			contactInfo->penetrationDistance = paabb->highExtent.z - (imposedPosition.z - imposedRadius);
+			contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, imposedPosition.y, paabb->highExtent.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{
+			if (dirMin == ST_DIRECTION_RIGHT)
+			{
+				if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+				{
+					float edgeDist = sqrtf(dv.y * dv.y + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(0.0f, dv.y, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, closestVertex.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, 0.0f, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, imposedPosition.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	break;
+	case ST_DIRECTION_BACK:
+	{
+		if (absdp.x <= paabb->halfExtents.x && absdp.y <= paabb->halfExtents.y)
+		{
+			contactInfo->normal = gDirectionBack;
+			contactInfo->penetrationDistance = (imposedPosition.z + imposedRadius) - paabb->lowExtent.z;
+			contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, imposedPosition.y, paabb->lowExtent.z);
+			contactInfo->collisionType = ST_COLLISION_FACE;
+			return 1;
+		}
+		else
+		{
+			if (dirMin == ST_DIRECTION_RIGHT)
+			{
+				if (sphereTraceAbs(dp.x) < paabb->halfExtents.x)
+				{
+					float edgeDist = sqrtf(dv.y * dv.y + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(0.0f, dv.y, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(imposedPosition.x, closestVertex.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				if (sphereTraceAbs(dp.y) < paabb->halfExtents.y)
+				{
+					float edgeDist = sqrtf(dv.x * dv.x + dv.z * dv.z);
+					if (edgeDist <= imposedRadius)
+					{
+						contactInfo->normal = sphereTraceDirectionConstructNormalized(sphereTraceVector3Construct(dv.x, 0.0f, dv.z));
+						contactInfo->penetrationDistance = imposedRadius - edgeDist;
+						contactInfo->point = sphereTraceVector3Construct(closestVertex.x, imposedPosition.y, closestVertex.z);
+						contactInfo->collisionType = ST_COLLISION_EDGE;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	break;
+	}
+
+	float dist = sphereTraceVector3Length(dv);
+	if (dist <= imposedRadius)
+	{
+		contactInfo->normal = sphereTraceDirectionConstruct(sphereTraceVector3Scale(dv, 1.0f/dist), 1);
+		contactInfo->penetrationDistance = imposedRadius - dist;
+		contactInfo->point = closestVertex;
+		contactInfo->collisionType = ST_COLLISION_POINT;
+		return 1;
+	}
+
 	return 0;
 }
 

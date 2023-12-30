@@ -34,6 +34,10 @@ b32 sphereTraceColliderRingImposedSphereCollisionTest(const ST_Ring* const pRing
 //
 b32 sphereTraceColliderPlaneSphereCollisionTest(ST_PlaneCollider* const pPlaneCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const contactInfo);
 //
+b32 sphereTraceColliderAABBImposedSphereCollisionTest(ST_AABB* const paabb, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const contactInfo);
+//
+b32 sphereTraceColliderAABBSphereCollisionTest(ST_Collider* const pCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const contactInfo);
+//
 b32 sphereTraceColliderTriangleSphereCollisionTest(ST_TriangleCollider* const pTriangleCollider, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const contactInfo);
 //
 b32 sphereTraceColliderPlaneImposedSphereCollisionTest(ST_PlaneCollider* const pPlaneCollider, ST_Vector3 imposedPosition, float imposedRadius, ST_SphereContact* const contactInfo);

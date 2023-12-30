@@ -40,6 +40,7 @@ ST_SimulationSpace sphereTraceSimulationConstruct()
 	simulationSpace.planeColliders = sphereTraceIndexListConstruct();
 	simulationSpace.triangleColliders = sphereTraceIndexListConstruct();
 	simulationSpace.uniformTerrainColliders = sphereTraceIndexListConstruct();
+	simulationSpace.aabbColliders = sphereTraceIndexListConstruct();
 	simulationSpace.callbackColliders = sphereTraceIndexListConstruct();
 	//simulationSpace.spacialPartitionContainer = sphereTraceSpacialPartitionStaticConstruct(20.0f);
 	simulationSpace.minDeltaTime = 1.0f / 60.0f;
@@ -58,6 +59,7 @@ ST_SimulationSpace sphereTraceSimulationConstruct1(ST_AABB worldaabb, ST_Vector3
 	simulationSpace.planeColliders = sphereTraceIndexListConstruct();
 	simulationSpace.triangleColliders = sphereTraceIndexListConstruct();
 	simulationSpace.uniformTerrainColliders = sphereTraceIndexListConstruct();
+	simulationSpace.aabbColliders = sphereTraceIndexListConstruct();
 	simulationSpace.callbackColliders = sphereTraceIndexListConstruct();
 	//simulationSpace.spacialPartitionContainer = sphereTraceSpacialPartitionStaticConstruct(20.0f);
 	simulationSpace.minDeltaTime = 1.0f / 60.0f;
@@ -73,6 +75,7 @@ void sphereTraceSimulationFree(ST_SimulationSpace* const pSimulationSpace)
 	sphereTraceIndexListFree(&pSimulationSpace->sphereColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->planeColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->triangleColliders);
+	sphereTraceIndexListFree(&pSimulationSpace->aabbColliders);
 	sphereTraceIndexListFree(&pSimulationSpace->callbackColliders);
 	ST_IndexListData* pild = pSimulationSpace->uniformTerrainColliders.pFirst;
 	ST_UniformTerrainCollider* pTerrainCollider = NULL;
@@ -132,6 +135,17 @@ void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const
 
 }
 
+void sphereTraceSimulationInsertAABBCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider)
+{
+	//ST_ColliderIndex index = pSimulationSpace->uniformTerrainColliders.count;
+	pCollider->colliderIndex = pCollider;
+	if (sphereTraceSortedIndexListAddUnique(&pSimulationSpace->aabbColliders, pCollider))
+		sphereTraceOctTreeGridInsertCollider(&pSimulationSpace->octTreeGrid, pCollider, ST_TRUE);
+	else
+		sphereTraceOctTreeGridReInsertCollider(&pSimulationSpace->octTreeGrid, pCollider, ST_TRUE);
+
+}
+
 void sphereTraceSimulationRemoveCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider, b32 restructureTree)
 {
 	//ST_IndexListData* pild = pCollider->bucketIndices.pFirst;
@@ -161,6 +175,11 @@ void sphereTraceSimulationRemoveCollider(ST_SimulationSpace* const pSimulationSp
 	case COLLIDER_TERRAIN:
 	{
 		sphereTraceSortedIndexListRemove(&pSimulationSpace->uniformTerrainColliders, pCollider);
+	}
+	break;
+	case COLLIDER_AABB:
+	{
+		sphereTraceSortedIndexListRemove(&pSimulationSpace->aabbColliders, pCollider);
 	}
 	break;
 	}
@@ -765,8 +784,9 @@ b32 sphereTraceColliderSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, 
 	case COLLIDER_TRIANGLE:
 		return sphereTraceColliderTriangleSphereTraceOut(spherePos, sphereRadius, clipoutDir, pCollider, pSphereCastData);
 		break;
-	//case COLLIDER_BOWL:
-
+	case COLLIDER_AABB:
+		return sphereTraceColliderAABBSphereTraceOut(spherePos, sphereRadius, clipoutDir, pCollider, pSphereCastData);
+		break;
 	}
 }
 
@@ -782,6 +802,9 @@ b32 sphereTraceColliderSphereCollisionTest(const ST_SphereCollider* const pSpher
 		break;
 	case COLLIDER_TRIANGLE:
 		return sphereTraceColliderTriangleSphereCollisionTest(pOtherCollider, pSphereCollider, pContact);
+		break;
+	case COLLIDER_AABB:
+		return sphereTraceColliderAABBSphereCollisionTest(pOtherCollider, pSphereCollider, pContact);
 		break;
 	}
 }
@@ -1651,7 +1674,7 @@ b32 sphereTraceSimulationRayTrace(ST_SimulationSpace* const pSimulationSpace, ST
 	float minDist = maxDist;
 	b32 retVal = ST_FALSE;
 	ST_RayTraceData rtdReturn;
-	if (sphereTraceColliderAABBRayTrace(start, dir, &pSimulationSpace->octTreeGrid.worldaabb, &rtd))
+	if (sphereTraceColliderEmptyAABBRayTrace(start, dir, &pSimulationSpace->octTreeGrid.worldaabb, &rtd))
 	{
 		ST_Index curIndex;
 		if (rtd.distance == 0.0f)
@@ -1667,7 +1690,7 @@ b32 sphereTraceSimulationRayTrace(ST_SimulationSpace* const pSimulationSpace, ST
 			return 0;
 		while (curIndex != breakCond)
 		{
-			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pSimulationSpace->octTreeGrid.treeBuckets[curIndex].root->aabb, &rtd))
+			if (sphereTraceColliderAABBRayTraceThrough(curStart, dir, &pSimulationSpace->octTreeGrid.treeBuckets[curIndex].root->aabb, &rtd))
 			{
 				if (sphereTraceOctTreeRayTraceFromWithin(curStart, dir, rtd.distance, &pSimulationSpace->octTreeGrid.treeBuckets[curIndex], &rtdReturn))
 				{

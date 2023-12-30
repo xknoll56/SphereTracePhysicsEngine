@@ -38,14 +38,16 @@ const ST_Direction gDirectionForward = { 0.0f, 0.0f, 1.0f, 1 };
 const ST_Direction gDirectionBack = { 0.0f, 0.0f, -1.0f, 1 };
 const float tolerance = 1.0e-6f;
 
-static ST_Vector3 allocatedv3;
-static ST_Vector2 allocatedv2;
-static ST_Vector2Integer allocatedv2i;
-static ST_Vector4 allocatedv4;
-static ST_Quaternion allocatedq;
-static ST_Matrix4 allocatedm;
-static ST_Direction allocateddir;
-static ST_Color allocatedc;
+//static ST_Vector3 allocatedv3;
+//static ST_Vector2 allocatedv2;
+//static ST_Vector2Integer allocatedv2i;
+//static ST_Vector4 allocatedv4;
+//static ST_Quaternion allocatedq;
+//static ST_Matrix4 allocatedm;
+//static ST_Direction allocateddir;
+//static ST_Color allocatedc;
+
+#define FP_FAST_FMA
 
 const ST_Matrix4 gMatrix4Identity = {
 	1.0f, 0.0f, 0.0f, 0.0f,
@@ -117,23 +119,26 @@ float sphereTraceRound(float f)
 
 ST_Vector2 sphereTraceVector2Construct(float x, float y)
 {
-	allocatedv2.x = x;
-	allocatedv2.y = y;
-	return allocatedv2;
+	ST_Vector2 vr;
+	vr.x = x;
+	vr.y = y;
+	return vr;
 }
 
 ST_Vector2 sphereTraceVector2ConstructWithVector3(ST_Vector3 v)
 {
-	allocatedv2.x = v.x;
-	allocatedv2.y = v.y;
-	return allocatedv2;
+	ST_Vector2 vr;
+	vr.x = v.x;
+	vr.y = v.y;
+	return vr;
 }
 
 ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y)
 {
-	allocatedv2i.x = x;
-	allocatedv2i.y = y;
-	return allocatedv2i;
+	ST_Vector2Integer vr;
+	vr.x = x;
+	vr.y = y;
+	return vr;
 }
 
 //ST_Vector3 sphereTraceVector3Construct(float x, float y, float z)
@@ -147,44 +152,49 @@ ST_Vector2Integer sphereTraceVector2IntegerConstruct(int x, int y)
 
 ST_Vector3 sphereTraceVector3Construct(float x, float y, float z)
 {
-	allocatedv3.x = x;
-	allocatedv3.y = y;
-	allocatedv3.z = z;
-	return allocatedv3;
+	ST_Vector3 vr;
+	vr.x = x;
+	vr.y = y;
+	vr.z = z;
+	return vr;
 }
 
 ST_Vector3 sphereTraceVector3UniformSize(float size)
 {
-	allocatedv3.x = size;
-	allocatedv3.y = size;
-	allocatedv3.z = size;
-	return allocatedv3;
+	ST_Vector3 vr;
+	vr.x = size;
+	vr.y = size;
+	vr.z = size;
+	return vr;
 }
 
 ST_Vector4 sphereTraceVector4Construct(float x, float y, float z, float w)
 {
-	allocatedv4.x = x;
-	allocatedv4.y = y;
-	allocatedv4.z = z;
-	allocatedv4.w = w;
-	return allocatedv4;
+	ST_Vector4 vr;
+	vr.x = x;
+	vr.y = y;
+	vr.z = z;
+	vr.w = w;
+	return vr;
 }
 
 ST_Vector4 sphereTraceVector4ConstructWithVector3(ST_Vector3 v, float w)
 {
-	allocatedv4.x = v.x;
-	allocatedv4.y = v.y;
-	allocatedv4.z = v.z;
-	allocatedv4.w = w;
-	return allocatedv4;
+	ST_Vector4 vr;
+	vr.x = v.x;
+	vr.y = v.y;
+	vr.z = v.z;
+	vr.w = w;
+	return vr;
 }
 
 ST_Vector3 sphereTraceVector3ConstructWithVector2(ST_Vector2 v, float z)
 {
-	allocatedv3.x = v.x;
-	allocatedv3.y = v.y;
-	allocatedv3.z = z;
-	return allocatedv3;
+	ST_Vector3 vr;
+	vr.x = v.x;
+	vr.y = v.y;
+	vr.z = z;
+	return vr;
 }
 
 ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03,
@@ -192,23 +202,24 @@ ST_Matrix4 sphereTraceMatrixConstruct(float m00, float m01, float m02, float m03
 	float m20, float m21, float m22, float m23,
 	float m30, float m31, float m32, float m33)
 {
-	allocatedm.m00 = m00;
-	allocatedm.m01 = m01;
-	allocatedm.m02 = m02;
-	allocatedm.m03 = m03;
-	allocatedm.m10 = m10;
-	allocatedm.m11 = m11;
-	allocatedm.m12 = m12;
-	allocatedm.m13 = m13;
-	allocatedm.m20 = m20;
-	allocatedm.m21 = m21;
-	allocatedm.m22 = m22;
-	allocatedm.m23 = m23;
-	allocatedm.m30 = m30;
-	allocatedm.m31 = m31;
-	allocatedm.m32 = m32;
-	allocatedm.m33 = m33;
-	return allocatedm;
+	ST_Matrix4 mr;
+	mr.m00 = m00;
+	mr.m01 = m01;
+	mr.m02 = m02;
+	mr.m03 = m03;
+	mr.m10 = m10;
+	mr.m11 = m11;
+	mr.m12 = m12;
+	mr.m13 = m13;
+	mr.m20 = m20;
+	mr.m21 = m21;
+	mr.m22 = m22;
+	mr.m23 = m23;
+	mr.m30 = m30;
+	mr.m31 = m31;
+	mr.m32 = m32;
+	mr.m33 = m33;
+	return mr;
 }
 
 
@@ -256,16 +267,18 @@ ST_Vector2 sphereTraceVector2Subtract(ST_Vector2 v1, ST_Vector2 v2)
 
 ST_Vector2Integer sphereTraceVector2IntegerAdd(ST_Vector2Integer v1, ST_Vector2Integer v2)
 {
-	allocatedv2i.x = v1.x + v2.x;
-	allocatedv2i.y = v1.y + v2.y;
-	return allocatedv2i;
+	ST_Vector2Integer vr;
+	vr.x = v1.x + v2.x;
+	vr.y = v1.y + v2.y;
+	return vr;
 }
 
 ST_Vector2Integer sphereTraceVector2IntegerSubtract(ST_Vector2Integer v1, ST_Vector2Integer v2)
 {
-	allocatedv2i.x = v1.x - v2.x;
-	allocatedv2i.y = v1.y - v2.y;
-	return allocatedv2i;
+	ST_Vector2Integer vr;
+	vr.x = v1.x - v2.x;
+	vr.y = v1.y - v2.y;
+	return vr;
 }
 
 float sphereTraceVector2Dot(ST_Vector2 v1, ST_Vector2 v2)
@@ -275,9 +288,10 @@ float sphereTraceVector2Dot(ST_Vector2 v1, ST_Vector2 v2)
 
 ST_Vector2 sphereTraceVector2Lerp(ST_Vector2 v1, ST_Vector2 v2, float t)
 {
-	allocatedv2.x = (v2.x - v1.x) * t + v1.x;
-	allocatedv2.y = (v2.y - v1.y) * t + v1.y;
-	return allocatedv2;
+	ST_Vector2 vr;
+	vr.x = (v2.x - v1.x) * t + v1.x;
+	vr.y = (v2.y - v1.y) * t + v1.y;
+	return vr;
 }
 
 float sphereTraceVector2Length(ST_Vector2 v)
@@ -443,6 +457,15 @@ ST_Vector3 sphereTraceVector3AddAndScale2(ST_Vector3 toAdd, ST_Vector3 toScale1,
 	v.x = fmaf(toScale2.x, scale2,fmaf(toScale1.x, scale1, toAdd.x));
 	v.y = fmaf(toScale2.y, scale2,fmaf(toScale1.y, scale1, toAdd.y));
 	v.z = fmaf(toScale2.z, scale2,fmaf(toScale1.z, scale1, toAdd.z));
+	return v;
+}
+
+ST_Vector3 sphereTraceVector3AddAndScale3(ST_Vector3 toAdd, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2, ST_Vector3 toScale3, float scale3)
+{
+	ST_Vector3 v;
+	v.x = fmaf(toScale3.x, scale3, fmaf(toScale2.x, scale2, fmaf(toScale1.x, scale1, toAdd.x)));
+	v.y = fmaf(toScale3.y, scale3, fmaf(toScale2.y, scale2, fmaf(toScale1.y, scale1, toAdd.y)));
+	v.z = fmaf(toScale3.z, scale3, fmaf(toScale2.z, scale2, fmaf(toScale1.z, scale1, toAdd.z)));
 	return v;
 }
 
@@ -681,28 +704,31 @@ ST_Matrix4 sphereTraceMatrixRotateZ(float rad)
 
 ST_Vector4 sphereTraceMatrixVector4Mult(ST_Matrix4 mat, ST_Vector4 vec)
 {
-	allocatedv4.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z + mat.m03 * vec.w;
-	allocatedv4.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z + mat.m13 * vec.w;
-	allocatedv4.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z + mat.m23 * vec.w;
-	allocatedv4.w = mat.m30 * vec.x + mat.m31 * vec.y + mat.m32 * vec.z + mat.m33 * vec.w;
-	return allocatedv4;
+	ST_Vector4 vr;
+	vr.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z + mat.m03 * vec.w;
+	vr.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z + mat.m13 * vec.w;
+	vr.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z + mat.m23 * vec.w;
+	vr.w = mat.m30 * vec.x + mat.m31 * vec.y + mat.m32 * vec.z + mat.m33 * vec.w;
+	return vr;
 }
 
 ST_Vector3 sphereTraceMatrixVector3Mult(ST_Matrix4 mat, ST_Vector3 vec)
 {
-	allocatedv3.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z;
-	allocatedv3.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z;
-	allocatedv3.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z;
-	return allocatedv3;
+	ST_Vector3 vr;
+	vr.x = mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z;
+	vr.y = mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z;
+	vr.z = mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z;
+	return vr;
 }
 
 ST_Vector4 sphereTraceVector4MatrixMult(ST_Vector4 vec, ST_Matrix4 mat)
 {
-	allocatedv4.x = mat.m00 * vec.x + mat.m10 * vec.y + mat.m20 * vec.z + mat.m30 * vec.w;
-	allocatedv4.y = mat.m01 * vec.x + mat.m11 * vec.y + mat.m21 * vec.z + mat.m31 * vec.w;
-	allocatedv4.z = mat.m02 * vec.x + mat.m12 * vec.y + mat.m22 * vec.z + mat.m32 * vec.w;
-	allocatedv4.w = mat.m03 * vec.x + mat.m13 * vec.y + mat.m23 * vec.z + mat.m33 * vec.w;
-	return allocatedv4;
+	ST_Vector4 vr;
+	vr.x = mat.m00 * vec.x + mat.m10 * vec.y + mat.m20 * vec.z + mat.m30 * vec.w;
+	vr.y = mat.m01 * vec.x + mat.m11 * vec.y + mat.m21 * vec.z + mat.m31 * vec.w;
+	vr.z = mat.m02 * vec.x + mat.m12 * vec.y + mat.m22 * vec.z + mat.m32 * vec.w;
+	vr.w = mat.m03 * vec.x + mat.m13 * vec.y + mat.m23 * vec.z + mat.m33 * vec.w;
+	return vr;
 }
 
 //ST_Matrix4 sphereTraceMatrixTranspose(ST_Matrix4 mat)
@@ -884,6 +910,22 @@ ST_Vector3 sphereTraceVector3GetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
 	return sphereTraceVector3Construct(mat.m02, mat.m12, mat.m22 );
 }
 
+
+ST_Direction sphereTraceDirectionGetLocalXAxisFromRotationMatrix(ST_Matrix4 mat)
+{
+	return sphereTraceDirectionConstruct1(mat.m00, mat.m10, mat.m20, 0);
+}
+
+ST_Direction sphereTraceDirectionGetLocalYAxisFromRotationMatrix(ST_Matrix4 mat)
+{
+	return sphereTraceDirectionConstruct1(mat.m01, mat.m11, mat.m21, 0);
+}
+
+ST_Direction sphereTraceDirectionGetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
+{
+	return sphereTraceDirectionConstruct1(mat.m02, mat.m12, mat.m22, 0);
+}
+
 void sphereTraceMatrixSetLocalXAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 xAxis)
 {
 	mat->m00 = xAxis.x;
@@ -907,11 +949,12 @@ void sphereTraceMatrixSetLocalZAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Ve
 
 ST_Quaternion sphereTraceQuaternionConstruct(float w, float x, float y, float z)
 {
-	allocatedq.w = w;
-	allocatedq.x = x;
-	allocatedq.y = y;
-	allocatedq.z = z;
-	return allocatedq;
+	ST_Quaternion qr;
+	qr.w = w;
+	qr.x = x;
+	qr.y = y;
+	qr.z = z;
+	return qr;
 }
 
 
@@ -930,27 +973,28 @@ void sphereTraceQuaternionConjugateByRef(ST_Quaternion* const pRef)
 
 ST_Matrix4 sphereTraceMatrixFromQuaternion(ST_Quaternion quat)
 {
-	allocatedm.m00 = -2.0f * (quat.y * quat.y + quat.z * quat.z) + 1.0f;
-	allocatedm.m01 = 2.0f * (quat.x * quat.y - quat.w * quat.z);
-	allocatedm.m02 = 2.0f * (quat.x * quat.z + quat.w * quat.y);
-	allocatedm.m03 = 0.0f;
-	allocatedm.m10 = 2.0f * (quat.x * quat.y + quat.w * quat.z);
-	allocatedm.m11 = -2.0f * (quat.x * quat.x + quat.z * quat.z) + 1.0f;
-	allocatedm.m12 = 2.0f * (quat.y * quat.z - quat.w * quat.x);
-	allocatedm.m13 = 0.0f;
-	allocatedm.m20 = 2.0f * (quat.x * quat.z - quat.w * quat.y);
-	allocatedm.m21 = 2.0f * (quat.y * quat.z + quat.w * quat.x);
-	allocatedm.m22 = -2.0f * (quat.x * quat.x + quat.y * quat.y) + 1.0f;
-	allocatedm.m23 = 0.0f;
-	allocatedm.m30 = 0.0f;
-	allocatedm.m31 = 0.0f;
-	allocatedm.m32 = 0.0f;
-	allocatedm.m33 = 1.0f;
-	ST_Vector3 right = sphereTraceVector3GetLocalXAxisFromRotationMatrix(allocatedm);
-	ST_Vector3 Up = sphereTraceVector3GetLocalYAxisFromRotationMatrix(allocatedm);
-	ST_Vector3 fwd = sphereTraceVector3Cross(right, Up);
-	sphereTraceMatrixSetLocalZAxisOfRotationMatrix(&allocatedm, fwd);
-	return allocatedm;
+	ST_Matrix4 mr;
+	mr.m00 = -2.0f * (quat.y * quat.y + quat.z * quat.z) + 1.0f;
+	mr.m01 = 2.0f * (quat.x * quat.y - quat.w * quat.z);
+	mr.m02 = 2.0f * (quat.x * quat.z + quat.w * quat.y);
+	mr.m03 = 0.0f;
+	mr.m10 = 2.0f * (quat.x * quat.y + quat.w * quat.z);
+	mr.m11 = -2.0f * (quat.x * quat.x + quat.z * quat.z) + 1.0f;
+	mr.m12 = 2.0f * (quat.y * quat.z - quat.w * quat.x);
+	mr.m13 = 0.0f;
+	mr.m20 = 2.0f * (quat.x * quat.z - quat.w * quat.y);
+	mr.m21 = 2.0f * (quat.y * quat.z + quat.w * quat.x);
+	mr.m22 = -2.0f * (quat.x * quat.x + quat.y * quat.y) + 1.0f;
+	mr.m23 = 0.0f;
+	mr.m30 = 0.0f;
+	mr.m31 = 0.0f;
+	mr.m32 = 0.0f;
+	mr.m33 = 1.0f;
+	//ST_Vector3 right = sphereTraceVector3GetLocalXAxisFromRotationMatrix(allocatedm);
+	//ST_Vector3 Up = sphereTraceVector3GetLocalYAxisFromRotationMatrix(allocatedm);
+	//ST_Vector3 fwd = sphereTraceVector3Cross(right, Up);
+	//sphereTraceMatrixSetLocalZAxisOfRotationMatrix(&allocatedm, fwd);
+	return mr;
 }
 
 ST_Quaternion sphereTraceQuaternionFromAngleAxis(ST_Vector3 axis, float angle)
@@ -970,12 +1014,13 @@ ST_Quaternion sphereTraceQuaternionFromEulerAngles(ST_Vector3 eulerAngles)
 	float cy = cos(eulerAngles.z * 0.5f);
 	float sy = sin(eulerAngles.z * 0.5f);
 
-	allocatedq.w = cr * cp * cy + sr * sp * sy;
-	allocatedq.x = sr * cp * cy - cr * sp * sy;
-	allocatedq.y = cr * sp * cy + sr * cp * sy;
-	allocatedq.z = cr * cp * sy - sr * sp * cy;
+	ST_Quaternion qr;
+	qr.w = cr * cp * cy + sr * sp * sy;
+	qr.x = sr * cp * cy - cr * sp * sy;
+	qr.y = cr * sp * cy + sr * cp * sy;
+	qr.z = cr * cp * sy - sr * sp * cy;
 
-	return allocatedq;
+	return qr;
 }
 
 ST_Quaternion sphereTraceQuaternionNormalize(ST_Quaternion quat)
@@ -995,38 +1040,42 @@ void sphereTraceQuaternionNormalizeByRef(ST_Quaternion* const pRef)
 
 ST_Quaternion sphereTraceQuaternionMultiply(ST_Quaternion a, ST_Quaternion b)
 {
-	allocatedq.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
-	allocatedq.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
-	allocatedq.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
-	allocatedq.z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
-	return allocatedq;
+	ST_Quaternion qr;
+	qr.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+	qr.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
+	qr.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
+	qr.z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
+	return qr;
 }
 
 ST_Quaternion sphereTraceQuaternionAdd(ST_Quaternion a, ST_Quaternion b)
 {
-	allocatedq.w = a.w + b.w;
-	allocatedq.x = a.x + b.x;
-	allocatedq.y = a.y + b.y;
-	allocatedq.z = a.z + b.z;
-	return allocatedq;
+	ST_Quaternion qr;
+	qr.w = a.w + b.w;
+	qr.x = a.x + b.x;
+	qr.y = a.y + b.y;
+	qr.z = a.z + b.z;
+	return qr;
 }
 
 ST_Quaternion sphereTraceQuaternionSubtract(ST_Quaternion a, ST_Quaternion b)
 {
-	allocatedq.w = a.w - b.w;
-	allocatedq.x = a.x - b.x;
-	allocatedq.y = a.y - b.y;
-	allocatedq.z = a.z - b.z;
-	return allocatedq;
+	ST_Quaternion qr;
+	qr.w = a.w - b.w;
+	qr.x = a.x - b.x;
+	qr.y = a.y - b.y;
+	qr.z = a.z - b.z;
+	return qr;
 }
 
 ST_Quaternion sphereTraceQuaternionScale(float f, ST_Quaternion a)
 {
-	allocatedq.w = a.w * f;
-	allocatedq.x = a.x * f;
-	allocatedq.y = a.y * f;
-	allocatedq.z = a.z * f;
-	return allocatedq;
+	ST_Quaternion qr;
+	qr.w = a.w * f;
+	qr.x = a.x * f;
+	qr.y = a.y * f;
+	qr.z = a.z * f;
+	return qr;
 }
 
 ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
@@ -1053,6 +1102,31 @@ ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vect
 	return sphereTraceMatrixQuaternionFromRotationMatrix(sphereTraceMatrixConstructFromRightForwardUp(right, up, forward));
 
 }
+
+//ST_Quaternion sphereTraceQuaternionLookFromUp(ST_Vector3 eye, ST_Vector3 at)
+//{
+//	ST_Vector3 forward = sphereTraceVector3Normalize(sphereTraceVector3Subtract(at, eye));
+//	float dot = sphereTraceVector3Dot(forward, gVector3Up);
+//	ST_Vector3 right;
+//	if (sphereTraceAbs(dot - 1.0f) < tolerance)
+//	{
+//		//right = gVector3Left;
+//		//up = gVector3Forward;
+//	}
+//	else if (sphereTraceAbs(dot + 1.0f) < tolerance)
+//	{
+//		//right = gVector3Left;
+//		//up = gVector3Back;
+//	}
+//	else
+//	{
+//		right = sphereTraceVector3Normalize(sphereTraceVector3Cross(up, forward));
+//		up = sphereTraceVector3Cross(forward, right);
+//	}
+//
+//	return sphereTraceMatrixQuaternionFromRotationMatrix(sphereTraceMatrixConstructFromRightForwardUp(right, up, forward));
+//
+//}
 //ST_Quaternion sphereTraceQuaternionLookAt(ST_Vector3 eye, ST_Vector3 at, ST_Vector3 up)
 //{
 //	ST_Vector3 forward = sphereTraceVector3Normalize(sphereTraceVector3Subtract(eye, at));
@@ -1108,36 +1182,37 @@ ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vec
 
 ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat)
 {
+	ST_Quaternion qr;
 	float tr = mat.m00 + mat.m11 + mat.m22;
 		if (tr > 0) {
 			float S = sqrt(tr + 1.0) * 2; // S=4*qw 
-			allocatedq.w = 0.25 * S;
-			allocatedq.x = (mat.m21 - mat.m12) / S;
-			allocatedq.y = (mat.m02 - mat.m20) / S;
-			allocatedq.z = (mat.m10 - mat.m01) / S;
+			qr.w = 0.25 * S;
+			qr.x = (mat.m21 - mat.m12) / S;
+			qr.y = (mat.m02 - mat.m20) / S;
+			qr.z = (mat.m10 - mat.m01) / S;
 		}
 		else if ((mat.m00 > mat.m11) & (mat.m00 > mat.m22)) {
 			float S = sqrt(1.0 + mat.m00 - mat.m11 - mat.m22) * 2; // S=4*qx 
-			allocatedq.w = (mat.m21 - mat.m12) / S;
-			allocatedq.x = 0.25 * S;
-			allocatedq.y = (mat.m01 + mat.m10) / S;
-			allocatedq.z = (mat.m02 + mat.m20) / S;
+			qr.w = (mat.m21 - mat.m12) / S;
+			qr.x = 0.25 * S;
+			qr.y = (mat.m01 + mat.m10) / S;
+			qr.z = (mat.m02 + mat.m20) / S;
 		}
 		else if (mat.m11 > mat.m22) {
 			float S = sqrt(1.0 + mat.m11 - mat.m00 - mat.m22) * 2; // S=4*qy
-			allocatedq.w = (mat.m02 - mat.m20) / S;
-			allocatedq.x = (mat.m01 + mat.m10) / S;
-			allocatedq.y = 0.25 * S;
-			allocatedq.z = (mat.m12 + mat.m21) / S;
+			qr.w = (mat.m02 - mat.m20) / S;
+			qr.x = (mat.m01 + mat.m10) / S;
+			qr.y = 0.25 * S;
+			qr.z = (mat.m12 + mat.m21) / S;
 		}
 		else {
 			float S = sqrt(1.0 + mat.m22 - mat.m00 - mat.m11) * 2; // S=4*qz
-			allocatedq.w = (mat.m10 - mat.m01) / S;
-			allocatedq.x = (mat.m02 + mat.m20) / S;
-			allocatedq.y = (mat.m12 + mat.m21) / S;
-			allocatedq.z = 0.25 * S;
+			qr.w = (mat.m10 - mat.m01) / S;
+			qr.x = (mat.m02 + mat.m20) / S;
+			qr.y = (mat.m12 + mat.m21) / S;
+			qr.z = 0.25 * S;
 		}
-		return allocatedq;
+		return qr;
 }
 
 ST_Vector4 sphereTraceVector4ColorSetAlpha(ST_Vector4 color, float alpha)
@@ -1148,26 +1223,39 @@ ST_Vector4 sphereTraceVector4ColorSetAlpha(ST_Vector4 color, float alpha)
 
 ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized)
 {
-	allocateddir.v = vec;
-	allocateddir.normalized = 0;
-	return allocateddir;
+	ST_Direction dr;
+	dr.v = vec;
+	dr.normalized = normalized;
+	return dr;
 }
+ST_Direction sphereTraceDirectionConstruct1(float x, float y, float z, b32 normalized)
+{
+	ST_Direction dr;
+	dr.v.x = x;
+	dr.v.y = y;
+	dr.v.z = z;
+	dr.normalized = normalized;
+	return dr;
+}
+
 
 
 ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec)
 {
+	ST_Direction dr;
 	sphereTraceVector3NormalizeByRef(&vec);
-	allocateddir.v = vec;
-	allocateddir.normalized = 1;
-	return allocateddir;
+	dr.v = vec;
+	dr.normalized = 1;
+	return dr;
 }
 
 ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2)
 {
-	allocateddir.v = sphereTraceVector3Add(dir1.v, dir2.v);
-	sphereTraceVector3NormalizeByRef(&allocateddir.v);
-	allocateddir.normalized = 1;
-	return allocateddir;
+	ST_Direction dr;
+	dr.v = sphereTraceVector3Add(dir1.v, dir2.v);
+	sphereTraceVector3NormalizeByRef(&dr.v);
+	dr.normalized = 1;
+	return dr;
 }
 
 void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir)
@@ -1181,11 +1269,12 @@ void sphereTraceDirectionNormalizeIfNotNormalizedByRef(ST_Direction* const dir)
 
 ST_Direction sphereTraceDirectionNegative(ST_Direction dir)
 {
-	allocateddir.v.x = -dir.v.x;
-	allocateddir.v.y = -dir.v.y;
-	allocateddir.v.z = -dir.v.z;
-	allocateddir.normalized = dir.normalized;
-	return allocateddir;
+	ST_Direction dr;
+	dr.v.x = -dir.v.x;
+	dr.v.y = -dir.v.y;
+	dr.v.z = -dir.v.z;
+	dr.normalized = dir.normalized;
+	return dr;
 }
 
 ST_Direction sphereTraceDirectionNormalizeIfNotNormalized(ST_Direction dir)
@@ -1220,11 +1309,12 @@ float sphereTraceDirectionGetMagnitudeInDirection(ST_Direction dir, ST_Vector3 v
 
 ST_Color sphereTraceColorConstruct(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
-	allocatedc.r = r;
-	allocatedc.g = g;
-	allocatedc.b = b;
-	allocatedc.a = a;
-	return allocatedc;
+	ST_Color cr;
+	cr.r = r;
+	cr.g = g;
+	cr.b = b;
+	cr.a = a;
+	return cr;
 }
 
 ST_Vector4 sphereTraceVector4FromColor(ST_Color color)

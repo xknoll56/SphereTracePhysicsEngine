@@ -191,7 +191,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const
 			return 0;
 		pRaycastData->startPoint = from;
 		pRaycastData->contact.point = sphereTraceVector3Add(from, sphereTraceVector3Scale(dir.v, pRaycastData->distance));
-		pRaycastData->contact.pOtherCollider = pTriangleCollider;
+		pRaycastData->pOtherCollider = pTriangleCollider;
 
 		return sphereTraceColliderTriangleIsProjectedPointContained(pRaycastData->contact.point, pTriangleCollider);
 
@@ -206,21 +206,21 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 	{
 		if (sphereTraceColliderTriangleIsProjectedPointContained(pSphereTraceData->rayTraceData.contact.point, pTriangleCollider))
 		{
-			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.pOtherCollider = pTriangleCollider;
+			//pSphereTraceData->rayTraceData.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 	}
 	ST_SphereTraceData datTest;
 	float dot = sphereTraceVector3Dot(dir.v, pTriangleCollider->normal.v);
-	if (dot<COLLIDER_TOLERANCE)
+	if (dot<ST_COLLIDER_TOLERANCE)
 	{
 		int edgeInd = sphereTraceColliderTriangleGetClosestTransformedEdgeIndexToPoint(pTriangleCollider, pSphereTraceData->rayTraceData.contact.point);
 		if (sphereTraceColliderEdgeSphereTrace(from, dir, radius, &pTriangleCollider->transformedEdges[edgeInd], &datTest))
 		{
 			*pSphereTraceData = datTest;
-			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.pOtherCollider = pTriangleCollider;
+			//pSphereTraceData->rayTraceData.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 		return 0;
@@ -251,8 +251,8 @@ b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, fl
 		}
 		if (closestEdgePointDist < FLT_MAX)
 		{
-			pSphereTraceData->rayTraceData.contact.pOtherCollider = pTriangleCollider;
-			pSphereTraceData->rayTraceData.contact.otherColliderType = COLLIDER_TRIANGLE;
+			pSphereTraceData->rayTraceData.pOtherCollider = pTriangleCollider;
+			//pSphereTraceData->rayTraceData.otherColliderType = COLLIDER_TRIANGLE;
 			return 1;
 		}
 	}

@@ -12,6 +12,7 @@
 #include "SphereTraceColliderPlane.h"
 #include "SphereTraceColliderTerrain.h"
 #include "SphereTraceColliderSphere.h"
+#include "SphereTraceColliderBox.h"
 #include "SphereTraceColliderTriangle.h"
 #include "SphereTraceColliderExperimental.h"
 #include "SphereTraceSpacialPartition.h"
@@ -35,6 +36,7 @@ typedef struct ST_SimulationSpace
 	ST_IndexList planeColliders;
 	ST_IndexList triangleColliders;
 	ST_IndexList uniformTerrainColliders;
+	ST_IndexList aabbColliders;
 	ST_IndexList callbackColliders;
 	//ST_IndexList translatedStaticColliders;
 	ST_Vector3 gravitationalAcceleration;
@@ -93,6 +95,8 @@ void sphereTraceSimulationInsertTriangleCollider(ST_SimulationSpace* const pSimu
 void sphereTraceSimulationInsertSphereCollider(ST_SimulationSpace* const pSimulationSpace, ST_SphereCollider* const pSphereCollider);
 
 void sphereTraceSimulationInsertUniformTerrainCollider(ST_SimulationSpace* const pSimulationSpace, ST_UniformTerrainCollider* const pTerrainCollider);
+
+void sphereTraceSimulationInsertAABBCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider);
 
 void sphereTraceSimulationRemoveCollider(ST_SimulationSpace* const pSimulationSpace, ST_Collider* const pCollider, b32 restructureTree);
 

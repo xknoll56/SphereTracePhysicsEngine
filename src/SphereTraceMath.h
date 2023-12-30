@@ -177,6 +177,8 @@ ST_Vector3 sphereTraceVector3AddAndScale(ST_Vector3 toAdd, ST_Vector3 toScale, f
 
 ST_Vector3 sphereTraceVector3AddAndScale2(ST_Vector3 toAdd, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2);
 
+ST_Vector3 sphereTraceVector3AddAndScale3(ST_Vector3 toAdd, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2, ST_Vector3 toScale3, float scale3);
+
 void sphereTraceVector3AddAndScaleByRef(ST_Vector3* const pRef, ST_Vector3 toScale, float scale);
 
 void sphereTraceVector3AddAndScale2ByRef(ST_Vector3* const pRef, ST_Vector3 toScale1, float scale1, ST_Vector3 toScale2, float scale2);
@@ -259,6 +261,12 @@ ST_Vector3 sphereTraceVector3GetLocalYAxisFromRotationMatrix(ST_Matrix4 mat);
 
 ST_Vector3 sphereTraceVector3GetLocalZAxisFromRotationMatrix(ST_Matrix4 mat);
 
+ST_Direction sphereTraceDirectionGetLocalXAxisFromRotationMatrix(ST_Matrix4 mat);
+   						
+ST_Direction sphereTraceDirectionGetLocalYAxisFromRotationMatrix(ST_Matrix4 mat);
+   						
+ST_Direction sphereTraceDirectionGetLocalZAxisFromRotationMatrix(ST_Matrix4 mat);
+
 void sphereTraceMatrixSetLocalXAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 xAxis);
 
 void sphereTraceMatrixSetLocalYAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 yAxis);
@@ -311,6 +319,8 @@ ST_Matrix4 sphereTraceMatrixConstructFromRightForwardUp(ST_Vector3 right, ST_Vec
 ST_Quaternion sphereTraceMatrixQuaternionFromRotationMatrix(ST_Matrix4 mat);
 
 ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized);
+
+ST_Direction sphereTraceDirectionConstruct1(float x, float y, float z, b32 normalized);
 
 ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2);
 

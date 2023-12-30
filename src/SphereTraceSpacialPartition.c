@@ -901,7 +901,7 @@ void sphereTraceOctTreeReInsertCollider(ST_OctTree* pTree, ST_Collider* pCollide
 //		ST_IndexList checkList = sphereTraceIndexListConstruct();
 //		while (childOctant != ST_OCTANT_NONE)
 //		{
-//			if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+//			if (sphereTraceColliderAABBRayTraceThrough(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
 //			{
 //				childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
 //				if (childOctant != ST_OCTANT_NONE && traceOutRTD.distance <= maxDist)
@@ -934,7 +934,7 @@ b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Vector3 from, ST_Direction dir, f
 			ST_RayTraceData traceOutRTD;
 			while (childOctant != ST_OCTANT_NONE)
 			{
-				if (sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
+				if (sphereTraceColliderAABBRayTraceThrough(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD))
 				{
 					childOctant = sphereTraceOctantGetNextFromDirection(childOctant, traceOutRTD.directionType);
 					distTravelled += traceOutRTD.distance;
@@ -945,7 +945,7 @@ b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Vector3 from, ST_Direction dir, f
 				}
 				else
 				{
-					sphereTraceColliderAABBRayTraceOut(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD);
+					sphereTraceColliderAABBRayTraceThrough(from, dir, &pNode->children[childOctant]->aabb, &traceOutRTD);
 					childOctant = ST_OCTANT_NONE;
 				}
 			}
@@ -976,7 +976,7 @@ b32 sphereTraceOctTreeNodeRayTraceRecursive(ST_Vector3 from, ST_Direction dir, f
 b32 sphereTraceOctTreeRayTrace(ST_Vector3 from, ST_Direction dir, float maxDist, const ST_OctTree* const pTree, ST_RayTraceData* const pRayTraceData)
 {
 
-	if (sphereTraceColliderAABBRayTrace(from, dir, &pTree->root->aabb, pRayTraceData))
+	if (sphereTraceColliderEmptyAABBRayTrace(from, dir, &pTree->root->aabb, pRayTraceData))
 	{
 		if (pTree->root->hasChildren)
 		{
@@ -1533,7 +1533,7 @@ ST_Index sphereTraceOctTreeGridGetNextIndexByDirection(const ST_OctTreeGrid* con
 //		{
 //			sphereTraceIndexListAddLast(&indices, curIndex);
 //			curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, curStart, dir);
-//			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
+//			if (sphereTraceColliderAABBRayTraceThrough(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
 //			{
 //
 //			}
@@ -1546,7 +1546,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start
 	ST_RayTraceData rtd;
 	ST_Vector3 curStart;
 	ST_Index breakCond = (ST_Index)-1;
-	if (sphereTraceColliderAABBRayTrace(start, dir, &pGrid->worldaabb, pData))
+	if (sphereTraceColliderEmptyAABBRayTrace(start, dir, &pGrid->worldaabb, pData))
 	{
 		ST_Index curIndex;
 		if(pData->distance==0.0f)
@@ -1564,7 +1564,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start
 		{
 			sphereTraceIndexListAddLast(&indices, curIndex);
 			//curIndex = sphereTraceOctTreeGridGetBucketIndexFromPositionAndDirection(pGrid, curStart, dir);
-			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
+			if (sphereTraceColliderAABBRayTraceThrough(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
 			{			
 				curIndex = sphereTraceOctTreeGridGetNextIndexByDirection(pGrid, curIndex, rtd.directionType);
 				curStart = rtd.contact.point;
@@ -1577,7 +1577,7 @@ ST_IndexList sphereTraceOctTreeGridGetBucketIndicesFromRayTrace(ST_Vector3 start
 			}
 			else
 			{
-				sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd);
+				sphereTraceColliderAABBRayTraceThrough(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd);
 				return indices;
 			}
 		}
@@ -1596,7 +1596,7 @@ b32 sphereTraceOctTreeGridRayTrace(ST_Vector3 start, ST_Direction dir, float max
 	float minDist = maxDist;
 	b32 retVal = ST_FALSE;
 	ST_RayTraceData rtdReturn;
-	if (sphereTraceColliderAABBRayTrace(start, dir, &pGrid->worldaabb, &rtd))
+	if (sphereTraceColliderEmptyAABBRayTrace(start, dir, &pGrid->worldaabb, &rtd))
 	{
 		ST_Index curIndex;
 		if (rtd.distance == 0.0f)
@@ -1612,7 +1612,7 @@ b32 sphereTraceOctTreeGridRayTrace(ST_Vector3 start, ST_Direction dir, float max
 			return 0;
 		while (curIndex != breakCond)
 		{
-			if (sphereTraceColliderAABBRayTraceOut(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
+			if (sphereTraceColliderAABBRayTraceThrough(curStart, dir, &pGrid->treeBuckets[curIndex].root->aabb, &rtd))
 			{
 				if (sphereTraceOctTreeRayTraceFromWithin(curStart, dir, rtd.distance, &pGrid->treeBuckets[curIndex], &rtdReturn))
 				{
