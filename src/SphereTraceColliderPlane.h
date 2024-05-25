@@ -12,6 +12,8 @@ void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* co
 //
 ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point);
 //
+ST_Direction sphereTraceColliderPlaneEdgeDirectionToDirection(const ST_PlaneCollider* const pPlaneCollider, ST_PlaneEdgeDirection dir);
+//
 ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToSphereTrace(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point, ST_Vector3 dir, float radius, ST_Vector3* closestPoint);
 //
 ST_PlaneVertexDirection sphereTraceColliderPlaneGetClosestTransformedVertexToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point);
@@ -48,10 +50,33 @@ b32 sphereTraceColliderPlaneRayTrace(ST_Vector3 from, ST_Direction dir, const ST
 //
 b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, const ST_PlaneCollider* const pPlaneCollider, ST_EdgeTraceData* const pEdgeTraceData);
 //
+b32 sphereTraceColliderImposedPlaneEdgeTrace1(ST_Edge* const pEdge, ST_Direction* const pDir, ST_Vector3* const pPlanePos, ST_Direction* const pPlaneNormal, ST_Direction* const pPlaneRight,
+	ST_Direction* const pPlaneForward, float xHalfExtents, float zHalfExtents, ST_EdgeTraceData* const pEdgeTraceData);
+//
 b32 sphereTraceColliderPlaneIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_PlaneCollider* const pPlaneCollider);
+//
+b32 sphereTraceColliderImposedPlaneIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents);
+//
+ST_PlaneEdgeDirection sphereTraceColliderImposedPlaneGetClosestTransformedEdgeDirectionToPoint(const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents, ST_Vector3 point);
+//
+ST_Edge sphereTraceColliderImposedPlaneEdgeDirectionToEdge(const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents, ST_PlaneEdgeDirection dir);
+//
+ST_Direction sphereTraceColliderImposedPlaneEdgeDirectionToDirection(const ST_Direction planeRight, const ST_Direction planeForward, ST_PlaneEdgeDirection dir);
 //
 b32 sphereTraceColliderInfinitePlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Vector3 pointOnPlane, ST_Direction planeNormal, ST_SphereTraceData* const pSphereTraceData);
 //
 b32 sphereTraceColliderPlaneSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereCastData);
 //
 b32 sphereTraceColliderPlaneSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_PlaneCollider* const pPlaneCollider, ST_SphereTraceData* const pSphereCastData);
+//
+b32 sphereTraceColliderImposedPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_EdgeTraceData* const pEdgeTraceData);
+//
+b32 sphereTraceColliderImposedPlaneRayTrace(ST_Vector3 start, ST_Direction dir, ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_RayTraceData* const pRayTraceData);
+//
+b32 sphereTraceColliderPlanePlaneTrace(ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_Direction dir, ST_PlaneCollider* const pPlaneCollider, ST_BoxTraceData* const pBoxTraceData);
+//
+b32 sphereTraceColliderPlanePlaneTrace1(ST_Vector3* const pPlanePos, ST_Direction* const pPlaneNormal, ST_Direction* const pPlaneRight, ST_Direction* const pPlaneForward,
+	float xHalfExtents, float zHalfExtents, ST_Direction* const pDir, ST_PlaneCollider* const pPlaneCollider, ST_BoxTraceData* const pBoxTraceData);

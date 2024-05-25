@@ -47,3 +47,17 @@ b32 sphereTraceColliderTriangleImposedSphereCollisionTest(ST_TriangleCollider* c
 b32 sphereTraceColliderSphereSphereCollisionTest(ST_SphereCollider* const pSphereColliderA, ST_SphereCollider* const pSphereColliderB, ST_SphereContact* const pContactInfo);
 //
 b32 sphereTraceColliderSphereSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_Vector3 encompassingPos, float encompassingRadius, ST_SphereContact* const pContactInfo);
+//
+ST_SphereCubeCluster sphereTraceColliderSphereCubeClusterConstruct(float width);
+
+ST_SpherePair sphereTraceColliderSpherePairConstruct(float radii, float halfDistance);
+
+void sphereTraceColliderSpherePairGetSpherePositions(const ST_SpherePair* const pSpherePair, ST_Vector3* pLeftSphere, ST_Vector3* pRightSphere);
+
+void sphereTraceColliderSpherePairSetPosition(ST_SpherePair* const pSpherePair, ST_Vector3 position);
+
+void sphereTraceColliderSpherePairSetRotation(ST_SpherePair* const pSpherePair, ST_Quaternion rotation);
+
+void sphereTraceColliderSpherePairRotate(ST_SpherePair* const pSpherePair, ST_Quaternion rotation);
+
+void sphereTraceColliderSpherePairSetAABB(ST_SpherePair* const pSpherePair);

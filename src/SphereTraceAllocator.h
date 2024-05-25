@@ -9,6 +9,7 @@ typedef uintptr_t ST_Index;
 typedef struct ST_CallbackFunction ST_CallbackFunction;
 typedef struct ST_SphereContactEntry ST_SphereContactEntry;
 typedef struct ST_SphereContact ST_SphereContact;
+typedef struct ST_BoxContact ST_BoxContact;
 typedef struct ST_OctTreeNode ST_OctTreeNode;
 typedef struct ST_AABBContact ST_AABBContact;
 typedef enum ST_ColliderType ST_ColliderType;
@@ -107,10 +108,10 @@ ST_SphereContact* sphereTraceLinearAllocatorAllocateSphereContact();
 ST_Index sphereTraceLinearAllocatorGetSphereContactCount();
 ST_SphereContact* sphereTraceLinearAllocatorGetSphereContactByIndex(ST_Index index);
 void sphereTraceLinearAllocatorResetSphereContacts();
-ST_AABBContact* sphereTraceLinearAllocatorAllocateAABBContact();
-ST_Index sphereTraceLinearAllocatorGetAABBContactCount();
-ST_AABBContact* sphereTraceLinearAllocatorGetAABBContactByIndex(ST_Index index);
-void sphereTraceLinearAllocatorResetAABBContacts();
+ST_BoxContact* sphereTraceLinearAllocatorAllocateBoxContact();
+ST_Index sphereTraceLinearAllocatorGetBoxContactCount();
+ST_BoxContact* sphereTraceLinearAllocatorGetBoxContactByIndex(ST_Index index);
+void sphereTraceLinearAllocatorResetBoxContacts();
 
 //array allocators
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray();

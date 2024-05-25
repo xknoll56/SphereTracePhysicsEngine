@@ -11,6 +11,7 @@ const ST_Vector3 gVector3Right = { 1.0f, 0.0f, 0.0f };
 const ST_Vector3 gVector3Forward = { 0.0f, 0.0f, 1.0f };
 const ST_Vector3 gVector3Zero = { 0.0f, 0.0f, 0.0f };
 const ST_Vector3 gVector3One = { 1.0f, 1.0f, 1.0f };
+const ST_Vector3 gVector3Half = { 0.5f, 0.5f, 0.5f };
 const ST_Vector3 gVector3Max = { FLT_MAX, FLT_MAX, FLT_MAX };
 const ST_Vector3 gVector3Left = { -1.0f, 0.0f, 0.0f };
 const ST_Vector3 gVector3Down = { 0.0f, -1.0f, 0.0f };
@@ -321,6 +322,14 @@ float sphereTraceVector3Dot(ST_Vector3 v1, ST_Vector3 v2)
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+float sphereTraceVector3AbsoluteDot(ST_Vector3 v1, ST_Vector3 v2)
+{
+	float ret = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+	if (ret < 0.0f)
+		ret *= -1.0f;
+	return ret;
+}
+
 float sphereTraceVector4Dot(ST_Vector4 v1, ST_Vector4 v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
@@ -329,6 +338,11 @@ float sphereTraceVector4Dot(ST_Vector4 v1, ST_Vector4 v2)
 ST_Vector3 sphereTraceVector3Scale(ST_Vector3 v, float f)
 {
 	return sphereTraceVector3Construct(v.x* f, v.y* f, v.z* f );
+}
+
+ST_Vector3 sphereTraceVector3Mult(ST_Vector3 v1, ST_Vector3 v2)
+{
+	return sphereTraceVector3Construct(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
 }
 
 void sphereTraceVector3ScaleByRef(ST_Vector3* const pRef, float f)
@@ -496,6 +510,11 @@ b32 sphereTraceVector3Nan(ST_Vector3 vec)
 b32 sphereTraceVector3NanAny(ST_Vector3 vec)
 {
 	return fpclassify(vec.x) == FP_NAN || fpclassify(vec.y) == FP_NAN || fpclassify(vec.z) == FP_NAN;
+}
+
+b32 sphereTraceVector3AnyGreaterThan(ST_Vector3 vec, float val)
+{
+	return  (sphereTraceAbs(vec.x) > val || sphereTraceAbs(vec.y) > val || sphereTraceAbs(vec.z) > val);
 }
 
 ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir)
@@ -913,17 +932,17 @@ ST_Vector3 sphereTraceVector3GetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
 
 ST_Direction sphereTraceDirectionGetLocalXAxisFromRotationMatrix(ST_Matrix4 mat)
 {
-	return sphereTraceDirectionConstruct1(mat.m00, mat.m10, mat.m20, 0);
+	return sphereTraceDirectionConstruct1(mat.m00, mat.m10, mat.m20, 1);
 }
 
 ST_Direction sphereTraceDirectionGetLocalYAxisFromRotationMatrix(ST_Matrix4 mat)
 {
-	return sphereTraceDirectionConstruct1(mat.m01, mat.m11, mat.m21, 0);
+	return sphereTraceDirectionConstruct1(mat.m01, mat.m11, mat.m21, 1);
 }
 
 ST_Direction sphereTraceDirectionGetLocalZAxisFromRotationMatrix(ST_Matrix4 mat)
 {
-	return sphereTraceDirectionConstruct1(mat.m02, mat.m12, mat.m22, 0);
+	return sphereTraceDirectionConstruct1(mat.m02, mat.m12, mat.m22, 1);
 }
 
 void sphereTraceMatrixSetLocalXAxisOfRotationMatrix(ST_Matrix4* const mat, ST_Vector3 xAxis)
@@ -1255,6 +1274,18 @@ ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2)
 	dr.v = sphereTraceVector3Add(dir1.v, dir2.v);
 	sphereTraceVector3NormalizeByRef(&dr.v);
 	dr.normalized = 1;
+	return dr;
+}
+
+ST_Direction sphereTraceDirectionAdd2(ST_Direction dir1, ST_Direction dir2, ST_Direction dir3, b32 normalize)
+{
+	ST_Direction dr;
+	dr.v = sphereTraceVector3Add(sphereTraceVector3Add(dir1.v, dir2.v), dir3.v);
+	if (normalize)
+	{
+		sphereTraceVector3NormalizeByRef(&dr.v);
+	}
+	dr.normalized = normalize;
 	return dr;
 }
 

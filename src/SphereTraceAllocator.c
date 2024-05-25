@@ -26,7 +26,7 @@ static ST_Allocator vector3Allocator;
 static ST_Allocator callbackFunctionAllocator;
 static ST_Allocator contactEntryAllocator;
 static ST_Allocator sphereContactLinearAllocator;
-static ST_Allocator aabbContactLinearAllocator;
+static ST_Allocator boxContactLinearAllocator;
 static ST_Allocator octTreeNodeAllocator;
 static ST_Allocator sphereColliderAllocator;
 static ST_Allocator planeColliderAllocator;
@@ -296,7 +296,8 @@ void sphereTraceAllocatorInitialize()
 	callbackFunctionAllocator = sphereTraceAllocatorConstruct(ST_FUNCTION_POOL_DEFAULT_SIZE, sizeof(ST_CallbackFunction), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	contactEntryAllocator = sphereTraceAllocatorConstruct(ST_INDEX_POOL_DEFAULT_SIZE, sizeof(ST_SphereContactEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	sphereContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_SphereContact), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
-	aabbContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_AABB), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	boxContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_BoxContact), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
+	//aabbContactLinearAllocator = sphereTraceLinearAllocatorConstruct(ST_CONTACT_LINEAR_ALLOCATOR_SIZE, sizeof(ST_AABB), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	octTreeNodeAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_OctTreeNode), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	//octTreeObjectEntryAllocator = sphereTraceAllocatorConstruct(ST_OCTTREENODE_POOL_DEFAULT_SIZE, sizeof(ST_SpaceObjectEntry), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
 	sphereColliderAllocator = sphereTraceAllocatorConstruct(ST_COLLIDER_ALLOCATOR_SIZE, sizeof(ST_SphereCollider), ST_INDEX_ALLOCATOR_DEFAULT_SIZE);
@@ -440,22 +441,26 @@ void sphereTraceLinearAllocatorResetSphereContacts()
 	sphereTraceLinearAllocatorReset(&sphereContactLinearAllocator);
 }
 
-ST_AABBContact* sphereTraceLinearAllocatorAllocateAABBContact()
+ST_BoxContact* sphereTraceLinearAllocatorAllocateBoxContact()
 {
-	return sphereTraceLinearAllocatorAllocateObject(&aabbContactLinearAllocator);
+	return sphereTraceLinearAllocatorAllocateObject(&boxContactLinearAllocator);
 }
-ST_Index sphereTraceLinearAllocatorGetAABBContactCount()
+
+ST_Index sphereTraceLinearAllocatorGetBoxContactCount()
 {
-	return aabbContactLinearAllocator.numObjects;
+	return boxContactLinearAllocator.numObjects;
 }
-ST_AABBContact* sphereTraceLinearAllocatorGetAABBContactByIndex(ST_Index index)
+
+ST_BoxContact* sphereTraceLinearAllocatorGetBoxContactByIndex(ST_Index index)
 {
-	return sphereTraceLinearAllocatorGetByIndex(&aabbContactLinearAllocator, index);
+	return sphereTraceLinearAllocatorGetByIndex(&boxContactLinearAllocator, index);
 }
-void sphereTraceLinearAllocatorResetAABBContacts()
+
+void sphereTraceLinearAllocatorResetBoxContacts()
 {
-	sphereTraceLinearAllocatorReset(&aabbContactLinearAllocator);
+	sphereTraceLinearAllocatorReset(&boxContactLinearAllocator);
 }
+
 
 ST_IndexList* sphereTraceAllocatorAllocateIndexListArray()
 {

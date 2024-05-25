@@ -131,9 +131,13 @@ float sphereTraceVector3Length(ST_Vector3 v);
 
 float sphereTraceVector3Dot(ST_Vector3 v1, ST_Vector3 v2);
 
+float sphereTraceVector3AbsoluteDot(ST_Vector3 v1, ST_Vector3 v2);
+
 float sphereTraceVector4Dot(ST_Vector4 v1, ST_Vector4 v2);
 
 ST_Vector3 sphereTraceVector3Scale(ST_Vector3 v, float f);
+
+ST_Vector3 sphereTraceVector3Mult(ST_Vector3 v1, ST_Vector3 v2);
 
 void sphereTraceVector3ScaleByRef(ST_Vector3* const pRef, float f);
 
@@ -188,6 +192,8 @@ ST_Vector3 sphereTraceVector3Average(ST_Vector3 v1, ST_Vector3 v2);
 b32 sphereTraceVector3Nan(ST_Vector3 vec);
 
 b32 sphereTraceVector3NanAny(ST_Vector3 vec);
+
+b32 sphereTraceVector3AnyGreaterThan(ST_Vector3 vec, float val);
 
 ST_Vector3 sphereTraceClosestPointOnLineBetweenTwoLines(ST_Vector3 point, ST_Vector3 lineDir, ST_Vector3 otherPoint, ST_Vector3 otherLineDir);
 
@@ -323,6 +329,8 @@ ST_Direction sphereTraceDirectionConstruct(ST_Vector3 vec, b32 normalized);
 ST_Direction sphereTraceDirectionConstruct1(float x, float y, float z, b32 normalized);
 
 ST_Direction sphereTraceDirectionAdd(ST_Direction dir1, ST_Direction dir2);
+
+ST_Direction sphereTraceDirectionAdd2(ST_Direction dir1, ST_Direction dir2, ST_Direction dir3, b32 normalize);
 
 ST_Direction sphereTraceDirectionConstructNormalized(ST_Vector3 vec);
 

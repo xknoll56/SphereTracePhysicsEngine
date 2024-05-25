@@ -21,6 +21,7 @@ extern const ST_Vector3 gVector3Down;
 extern const ST_Vector3 gVector3Back;
 extern const ST_Vector4 gVector4Zero;
 extern const ST_Vector4 gVector4One;
+extern const ST_Vector3 gVector3Half;
 extern const ST_Vector4 gVector4ColorWhite;
 extern const ST_Vector4 gVector4ColorBlack;
 extern const ST_Vector4 gVector4ColorYellow;
@@ -48,10 +49,11 @@ extern const ST_BoxFace gFaceUp;
 extern const ST_BoxFace gFaceDown;
 extern const ST_BoxFace gFaceForward;
 extern const ST_BoxFace gFaceBack;
+const ST_BoxEdgeConnection gEdgeConnections[8];
 
 #define ST_VECTOR3(x, y, z) sphereTraceVector3Construct(x,y,z)
 //#define ST_VECTOR3() gVector3Zero
-#define ST_VECTOR4(x, y, z, w) sphereTraceVector4Construct(x, y, z, w);
+#define ST_VECTOR4(x, y, z, w) sphereTraceVector4Construct(x, y, z, w)
 
 #define ST_QUATERNION(v, alpha) sphereTraceQuaternionFromAngleAxis(v, alpha);
 

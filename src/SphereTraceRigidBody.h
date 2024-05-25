@@ -30,6 +30,8 @@ typedef struct ST_RigidBody
 
 ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia);
 
+ST_Vector3 sphereTraceRigidBodyInertialInverse(ST_RigidBody* const pRigidBody);
+
 void sphereTraceRigidBodyAddForce(ST_RigidBody* const pRigidBody, const ST_Vector3 force);
 
 void sphereTraceRigidBodyApplyForces(ST_RigidBody* const pRigidBody, float dt);
@@ -55,7 +57,17 @@ float sphereTraceRigidBodyGetSpeed(ST_RigidBody* const pRigidBody);
 
 float sphereTraceRigidBodySetSpeed(ST_RigidBody* const pRigidBody, float speed);
 
+void sphereTraceRigidBodySetRotation(ST_RigidBody* const pRigidBody, ST_Quaternion rotation);
+
 void sphereTraceRigidBodyResetMomentum(ST_RigidBody* const pRigidBody);
 
 void sphereTraceRigidBodyResetAngularMomentum(ST_RigidBody* const pRigidBody);
+
+void sphereTraceRigidBodyRotate(ST_RigidBody* const pRigidBody, const ST_Quaternion rotation);
+
+void sphereTraceRigidBodyRotateAroundPoint(ST_RigidBody* const pRigidBody, ST_Vector3 point, const ST_Quaternion rotation);
+
+void sphereTraceRigidBodyRotateAroundPointToSetRotation(ST_RigidBody* const pRigidBody, ST_Vector3 point, const ST_Quaternion newRotation);
+
+void sphereTraceRigidBodyClearDPDM(ST_RigidBody* const pRigidBody);
 

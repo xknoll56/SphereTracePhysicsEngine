@@ -24,6 +24,11 @@ ST_RigidBody sphereTraceRigidBodyConstruct(float mass, float inertia)
     return rigidBody;
 }
 
+//ST_Vector3 sphereTraceRigidBodyInertialInverse(ST_RigidBody* const pRigidBody)
+//{
+//    return sphereTraceVector3Construct(1.0f / pRigidBody->inertia.x, 1.0f / pRigidBody->inertia.y, 1.0f / pRigidBody->inertia.z);
+//}
+
 void sphereTraceRigidBodyAddForce(ST_RigidBody* const pRigidBody, const ST_Vector3 force)
 {
     pRigidBody->isAsleep = ST_FALSE;
@@ -114,6 +119,12 @@ float sphereTraceRigidBodySetSpeed(ST_RigidBody* const pRigidBody, float speed)
         sphereTraceVector3Scale(pRigidBody->velocity, speed / sphereTraceRigidBodyGetSpeed(pRigidBody)));
 }
 
+void sphereTraceRigidBodySetRotation(ST_RigidBody* const pRigidBody, ST_Quaternion rotation)
+{
+    pRigidBody->rotation = rotation;
+    pRigidBody->rotationMatrix = sphereTraceMatrixFromQuaternion(rotation);
+}
+
 void sphereTraceRigidBodyResetMomentum(ST_RigidBody* const pRigidBody)
 {
     pRigidBody->linearMomentum = gVector3Zero;
@@ -122,4 +133,32 @@ void sphereTraceRigidBodyResetMomentum(ST_RigidBody* const pRigidBody)
 void sphereTraceRigidBodyResetAngularMomentum(ST_RigidBody* const pRigidBody)
 {
     pRigidBody->angularMomentum = gVector3Zero;
+}
+
+void sphereTraceRigidBodyRotate(ST_RigidBody* const pRigidBody, const ST_Quaternion rotation)
+{
+    pRigidBody->rotation = sphereTraceQuaternionMultiply(rotation, pRigidBody->rotation);
+    pRigidBody->rotation = sphereTraceQuaternionNormalize(pRigidBody->rotation);
+    pRigidBody->rotationMatrix = sphereTraceMatrixFromQuaternion(pRigidBody->rotation);
+}
+
+void sphereTraceRigidBodyRotateAroundPoint(ST_RigidBody* const pRigidBody, ST_Vector3 point, const ST_Quaternion rotation)
+{
+    ST_Vector3 dp = sphereTraceVector3Subtract(pRigidBody->position, point);
+    pRigidBody->position = sphereTraceVector3Add(point, sphereTraceVector3RotatePoint(dp, rotation));
+    pRigidBody->rotation = sphereTraceQuaternionMultiply(rotation, pRigidBody->rotation);
+    pRigidBody->rotation = sphereTraceQuaternionNormalize(pRigidBody->rotation);
+    pRigidBody->rotationMatrix = sphereTraceMatrixFromQuaternion(pRigidBody->rotation);
+}
+
+void sphereTraceRigidBodyRotateAroundPointToSetRotation(ST_RigidBody* const pRigidBody, ST_Vector3 point, const ST_Quaternion newRotation)
+{
+    ST_Quaternion toRotation = sphereTraceQuaternionMultiply(pRigidBody->rotation, sphereTraceQuaternionConjugate(newRotation));
+    sphereTraceRigidBodyRotateAroundPoint(pRigidBody, point, toRotation);
+}
+
+void sphereTraceRigidBodyClearDPDM(ST_RigidBody* const pRigidBody)
+{
+    sphereTraceVector3ListFree(&pRigidBody->appliedDeltaAngularMomentums);
+    sphereTraceVector3ListFree(&pRigidBody->appliedDeltaMomentums);
 }

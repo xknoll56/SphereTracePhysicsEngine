@@ -1050,3 +1050,74 @@ b32 sphereTraceColliderSphereSphereTraceOut(ST_Vector3 spherePos, float sphereRa
 	return sphereTraceColliderImposedSphereSphereTrace(castPoint, sphereTraceDirectionNegative(clipoutDir), sphereRadius, encompassingPos, encompassingRadius, pContactInfo);
 
 }
+
+
+ST_SphereCubeCluster sphereTraceColliderSphereCubeClusterConstruct(float halfWidth)
+{
+	ST_SphereCubeCluster cluster;
+	cluster.collider = sphereTraceColliderConstruct(COLLIDER_CUBE_CLUSTER, sphereTraceVector3Length(sphereTraceVector3Construct(halfWidth, halfWidth, halfWidth)));
+	cluster.rigidBody = sphereTraceRigidBodyConstruct(1.0f, 1.0f);
+	float halfHalf = 0.5f * halfWidth;
+	cluster.elementPositions[ST_LEFT_DOWN_BACK] = sphereTraceVector3Construct(-halfHalf, -halfHalf, -halfHalf);
+	cluster.elementPositions[ST_RIGHT_DOWN_BACK] = sphereTraceVector3Construct(halfHalf, -halfHalf, -halfHalf);
+	cluster.elementPositions[ST_LEFT_DOWN_FORWARD] = sphereTraceVector3Construct(-halfHalf, -halfHalf, halfHalf);
+	cluster.elementPositions[ST_RIGHT_DOWN_FORWARD] = sphereTraceVector3Construct(halfHalf, -halfHalf, halfHalf);
+	cluster.elementPositions[ST_LEFT_UP_BACK] = sphereTraceVector3Construct(-halfHalf, halfHalf, -halfHalf);
+	cluster.elementPositions[ST_RIGHT_UP_BACK] = sphereTraceVector3Construct(halfHalf, halfHalf, -halfHalf);
+	cluster.elementPositions[ST_LEFT_UP_FORWARD] = sphereTraceVector3Construct(-halfHalf, halfHalf, halfHalf);
+	cluster.elementPositions[ST_RIGHT_UP_FORWARD] = sphereTraceVector3Construct(halfHalf, halfHalf, halfHalf);
+	cluster.halfWidth = halfWidth;
+	return cluster;
+}
+
+void sphereTraceColliderSpherePairGetSpherePositions(const ST_SpherePair* const pSpherePair, ST_Vector3* pLeftSphere, ST_Vector3* pRightSphere)
+{
+	*pLeftSphere = sphereTraceVector3AddAndScale(pSpherePair->rigidBody.position, pSpherePair->frame.right.v, -pSpherePair->halfDistance);
+	*pRightSphere = sphereTraceVector3AddAndScale(pSpherePair->rigidBody.position, pSpherePair->frame.right.v, pSpherePair->halfDistance);
+}
+
+void sphereTraceColliderSpherePairSetAABB(ST_SpherePair* const pSpherePair)
+{
+	ST_SphereTraceData std;
+	std.radius = pSpherePair->radii;
+	sphereTraceColliderSpherePairGetSpherePositions(pSpherePair, &std.rayTraceData.startPoint, &std.sphereCenter);
+	sphereTraceColliderResizeAABBWithSpherecast(&std, &pSpherePair->collider.aabb);
+}
+
+ST_SpherePair sphereTraceColliderSpherePairConstruct(float radii, float halfDistance)
+{
+	ST_SpherePair cluster;
+	cluster.collider = sphereTraceColliderConstruct(COLLIDER_SPHERE_PAIR, radii+halfDistance);
+	cluster.halfDistance = halfDistance;
+	cluster.frame = sphereTraceFrameConstruct();
+	cluster.rigidBody = sphereTraceRigidBodyConstruct(1, 1);
+	cluster.radii = radii;
+	cluster.restingContact = ST_FALSE;
+
+	cluster.collider.aabb = sphereTraceAABBConstruct2(gVector3Zero, gVector3Zero);
+	sphereTraceColliderSpherePairSetAABB(&cluster);
+
+	return cluster;
+}
+
+void sphereTraceColliderSpherePairSetPosition(ST_SpherePair* const pSpherePair, ST_Vector3 position)
+{
+	pSpherePair->rigidBody.position = position;
+	sphereTraceColliderSpherePairSetAABB(pSpherePair);
+}
+
+void sphereTraceColliderSpherePairSetRotation(ST_SpherePair* const pSpherePair, ST_Quaternion rotation)
+{
+	sphereTraceRigidBodySetRotation(&pSpherePair->rigidBody.rotation, rotation);
+	sphereTraceColliderSpherePairSetAABB(pSpherePair);
+	sphereTraceFrameUpdateWithRotationMatrix(&pSpherePair->frame, pSpherePair->rigidBody.rotationMatrix);
+}
+
+void sphereTraceColliderSpherePairRotate(ST_SpherePair* const pSpherePair, ST_Quaternion rotation)
+{
+	sphereTraceRigidBodyRotate(&pSpherePair->rigidBody, rotation);
+	sphereTraceColliderSpherePairSetAABB(pSpherePair);
+	sphereTraceFrameUpdateWithRotationMatrix(&pSpherePair->frame, pSpherePair->rigidBody.rotationMatrix);
+}
+
+

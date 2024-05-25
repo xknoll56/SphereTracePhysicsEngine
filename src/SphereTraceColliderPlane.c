@@ -96,6 +96,56 @@ void sphereTraceColliderPlaneSetTransformedVerticesAndEdges(ST_PlaneCollider* co
 
 }
 
+//ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point)
+//{
+//	ST_Vector3 distVec = sphereTraceVector3Subtract(point, pPlaneCollider->position);
+//	float xDist = sphereTraceVector3Dot(distVec, pPlaneCollider->right.v) / pPlaneCollider->xHalfExtent;
+//	float zDist = sphereTraceVector3Dot(distVec, pPlaneCollider->forward.v) / pPlaneCollider->zHalfExtent;
+//
+//	if (xDist > 0.0f)
+//	{
+//		if (sphereTraceAbs(zDist) > xDist)
+//		{
+//			if (zDist > 0.0f)
+//			{
+//				//return forward edge
+//				return PLANE_EDGE_FORWARD;
+//			}
+//			else
+//			{
+//				//return back edge
+//				return PLANE_EDGE_BACK;
+//			}
+//		}
+//		else
+//		{
+//			//return right edge
+//			return PLANE_EDGE_RIGHT;
+//		}
+//	}
+//	else
+//	{
+//		if (sphereTraceAbs(zDist) > -xDist)
+//		{
+//			if (zDist > 0.0f)
+//			{
+//				//return forward edge
+//				return PLANE_EDGE_FORWARD;
+//			}
+//			else
+//			{
+//				//return back edge
+//				return PLANE_EDGE_BACK;
+//			}
+//		}
+//		else
+//		{
+//			//return left edge
+//			return PLANE_EDGE_LEFT;
+//		}
+//	}
+//}
+
 ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(const ST_PlaneCollider* const pPlaneCollider, ST_Vector3 point)
 {
 	ST_Vector3 distVec = sphereTraceVector3Subtract(point, pPlaneCollider->position);
@@ -143,6 +193,36 @@ ST_PlaneEdgeDirection sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(c
 			//return left edge
 			return PLANE_EDGE_LEFT;
 		}
+	}
+}
+
+ST_Direction sphereTraceColliderPlaneEdgeDirectionToDirection(const ST_PlaneCollider* const pPlaneCollider, ST_PlaneEdgeDirection dir)
+{
+	switch (dir)
+	{
+	case PLANE_EDGE_FORWARD:
+		return pPlaneCollider->forward;
+	case PLANE_EDGE_RIGHT:
+		return pPlaneCollider->right;
+	case PLANE_EDGE_BACK:
+		return sphereTraceDirectionNegative(pPlaneCollider->forward);
+	case PLANE_EDGE_LEFT:
+		return sphereTraceDirectionNegative(pPlaneCollider->right);
+	}
+}
+
+ST_Direction sphereTraceColliderImposedPlaneEdgeDirectionToDirection(const ST_Direction planeRight, const ST_Direction planeForward, ST_PlaneEdgeDirection dir)
+{
+	switch (dir)
+	{
+	case PLANE_EDGE_FORWARD:
+		return planeForward;
+	case PLANE_EDGE_RIGHT:
+		return planeRight;
+	case PLANE_EDGE_BACK:
+		return sphereTraceDirectionNegative(planeForward);
+	case PLANE_EDGE_LEFT:
+		return sphereTraceDirectionNegative(planeRight);
 	}
 }
 
@@ -376,7 +456,8 @@ void sphereTraceColliderPlaneRotateAround(ST_PlaneCollider* const pPlaneCollider
 	pPlaneCollider->right = sphereTraceDirectionRotateDir(pPlaneCollider->right, rotation);
 	pPlaneCollider->normal = sphereTraceDirectionRotateDir(pPlaneCollider->normal, rotation);
 	pPlaneCollider->forward = sphereTraceDirectionRotateDir(pPlaneCollider->forward, rotation);
-	pPlaneCollider->position = sphereTraceVector3RotatePoint(pPlaneCollider->position, rotation);
+	ST_Vector3 relative = sphereTraceVector3Subtract(point, pPlaneCollider->position);
+	pPlaneCollider->position = sphereTraceVector3Add(pPlaneCollider->position, sphereTraceVector3RotatePoint(relative, rotation));
 	pPlaneCollider->rotation = sphereTraceQuaternionMultiply(rotation, pPlaneCollider->rotation);
 	sphereTraceColliderPlaneSetTransformedVerticesAndEdges(pPlaneCollider);
 	sphereTraceColliderPlaneSetAABB(pPlaneCollider);
@@ -475,11 +556,13 @@ b32 sphereTraceColliderInfinitePlaneEdgeTrace(ST_Edge* pEdge, ST_Direction dir, 
 			if (rtd1.distance < rtd2.distance)
 			{
 				*pEdgeTraceData = sphereTraceEdgeTraceDataFrom1RayTraceData(&rtd1);
+				pEdgeTraceData->hitIndex = 0;
 				return ST_TRUE;
 			}
 			else
 			{
 				*pEdgeTraceData = sphereTraceEdgeTraceDataFrom1RayTraceData(&rtd2);
+				pEdgeTraceData->hitIndex = 1;
 				return ST_TRUE;
 			}
 		}
@@ -790,6 +873,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 		{
 			if (sphereTraceColliderPlaneIsProjectedPointContained(pEdgeTraceData->contact1.point, pPlaneCollider))
 			{
+				pEdgeTraceData->contact1.collisionType = ST_COLLISION_FACE;
 				return ST_TRUE;
 			}
 			else
@@ -824,6 +908,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 				if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &pPlaneCollider->transformedEdges[edgeDir], pEdgeTraceData))
 				{
 					etd.contact1 = pEdgeTraceData->contact1;
+					etd.contact1.collisionType = ST_COLLISION_EDGE;
 					hits = ST_TRUE;
 				}
 				else
@@ -834,6 +919,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 						if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &pPlaneCollider->transformedEdges[otherEdgeDir], pEdgeTraceData))
 						{
 							etd.contact1 = pEdgeTraceData->contact1;
+							etd.contact1.collisionType = ST_COLLISION_EDGE;
 							hits = ST_TRUE;
 						}
 					}
@@ -841,6 +927,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 			}
 			else
 			{
+				etd.contact1.collisionType = ST_COLLISION_FACE;
 				hits = ST_TRUE;
 			}
 
@@ -851,6 +938,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 				if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &pPlaneCollider->transformedEdges[edgeDir], pEdgeTraceData))
 				{
 					etd.contact2 = pEdgeTraceData->contact1;
+					etd.contact2.collisionType = ST_COLLISION_EDGE;
 					hits = ST_TRUE;
 				}
 				else
@@ -861,6 +949,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 						if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &pPlaneCollider->transformedEdges[otherEdgeDir], pEdgeTraceData))
 						{
 							etd.contact2 = pEdgeTraceData->contact1;
+							etd.contact2.collisionType = ST_COLLISION_EDGE;
 							hits = ST_TRUE;
 						}
 					}
@@ -868,6 +957,7 @@ b32 sphereTraceColliderPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, co
 			}
 			else
 			{
+				etd.contact2.collisionType = ST_COLLISION_FACE;
 				hits = ST_TRUE;
 			}
 
@@ -1061,4 +1151,756 @@ b32 sphereTraceColliderPlaneSphereTraceOut(ST_Vector3 spherePos, float sphereRad
 	b32 ret = sphereTraceColliderPlaneSphereTrace(castPoint, sphereTraceDirectionNegative(clipoutDir), sphereRadius, pPlaneCollider, pSphereCastData);
 	//ST_Direction dir = sphereTraceDirectionConstructNormalized(sphereTraceVector3Subtract(castPoint, pSphereCastData->sphereCenter));
 	return ret;
+}
+
+b32 sphereTraceColliderImposedPlaneIsProjectedPointContained(ST_Vector3 projectedPoint, const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight, 
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents)
+{
+	sphereTraceVector3SubtractByRef(&projectedPoint, *pPlanePos);
+	float dist = sphereTraceVector3Dot(projectedPoint, pPlaneRight->v);
+	if (sphereTraceAbs(dist) > xHalfExtents)
+	{
+		return 0;
+	}
+	dist = sphereTraceVector3Dot(projectedPoint, pPlaneForward->v);
+	if (sphereTraceAbs(dist) > zHalfExtents)
+	{
+		return 0;
+	}
+	return 1;
+}
+
+ST_Edge sphereTraceColliderImposedPlaneEdgeDirectionToEdge(const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents, ST_PlaneEdgeDirection dir)
+{
+	switch (dir)
+	{
+	case PLANE_EDGE_RIGHT:
+		return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents),
+			sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+		break;
+	case PLANE_EDGE_FORWARD:
+		return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents),
+			sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+		break;
+	case PLANE_EDGE_LEFT:
+		return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+			sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+		break;
+	case PLANE_EDGE_BACK:
+		return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+			sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+		break;
+	}
+}
+
+ST_PlaneEdgeDirection sphereTraceColliderImposedPlaneGetClosestTransformedEdgeDirectionToPoint(const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents, ST_Vector3 point)
+{
+	ST_Vector3 distVec = sphereTraceVector3Subtract(point, *pPlanePos);
+	float xDist = sphereTraceVector3Dot(distVec, pPlaneRight->v) / xHalfExtents;
+	float zDist = sphereTraceVector3Dot(distVec, pPlaneForward->v) / zHalfExtents;
+
+	if (xDist > 0.0f)
+	{
+		if (sphereTraceAbs(zDist) > xDist)
+		{
+			if (zDist > 0.0f)
+			{
+				//return forward edge
+				return PLANE_EDGE_FORWARD;
+			}
+			else
+			{
+				//return back edge
+				return PLANE_EDGE_BACK;
+			}
+		}
+		else
+		{
+			//return right edge
+			return PLANE_EDGE_RIGHT;
+		}
+	}
+	else
+	{
+		if (sphereTraceAbs(zDist) > -xDist)
+		{
+			if (zDist > 0.0f)
+			{
+				//return forward edge
+				return PLANE_EDGE_FORWARD;
+			}
+			else
+			{
+				//return back edge
+				return PLANE_EDGE_BACK;
+			}
+		}
+		else
+		{
+			//return left edge
+			return PLANE_EDGE_LEFT;
+		}
+	}
+}
+
+ST_Edge sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(const ST_Vector3* const pPlanePos, const ST_Direction* const pPlaneRight,
+	const ST_Direction* const  pPlaneForward, float xHalfExtents, float zHalfExtents, ST_Vector3 point)
+{
+	ST_Vector3 distVec = sphereTraceVector3Subtract(point, *pPlanePos);
+	float xDist = sphereTraceVector3Dot(distVec, pPlaneRight->v) / xHalfExtents;
+	float zDist = sphereTraceVector3Dot(distVec, pPlaneForward->v) / zHalfExtents;
+
+	if (xDist > 0.0f)
+	{
+		if (sphereTraceAbs(zDist) > xDist)
+		{
+			if (zDist > 0.0f)
+			{
+				//return forward edge
+				return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents),
+					sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+			}
+			else
+			{
+				//return back edge
+				return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+					sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+			}
+		}
+		else
+		{
+			//return right edge
+			return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents),
+				sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+		}
+	}
+	else
+	{
+		if (sphereTraceAbs(zDist) > -xDist)
+		{
+			if (zDist > 0.0f)
+			{
+				//return forward edge
+				return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents),
+					sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+			}
+			else
+			{
+				//return back edge
+				return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+					sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+			}
+		}
+		else
+		{
+			//return left edge
+			return sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+				sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+		}
+	}
+}
+
+b32 sphereTraceColliderImposedPlaneRayTrace(ST_Vector3 start, ST_Direction dir, ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_RayTraceData* const pRayTraceData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	sphereTraceColliderInfinitePlaneRayTrace(start, dir, planeNormal, planePos, pRayTraceData);
+	if (pRayTraceData->distance > 0.0f)
+	{
+		if (fpclassify(pRayTraceData->distance) == FP_INFINITE)
+			return 0;
+		pRayTraceData->startPoint = start;
+		ST_Vector3 vectorFromCenter = sphereTraceVector3Subtract(pRayTraceData->contact.point, planePos);
+		float xDist = sphereTraceVector3Dot(vectorFromCenter, planeRight.v);
+		if (sphereTraceAbs(xDist) > xHalfExtents)
+			return 0;
+		float zDist = sphereTraceVector3Dot(vectorFromCenter, planeForward.v);
+		if (sphereTraceAbs(zDist) > zHalfExtents)
+			return 0;
+		return 1;
+	}
+	return 0;
+}
+
+b32 sphereTraceColliderImposedPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction dir, ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_EdgeTraceData* const pEdgeTraceData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+	if (sphereTraceColliderInfinitePlaneEdgeTrace(pEdge, dir, planeNormal, planePos, pEdgeTraceData))
+	{
+
+		if (!pEdgeTraceData->usesBothContacts)
+		{
+			if (sphereTraceColliderImposedPlaneIsProjectedPointContained(pEdgeTraceData->contact1.point, &planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents))
+			{
+				pEdgeTraceData->contact1.collisionType = ST_COLLISION_FACE;
+				return ST_TRUE;
+			}
+			else
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+				{
+					return ST_TRUE;
+				}
+				else
+				{
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+					{
+						return ST_TRUE;
+					}
+				}
+			}
+		}
+		else
+		{
+			ST_EdgeTraceData etd = *pEdgeTraceData;
+			b32 hits = ST_FALSE;
+
+			//check the first point and correct the first contact
+			if (!sphereTraceColliderImposedPlaneIsProjectedPointContained(etd.contact1.point, &planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents))
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, etd.contact1.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+				{
+					etd.contact1 = pEdgeTraceData->contact1;
+					etd.contact1.collisionType = ST_COLLISION_EDGE;
+					hits = ST_TRUE;
+				}
+				else
+				{
+					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+					{
+						etd.contact1 = pEdgeTraceData->contact1;
+						etd.contact1.collisionType = ST_COLLISION_EDGE;
+						hits = ST_TRUE;
+					}
+
+				}
+			}
+			else
+			{
+				etd.contact1.collisionType = ST_COLLISION_FACE;
+				hits = ST_TRUE;
+			}
+
+			//check the second point and correct the second contact
+			if (!sphereTraceColliderImposedPlaneIsProjectedPointContained(etd.contact2.point, &planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents))
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, etd.contact2.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+				{
+					etd.contact2 = pEdgeTraceData->contact1;
+					etd.contact2.collisionType = ST_COLLISION_EDGE;
+					hits = ST_TRUE;
+				}
+				else
+				{
+					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
+					{
+						etd.contact2 = pEdgeTraceData->contact1;
+						etd.contact2.collisionType = ST_COLLISION_EDGE;
+						hits = ST_TRUE;
+					}
+				}
+			}
+			else
+			{
+				etd.contact2.collisionType = ST_COLLISION_FACE;
+				hits = ST_TRUE;
+			}
+
+			if (hits)
+			{
+				*pEdgeTraceData = etd;
+				return ST_TRUE;
+			}
+		}
+	}
+	return ST_FALSE;
+}
+
+b32 sphereTraceColliderImposedPlaneEdgeTrace1(ST_Edge* const pEdge, ST_Direction* const pDir, ST_Vector3* const pPlanePos, ST_Direction* const pPlaneNormal, ST_Direction* const pPlaneRight, ST_Direction* const pPlaneForward, float xHalfExtents, float zHalfExtents, ST_EdgeTraceData* const pEdgeTraceData)
+{
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(pDir);
+	if (sphereTraceColliderInfinitePlaneEdgeTrace(pEdge, *pDir, *pPlaneNormal, *pPlanePos, pEdgeTraceData))
+	{
+
+		if (!pEdgeTraceData->usesBothContacts)
+		{
+			if (sphereTraceColliderImposedPlaneIsProjectedPointContained(pEdgeTraceData->contact1.point, pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents))
+			{
+				pEdgeTraceData->contact1.collisionType = ST_COLLISION_FACE;
+				return ST_TRUE;
+			}
+			else
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+				{
+					return ST_TRUE;
+				}
+				else
+				{
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+					{
+						return ST_TRUE;
+					}
+				}
+			}
+		}
+		else
+		{
+			ST_EdgeTraceData etd = *pEdgeTraceData;
+			b32 hits = ST_FALSE;
+
+			//check the first point and correct the first contact
+			if (!sphereTraceColliderImposedPlaneIsProjectedPointContained(etd.contact1.point, pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents))
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, etd.contact1.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+				{
+					etd.contact1 = pEdgeTraceData->contact1;
+					etd.contact1.collisionType = ST_COLLISION_EDGE;
+					hits = ST_TRUE;
+				}
+				else
+				{
+					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+					{
+						etd.contact1 = pEdgeTraceData->contact1;
+						etd.contact1.collisionType = ST_COLLISION_EDGE;
+						hits = ST_TRUE;
+					}
+
+				}
+			}
+			else
+			{
+				etd.contact1.collisionType = ST_COLLISION_FACE;
+				hits = ST_TRUE;
+			}
+
+			//check the second point and correct the second contact
+			if (!sphereTraceColliderImposedPlaneIsProjectedPointContained(etd.contact2.point, pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents))
+			{
+				ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, etd.contact2.point);
+				if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+				{
+					etd.contact2 = pEdgeTraceData->contact1;
+					etd.contact2.collisionType = ST_COLLISION_EDGE;
+					hits = ST_TRUE;
+				}
+				else
+				{
+					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+
+					if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
+					{
+						etd.contact2 = pEdgeTraceData->contact1;
+						etd.contact2.collisionType = ST_COLLISION_EDGE;
+						hits = ST_TRUE;
+					}
+				}
+			}
+			else
+			{
+				etd.contact2.collisionType = ST_COLLISION_FACE;
+				hits = ST_TRUE;
+			}
+
+			if (hits)
+			{
+				*pEdgeTraceData = etd;
+				return ST_TRUE;
+			}
+		}
+	}
+	return ST_FALSE;
+}
+
+
+b32 sphereTraceColliderPlanePlaneTrace(ST_Vector3 planePos, ST_Direction planeNormal, ST_Direction planeRight, ST_Direction planeForward, float xHalfExtents, float zHalfExtents, ST_Direction dir, ST_PlaneCollider* const pPlaneCollider, ST_BoxTraceData* const pBoxTraceData)
+{
+	ST_EdgeTraceData etd;
+	ST_Direction negDir = sphereTraceDirectionNegative(dir);
+	float minDist = FLT_MAX;
+	pBoxTraceData->numContacts = 0;
+	if (sphereTraceColliderImposedPlaneEdgeTrace(&pPlaneCollider->transformedEdges[PLANE_EDGE_BACK], negDir, planePos, planeNormal, planeRight, planeForward, xHalfExtents, zHalfExtents, &etd))
+	{
+		if (!etd.usesBothContacts)
+		{
+			if (etd.hitIndex == 0)
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+			else
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point2;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+		}
+		else
+		{
+			etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1;
+			etd.contact2.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point2;
+			etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			etd.contact2.normal = sphereTraceDirectionNegative(etd.contact2.normal);
+		}
+		if (etd.contact1.collisionType == ST_COLLISION_FACE)
+		{
+			minDist = etd.distance;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		if (etd.usesBothContacts)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+			}
+			if (etd.contact2.collisionType == ST_COLLISION_FACE)
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+			}
+		}
+	}
+
+	if (sphereTraceColliderImposedPlaneEdgeTrace(&pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD], negDir, planePos, planeNormal, planeRight, planeForward, xHalfExtents, zHalfExtents, &etd))
+	{
+		if (!etd.usesBothContacts)
+		{
+			if (etd.hitIndex == 0)
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+			else
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point2;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+		}
+		else
+		{
+			etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1;
+			etd.contact2.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point2;
+			etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			etd.contact2.normal = sphereTraceDirectionNegative(etd.contact2.normal);
+		}
+		if (etd.contact1.collisionType == ST_COLLISION_FACE)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+				pBoxTraceData->numContacts = 0;
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+			}
+			else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+			}
+		}
+		if (etd.usesBothContacts)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+			}
+			if (etd.contact2.collisionType == ST_COLLISION_FACE)
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+			}
+		}
+	}
+
+	ST_Edge edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(planePos, planeRight.v, -xHalfExtents, planeForward.v, zHalfExtents),
+		sphereTraceVector3AddAndScale2(planePos, planeRight.v, xHalfExtents, planeForward.v, zHalfExtents), 2.0f * xHalfExtents, planeRight);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, dir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(planePos, planeRight.v, xHalfExtents, planeForward.v, -zHalfExtents),
+		sphereTraceVector3AddAndScale2(planePos, planeRight.v, xHalfExtents, planeForward.v, zHalfExtents), 2.0f * zHalfExtents, planeForward);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, dir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(planePos, planeRight.v, -xHalfExtents, planeForward.v,-zHalfExtents),
+		sphereTraceVector3AddAndScale2(planePos, planeRight.v, xHalfExtents, planeForward.v, -zHalfExtents), 2.0f * xHalfExtents, planeRight);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, dir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(planePos, planeRight.v, -xHalfExtents, planeForward.v, -zHalfExtents),
+		sphereTraceVector3AddAndScale2(planePos, planeRight.v, -xHalfExtents, planeForward.v, zHalfExtents), 2.0f * zHalfExtents, planeForward);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, dir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	if (minDist < FLT_MAX)
+	{
+		pBoxTraceData->traceDistance = minDist;
+		pBoxTraceData->boxCenter = sphereTraceVector3AddAndScale(planePos, dir.v, minDist);
+		return ST_TRUE;
+	}
+	return ST_FALSE;
+}
+
+b32 sphereTraceColliderPlanePlaneTrace1(ST_Vector3* const pPlanePos, ST_Direction* const pPlaneNormal, ST_Direction* const pPlaneRight, ST_Direction* const pPlaneForward, 
+	float xHalfExtents, float zHalfExtents, ST_Direction* const pDir, ST_PlaneCollider* const pPlaneCollider, ST_BoxTraceData* const pBoxTraceData)
+{
+	ST_EdgeTraceData etd;
+	ST_Direction negDir = sphereTraceDirectionNegative(*pDir);
+	float minDist = FLT_MAX;
+	pBoxTraceData->numContacts = 0;
+	if (sphereTraceColliderImposedPlaneEdgeTrace1(&pPlaneCollider->transformedEdges[PLANE_EDGE_BACK], &negDir, pPlanePos, pPlaneNormal, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, &etd))
+	{
+		if (!etd.usesBothContacts)
+		{
+			if (etd.hitIndex == 0)
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+			else
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point2;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+		}
+		else
+		{
+			etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point1;
+			etd.contact2.point = pPlaneCollider->transformedEdges[PLANE_EDGE_BACK].point2;
+			etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			etd.contact2.normal = sphereTraceDirectionNegative(etd.contact2.normal);
+		}
+		if (etd.contact1.collisionType == ST_COLLISION_FACE)
+		{
+			minDist = etd.distance;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		if (etd.usesBothContacts)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+			}
+			if (etd.contact2.collisionType == ST_COLLISION_FACE)
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+			}
+		}
+	}
+
+	if (sphereTraceColliderImposedPlaneEdgeTrace1(&pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD], &negDir, pPlanePos, pPlaneNormal, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, &etd))
+	{
+		if (!etd.usesBothContacts)
+		{
+			if (etd.hitIndex == 0)
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+			else
+			{
+				etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point2;
+				etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			}
+		}
+		else
+		{
+			etd.contact1.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point1;
+			etd.contact2.point = pPlaneCollider->transformedEdges[PLANE_EDGE_FORWARD].point2;
+			etd.contact1.normal = sphereTraceDirectionNegative(etd.contact1.normal);
+			etd.contact2.normal = sphereTraceDirectionNegative(etd.contact2.normal);
+		}
+		if (etd.contact1.collisionType == ST_COLLISION_FACE)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+				pBoxTraceData->numContacts = 0;
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+			}
+			else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+			}
+		}
+		if (etd.usesBothContacts)
+		{
+			if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+			{
+				minDist = etd.distance;
+			}
+			if (etd.contact2.collisionType == ST_COLLISION_FACE)
+			{
+				pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+			}
+		}
+	}
+
+	ST_Edge edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents),
+		sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, *pDir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents),
+		sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, *pDir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+		sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, xHalfExtents, pPlaneForward->v, -zHalfExtents), 2.0f * xHalfExtents, *pPlaneRight);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, *pDir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	edge = sphereTraceEdgeConstruct1(sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, -zHalfExtents),
+		sphereTraceVector3AddAndScale2(*pPlanePos, pPlaneRight->v, -xHalfExtents, pPlaneForward->v, zHalfExtents), 2.0f * zHalfExtents, *pPlaneForward);
+	if (sphereTraceColliderPlaneEdgeTrace(&edge, *pDir, pPlaneCollider, &etd))
+	{
+		if (etd.distance < (minDist - ST_COLLIDER_TOLERANCE))
+		{
+			minDist = etd.distance;
+			pBoxTraceData->numContacts = 0;
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+		else if (sphereTraceEpsilonEqual(etd.distance, minDist, ST_COLLIDER_TOLERANCE))
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact1;
+		}
+
+		if (etd.usesBothContacts)
+		{
+			pBoxTraceData->contacts[pBoxTraceData->numContacts++] = etd.contact2;
+		}
+	}
+
+	if (minDist < FLT_MAX)
+	{
+		pBoxTraceData->traceDistance = minDist;
+		pBoxTraceData->boxCenter = sphereTraceVector3AddAndScale(*pPlanePos, pDir->v, minDist);
+		return ST_TRUE;
+	}
+	return ST_FALSE;
 }

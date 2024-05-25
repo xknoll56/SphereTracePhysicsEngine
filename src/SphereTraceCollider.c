@@ -5,12 +5,32 @@
 
 const ST_AABB gAABBOne = { {0.5f,0.5f,0.5f}, {0.0f,0.0f,0.0f}, {1.0f,1.0f,1.0f}, {0.5f,0.5f,0.5f} };
 
-const ST_BoxFace gFaceRight = { ST_DIRECTION_RIGHT, {ST_RIGHT_DOWN_BACK, ST_RIGHT_DOWN_FORWARD, ST_RIGHT_UP_BACK, ST_RIGHT_UP_FORWARD},{2, 5, 7, 10} };
-const ST_BoxFace gFaceLeft = { ST_DIRECTION_LEFT, {ST_LEFT_DOWN_BACK, ST_LEFT_DOWN_FORWARD, ST_LEFT_UP_BACK, ST_LEFT_UP_FORWARD},{1, 4, 6, 9} };
-const ST_BoxFace gFaceUp = { ST_DIRECTION_UP, {ST_LEFT_UP_BACK, ST_RIGHT_UP_BACK, ST_LEFT_UP_FORWARD, ST_RIGHT_UP_FORWARD},{8, 9, 10, 11} };
-const ST_BoxFace gFaceDown = { ST_DIRECTION_DOWN, {ST_LEFT_DOWN_BACK, ST_RIGHT_DOWN_BACK, ST_LEFT_DOWN_FORWARD, ST_RIGHT_DOWN_FORWARD},{0, 1, 2, 3} };
-const ST_BoxFace gFaceForward = { ST_DIRECTION_FORWARD, {ST_LEFT_DOWN_FORWARD, ST_RIGHT_DOWN_FORWARD, ST_LEFT_UP_FORWARD, ST_RIGHT_UP_FORWARD},{0, 4, 5, 8} };
-const ST_BoxFace gFaceBack = { ST_DIRECTION_BACK, {ST_LEFT_DOWN_BACK, ST_RIGHT_DOWN_BACK, ST_LEFT_UP_BACK, ST_RIGHT_UP_BACK},{3, 6, 7, 11} };
+const ST_BoxFace gFaceRight = { ST_DIRECTION_RIGHT, {ST_RIGHT_DOWN_BACK, ST_RIGHT_DOWN_FORWARD, ST_RIGHT_UP_BACK, ST_RIGHT_UP_FORWARD}};
+const ST_BoxFace gFaceLeft = { ST_DIRECTION_LEFT, {ST_LEFT_DOWN_BACK, ST_LEFT_DOWN_FORWARD, ST_LEFT_UP_BACK, ST_LEFT_UP_FORWARD}};
+const ST_BoxFace gFaceUp = { ST_DIRECTION_UP, {ST_LEFT_UP_BACK, ST_RIGHT_UP_BACK, ST_LEFT_UP_FORWARD, ST_RIGHT_UP_FORWARD}};
+const ST_BoxFace gFaceDown = { ST_DIRECTION_DOWN, {ST_LEFT_DOWN_BACK, ST_RIGHT_DOWN_BACK, ST_LEFT_DOWN_FORWARD, ST_RIGHT_DOWN_FORWARD}};
+const ST_BoxFace gFaceForward = { ST_DIRECTION_FORWARD, {ST_LEFT_DOWN_FORWARD, ST_RIGHT_DOWN_FORWARD, ST_LEFT_UP_FORWARD, ST_RIGHT_UP_FORWARD}};
+const ST_BoxFace gFaceBack = { ST_DIRECTION_BACK, {ST_LEFT_DOWN_BACK, ST_RIGHT_DOWN_BACK, ST_LEFT_UP_BACK, ST_RIGHT_UP_BACK}};
+
+const ST_BoxEdgeConnection gEdgeConnections[8] = { 
+	//LEFT_DOWN_BACK
+	{{ST_DIRECTION_RIGHT, ST_DIRECTION_UP, ST_DIRECTION_FORWARD}, {ST_RIGHT_DOWN_BACK, ST_LEFT_UP_BACK, ST_LEFT_DOWN_FORWARD}},
+	//RIGHT_DOWN_BACK
+	{ {ST_DIRECTION_LEFT, ST_DIRECTION_UP, ST_DIRECTION_FORWARD}, {ST_LEFT_DOWN_BACK, ST_RIGHT_UP_BACK, ST_RIGHT_DOWN_FORWARD}},
+	//LEFT_DOWN_FORWARD
+	{ {ST_DIRECTION_RIGHT, ST_DIRECTION_UP, ST_DIRECTION_BACK}, {ST_RIGHT_DOWN_FORWARD, ST_LEFT_UP_FORWARD, ST_LEFT_DOWN_BACK} },
+	//RIGHT_DOWN_FORWARD
+	{ {ST_DIRECTION_LEFT, ST_DIRECTION_UP, ST_DIRECTION_BACK}, {ST_LEFT_DOWN_FORWARD, ST_RIGHT_UP_FORWARD, ST_RIGHT_DOWN_BACK} },
+	//LEFT_UP_BACK
+	{ {ST_DIRECTION_RIGHT, ST_DIRECTION_DOWN, ST_DIRECTION_FORWARD}, {ST_RIGHT_UP_BACK, ST_LEFT_DOWN_BACK, ST_LEFT_UP_FORWARD} },
+	//RIGHT_UP_BACK
+	{ {ST_DIRECTION_LEFT, ST_DIRECTION_DOWN, ST_DIRECTION_FORWARD}, {ST_LEFT_UP_BACK, ST_RIGHT_DOWN_BACK, ST_RIGHT_UP_FORWARD} },
+	//LEFT_UP_FORWARD
+	{ {ST_DIRECTION_RIGHT, ST_DIRECTION_DOWN, ST_DIRECTION_BACK}, {ST_RIGHT_UP_FORWARD, ST_LEFT_DOWN_FORWARD, ST_LEFT_UP_BACK} },
+	//RIGHT_UP_FORWARD
+	{ {ST_DIRECTION_LEFT, ST_DIRECTION_DOWN, ST_DIRECTION_BACK}, {ST_LEFT_UP_FORWARD, ST_RIGHT_DOWN_FORWARD, ST_RIGHT_UP_BACK} } };
+
+
 
 const char* ST_ColliderStrings[] =
 {
@@ -80,6 +100,25 @@ void sphereTraceColliderFree(ST_Collider* const pCollider)
 //	pCollider->octTreeEntry.objectIsCollider = ST_TRUE;
 //}
 
+ST_Frame sphereTraceFrameConstruct()
+{
+	ST_Frame frame;
+	frame.right = gDirectionRight;
+	frame.up = gDirectionUp;
+	frame.forward = gDirectionForward;
+	return frame;
+}
+
+void sphereTraceFrameUpdateWithRotationMatrix(ST_Frame* pFrame, ST_Matrix4 rotationMatrix)
+{
+	pFrame->right = sphereTraceDirectionGetLocalXAxisFromRotationMatrix(rotationMatrix);
+	pFrame->up = sphereTraceDirectionGetLocalYAxisFromRotationMatrix(rotationMatrix);
+	pFrame->forward = sphereTraceDirectionGetLocalZAxisFromRotationMatrix(rotationMatrix);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pFrame->right);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pFrame->up);
+	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&pFrame->up);
+}
+
 ST_Edge sphereTraceEdgeConstruct(ST_Vector3 p1, ST_Vector3 p2)
 {
 	ST_Edge edge;
@@ -100,13 +139,13 @@ ST_Edge sphereTraceEdgeConstruct1(ST_Vector3 p1, ST_Vector3 p2, float dist, ST_D
 	return edge;
 }
 
-ST_DynamicEdge sphereTraceDynamicEdgeConstruct(ST_Vector3* pp1, ST_Vector3* pp2, float* pdist, ST_Direction* pdir)
+ST_DynamicEdge sphereTraceDynamicEdgeConstruct(ST_Vector3* pp1, ST_Vector3* pp2, float dist, ST_Direction* pdir)
 {
 	ST_DynamicEdge edge;
 	edge.pDir = pdir;
 	edge.pPoint1 = pp1;
 	edge.pPoint2 = pp2;
-	edge.pDist = pdist;
+	edge.dist = dist;
 	return edge;
 }
 
@@ -114,7 +153,7 @@ ST_Edge sphereTraceEdgeFromDynamicEdge(const ST_DynamicEdge* const pde)
 {
 	ST_Edge edge;
 	edge.dir = *pde->pDir;
-	edge.dist = *pde->pDist;
+	edge.dist = pde->dist;
 	edge.point1 = *pde->pPoint1;
 	edge.point2 = *pde->pPoint2;
 	return edge;
@@ -281,6 +320,46 @@ void sphereTraceColliderAABBResizeAABBToContainAnotherAABB(ST_AABB* const aabbTo
 	if (aabbToContain->highExtent.z > aabbToResize->highExtent.z)
 	{
 		aabbToResize->highExtent.z = aabbToContain->highExtent.z;
+		resizeDidHappen = 1;
+	}
+	if (resizeDidHappen)
+	{
+		sphereTraceColliderAABBSetHalfExtents(aabbToResize);
+		aabbToResize->center = sphereTraceVector3Average(aabbToResize->highExtent, aabbToResize->lowExtent);
+	}
+}
+
+void sphereTraceColliderAABBResizeAABBToContainPoint(ST_AABB* const aabbToResize, const ST_Vector3 point)
+{
+	b32 resizeDidHappen = 0;
+	if (point.x < aabbToResize->lowExtent.x)
+	{
+		aabbToResize->lowExtent.x = point.x;
+		resizeDidHappen = 1;
+	}
+	if (point.y < aabbToResize->lowExtent.y)
+	{
+		aabbToResize->lowExtent.y = point.y;
+		resizeDidHappen = 1;
+	}
+	if (point.z < aabbToResize->lowExtent.z)
+	{
+		aabbToResize->lowExtent.z = point.z;
+		resizeDidHappen = 1;
+	}
+	if (point.x > aabbToResize->highExtent.x)
+	{
+		aabbToResize->highExtent.x = point.x;
+		resizeDidHappen = 1;
+	}
+	if (point.y > aabbToResize->highExtent.y)
+	{
+		aabbToResize->highExtent.y = point.y;
+		resizeDidHappen = 1;
+	}
+	if (point.z > aabbToResize->highExtent.z)
+	{
+		aabbToResize->highExtent.z = point.z;
 		resizeDidHappen = 1;
 	}
 	if (resizeDidHappen)
@@ -505,6 +584,235 @@ ST_DirectionType sphereTraceDirectionTypeGetReverse(ST_DirectionType dirType)
 	case ST_DIRECTION_BACK:
 		return ST_DIRECTION_FORWARD;
 		break;
+	}
+}
+
+ST_DirectionType sphereTraceDirectionTypeCross(ST_DirectionType dir1, ST_DirectionType dir2)
+{
+	switch (dir1)
+	{
+	case ST_DIRECTION_RIGHT:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_FORWARD;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_BACK;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_DOWN;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_UP;
+		}
+		break;
+		}
+	}
+	break;
+	case ST_DIRECTION_LEFT:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_BACK;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_FORWARD;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_UP;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_DOWN;
+		}
+		break;
+		}
+	}
+	break;
+	case ST_DIRECTION_UP:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_BACK;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_FORWARD;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_RIGHT;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_LEFT;
+		}
+		break;
+		}
+	}
+	break;
+	case ST_DIRECTION_DOWN:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_FORWARD;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_BACK;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_LEFT;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_RIGHT;
+		}
+		break;
+		}
+	}
+	break;
+	case ST_DIRECTION_FORWARD:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_UP;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_DOWN;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_LEFT;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_RIGHT;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		}
+	}
+	break;
+	case ST_DIRECTION_BACK:
+	{
+		switch (dir2)
+		{
+		case ST_DIRECTION_RIGHT:
+		{
+			return ST_DIRECTION_DOWN;
+		}
+		break;
+		case ST_DIRECTION_LEFT:
+		{
+			return ST_DIRECTION_UP;
+		}
+		break;
+		case ST_DIRECTION_UP:
+		{
+			return ST_DIRECTION_RIGHT;
+		}
+		break;
+		case ST_DIRECTION_DOWN:
+		{
+			return ST_DIRECTION_LEFT;
+		}
+		break;
+		case ST_DIRECTION_FORWARD:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		case ST_DIRECTION_BACK:
+		{
+			return ST_DIRECTION_NONE;
+		}
+		break;
+		}
+	}
+	break;
 	}
 }
 //
@@ -1851,7 +2159,8 @@ void sphereTraceColliderResizeAABBWithSpherecast(const ST_SphereTraceData* const
 		}
 	}
 
-	aabb->halfExtents = sphereTraceVector3Subtract(aabb->highExtent, sphereTraceVector3Average(aabb->highExtent, aabb->lowExtent));
+	//aabb->halfExtents = sphereTraceVector3Subtract(aabb->highExtent, sphereTraceVector3Average(aabb->highExtent, aabb->lowExtent));
+	*aabb = sphereTraceAABBConstruct1(aabb->lowExtent, aabb->highExtent);
 }
 
 
@@ -2176,6 +2485,7 @@ b32 sphereTraceColliderEdgeEdgeTrace(ST_Edge* const pEdgeTrace, ST_Direction dir
 	{
 		if (t >= 0.0f && t <= pEdge->dist)
 		{
+			pEdgeTraceData->contact1.collisionType = ST_COLLISION_EDGE;
 			return ST_TRUE;
 
 		}
@@ -2228,6 +2538,28 @@ b32 sphereTraceColliderRayTrace(ST_Vector3 from, ST_Direction dir, const ST_Coll
 	}
 }
 
+b32 sphereTraceColliderSphereTrace(ST_Vector3 from, float radius, ST_Direction dir, const ST_Collider* const pCollider, ST_SphereTraceData* const pSphereTraceData)
+{
+	switch (pCollider->colliderType)
+	{
+	case COLLIDER_PLANE:
+		return sphereTraceColliderPlaneSphereTrace(from, dir, radius, pCollider, pSphereTraceData);
+		break;
+	case COLLIDER_SPHERE:
+		return sphereTraceColliderSphereSphereTrace(from, dir, radius, pCollider, pSphereTraceData);
+		break;
+	case COLLIDER_TRIANGLE:
+		return sphereTraceColliderTriangleSphereTrace(from, dir, radius, pCollider, pSphereTraceData);
+		break;
+	case COLLIDER_AABB:
+		return sphereTraceColliderAABBSphereTrace(from, dir, radius, pCollider, pSphereTraceData);
+		break;
+	case COLLIDER_BOX:
+		return 0;
+		break;
+	}
+}
+
 
 b32 sphereTraceColliderListRayTrace(ST_Vector3 from, ST_Direction dir, ST_IndexList* const pColliderList, ST_RayTraceData* const pRayTraceData)
 {
@@ -2252,4 +2584,37 @@ b32 sphereTraceColliderListRayTrace(ST_Vector3 from, ST_Direction dir, ST_IndexL
 		return ST_TRUE;
 	return ST_FALSE;
 }
+
+b32 sphereTraceColliderListSphereTrace(ST_Vector3 from,  ST_Direction dir, float radius, ST_IndexList* const pColliderList, ST_SphereTraceData* const pSphereTraceData)
+{
+	float minDist = FLT_MAX;
+	ST_SphereTraceData std;
+	ST_Collider* pCollider;
+	ST_IndexListData* pild = pColliderList->pFirst;
+	for (ST_Index i = 0; i < pColliderList->count; i++)
+	{
+		pCollider = pild->value;
+		if (sphereTraceColliderSphereTrace(from,radius, dir, pCollider, &std))
+		{
+			if (std.traceDistance < minDist)
+			{
+				*pSphereTraceData = std;
+				minDist = std.traceDistance;
+			}
+		}
+		pild = pild->pNext;
+	}
+	if (minDist != FLT_MAX)
+		return ST_TRUE;
+	return ST_FALSE;
+}
 //ST_UniformTerrainCollider* sphereTraceColliderTerrainGetFromContact(const ST_SphereContact* const pContact);
+
+ST_BoxContact sphereTraceBoxContactInit()
+{
+	ST_BoxContact bc;
+	bc.numContacts = 0;
+	bc.maxPenetrationIndex = 0;
+	bc.numLerpPoints = 0;
+	return bc;
+}
