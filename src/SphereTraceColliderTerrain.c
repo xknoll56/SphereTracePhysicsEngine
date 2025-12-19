@@ -332,9 +332,9 @@ ST_IndexList sphereTraceColliderUniformTerrainSampleTriangleIndicesForSphere(con
 	ST_Vector3 posStart = sphereTraceColliderUniformTerrainInverseTransformPoint(terrainCollider, spherePosition);
 	posStart.x -= radius;
 	posStart.z -= radius;
-	for (float distFwd = 0.0f; distFwd < maxCheckDistFwd; distFwd += terrainCollider->cellSize)
+	for (distFwd = 0.0f; distFwd < maxCheckDistFwd; distFwd += terrainCollider->cellSize)
 	{
-		for (float distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
+		for (distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
 		{
 			ST_Vector3 pos = posStart;
 			pos.x += distRight;
@@ -924,9 +924,9 @@ ST_IndexList sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTra
 	//rendererDrawLineFromTo(pos1, pos2, gVector4ColorRed);
 	//rendererDrawLineFromTo(pos2, pos3, gVector4ColorRed);
 	//rendererDrawLineFromTo(pos3, posStart, gVector4ColorRed);
-	for (float distFwd = 0.0f; distFwd < maxCheckDistFwd; distFwd += terrainCollider->cellSize)
+	for (distFwd = 0.0f; distFwd < maxCheckDistFwd; distFwd += terrainCollider->cellSize)
 	{
-		for (float distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
+		for (distRight = 0.0f; distRight < maxCheckDistRight; distRight += terrainCollider->cellSize)
 		{
 			ST_Vector3 pos = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(posStart, terrainCollider->rightPlane.normal.v, signX * distRight), terrainCollider->forwardPlane.normal.v, signZ * distFwd);
 			float dirDist = sphereTraceVector3Dot(dir, sphereTraceVector3Subtract(pos, pSphereTraceData->rayTraceData.startPoint));
@@ -1231,7 +1231,7 @@ b32 sphereTraceColliderUniformTerrainSphereTrace(const ST_UniformTerrainCollider
 					stdDummy.rayTraceData.startPoint = pSphereTraceData->sphereCenter;
 					stdDummy.sphereCenter = sphereTraceVector3AddAndScale(stdDummy.rayTraceData.startPoint, dir.v, radius);
 					il = sphereTraceColliderUniformTerrainSampleTrianglesIndicesForSphereTrace(pTerrainCollider, &stdDummy);
-					ST_IndexListData* pild = il.pFirst;
+					pild = il.pFirst;
 					for (int i = 0; i < il.count; i++)
 					{
 						//sceneDrawTriangleOutline(&pTerrainCollider->triangles[pild->value], gVector4ColorGreen);

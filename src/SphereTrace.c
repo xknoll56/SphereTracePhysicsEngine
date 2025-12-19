@@ -548,7 +548,7 @@ void sphereTraceSimulationBoxContactResponse(const ST_SimulationSpace* const pSi
 		ST_Vector3 vpn = sphereTraceVector3Scale(normal.v, vpMag);
 		ST_Vector3 vt = sphereTraceVector3Subtract(vp, vpn);
 		ST_Vector3 vtDir = sphereTraceVector3Normalize(vt);
-		b32 restingContactCondition = (sphereTraceAbs(vpMag) < ST_VELOCITY_THRESHOLD);
+		restingContactCondition = (sphereTraceAbs(vpMag) < ST_VELOCITY_THRESHOLD);
 		float accelNormal = sphereTraceAbs(vnMag);
 		//j = -1.1f * vpMag / pContactInfo->numContacts;
 		ST_Vector3 dp = sphereTraceVector3Scale(normal.v, j);
@@ -695,7 +695,7 @@ void sphereTraceSimulationBoxBoxResponse(const ST_SimulationSpace* const pSimula
 		ST_Vector3 vpn = sphereTraceVector3Scale(normal.v, vpMag);
 		ST_Vector3 vt = sphereTraceVector3Subtract(vprel, vpn);
 		ST_Vector3 vtDir = sphereTraceVector3Normalize(vt);
-		b32 restingContactCondition = (sphereTraceAbs(vpMag) < ST_VELOCITY_THRESHOLD);
+		restingContactCondition = (sphereTraceAbs(vpMag) < ST_VELOCITY_THRESHOLD);
 		float accelNormal = sphereTraceAbs(vnMag);
 		j = -pSimulationSpace->defaultMaterial.restitution * vpMag * 
 			(1.0f/((1.0f / pBoxColliderA->rigidBody.mass) + (1.0f / pBoxColliderB->rigidBody.mass))) / pContactInfo->numContacts;

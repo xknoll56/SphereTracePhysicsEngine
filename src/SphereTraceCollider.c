@@ -2334,62 +2334,62 @@ b32 sphereTraceColliderEdgeSphereTrace_(ST_Vector3 from, ST_Direction dir, float
 	return 0;
 }
 
-b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
-{
-	pSphereTraceData->radius = radius;
-	//dir = sphereTraceVector3Normalize(dir);
-	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
-	if (sphereTraceColliderEdgeImposedSphereCollisionTest(pEdge, from, radius, &pSphereTraceData->rayTraceData.contact))
-	{
-		pSphereTraceData->radius = radius;
-		pSphereTraceData->rayTraceData.startPoint = from;
-		pSphereTraceData->sphereCenter = from;
-		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(from, pSphereTraceData->rayTraceData.contact.point));
-		pSphereTraceData->traceDistance = 0.0f;
-		return 1;
-	}
-	ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, pEdge->dir.v));
-	ST_Vector3 wall = sphereTraceVector3Cross(pEdge->dir.v, cross);
-	sphereTraceColliderInfinitePlaneSphereTrace(from, dir, radius,
-		pEdge->point1, sphereTraceDirectionConstructNormalized(wall), pSphereTraceData);
-	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, pEdge->point1), cross);
-	if (sphereTraceAbs(dist) <= radius)
-	{
-		ST_Vector3 dirRight = sphereTraceVector3Cross(dir.v, cross);
-		float theta = acosf(dist, radius);
-		float cbeta = sphereTraceVector3Dot(dir.v, pEdge->dir.v);
-		float ringRad = sinf(theta) * cbeta * radius;
-		ST_Vector3 lineStart = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(from, cross, -dist),
-			dirRight, ringRad);
-		ST_Vector3 lineEnd = sphereTraceClosestPointOnLineBetweenTwoLines(pEdge->point1, pEdge->dir.v,
-			lineStart, dir.v);
-		float lineDist = sphereTraceVector3Dot(sphereTraceVector3Subtract(lineEnd, pEdge->point1), pEdge->dir.v);
-		if (lineDist < 0.0f)
-		{
-			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point1, pSphereTraceData);
-		}
-		else if (lineDist > pEdge->dist)
-		{
-			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point2, pSphereTraceData);
-		}
-		else
-		{
-			ST_RayTraceData rtd;
-			if (sphereTraceColliderImposedSphereRayTrace(lineEnd, sphereTraceDirectionNegative(dir), pSphereTraceData->sphereCenter, pSphereTraceData->radius, &rtd))
-			{
-				//sceneDrawSphereCast(lineEnd, rtd.contact.point, 0.01f, gVector4ColorBlue);
-				sphereTraceVector3AddAndScaleByRef(&pSphereTraceData->sphereCenter, dir.v, rtd.distance);
-			}
-			pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
-			pSphereTraceData->rayTraceData.contact.point = lineEnd;
-			pSphereTraceData->rayTraceData.contact.normal = sphereTraceDirectionNegative(rtd.contact.normal);
-			pSphereTraceData->rayTraceData.contact.collisionType = ST_COLLISION_EDGE;
-			pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(pSphereTraceData->rayTraceData.contact.point, pSphereTraceData->rayTraceData.startPoint);
-			return 1;
-		}
-	}
-	return 0;
-}
+//b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
+//{
+//	pSphereTraceData->radius = radius;
+//	//dir = sphereTraceVector3Normalize(dir);
+//	sphereTraceDirectionNormalizeIfNotNormalizedByRef(&dir);
+//	if (sphereTraceColliderEdgeImposedSphereCollisionTest(pEdge, from, radius, &pSphereTraceData->rayTraceData.contact))
+//	{
+//		pSphereTraceData->radius = radius;
+//		pSphereTraceData->rayTraceData.startPoint = from;
+//		pSphereTraceData->sphereCenter = from;
+//		pSphereTraceData->rayTraceData.distance = sphereTraceVector3Length(sphereTraceVector3Subtract(from, pSphereTraceData->rayTraceData.contact.point));
+//		pSphereTraceData->traceDistance = 0.0f;
+//		return 1;
+//	}
+//	ST_Vector3 cross = sphereTraceVector3Normalize(sphereTraceVector3Cross(dir.v, pEdge->dir.v));
+//	ST_Vector3 wall = sphereTraceVector3Cross(pEdge->dir.v, cross);
+//	sphereTraceColliderInfinitePlaneSphereTrace(from, dir, radius,
+//		pEdge->point1, sphereTraceDirectionConstructNormalized(wall), pSphereTraceData);
+//	float dist = sphereTraceVector3Dot(sphereTraceVector3Subtract(pSphereTraceData->rayTraceData.contact.point, pEdge->point1), cross);
+//	if (sphereTraceAbs(dist) <= radius)
+//	{
+//		ST_Vector3 dirRight = sphereTraceVector3Cross(dir.v, cross);
+//		float theta = acosf(dist, radius);
+//		float cbeta = sphereTraceVector3Dot(dir.v, pEdge->dir.v);
+//		float ringRad = sinf(theta) * cbeta * radius;
+//		ST_Vector3 lineStart = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(from, cross, -dist),
+//			dirRight, ringRad);
+//		ST_Vector3 lineEnd = sphereTraceClosestPointOnLineBetweenTwoLines(pEdge->point1, pEdge->dir.v,
+//			lineStart, dir.v);
+//		float lineDist = sphereTraceVector3Dot(sphereTraceVector3Subtract(lineEnd, pEdge->point1), pEdge->dir.v);
+//		if (lineDist < 0.0f)
+//		{
+//			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point1, pSphereTraceData);
+//		}
+//		else if (lineDist > pEdge->dist)
+//		{
+//			return sphereTraceColliderPointSphereTrace(from, dir, radius, pEdge->point2, pSphereTraceData);
+//		}
+//		else
+//		{
+//			ST_RayTraceData rtd;
+//			if (sphereTraceColliderImposedSphereRayTrace(lineEnd, sphereTraceDirectionNegative(dir), pSphereTraceData->sphereCenter, pSphereTraceData->radius, &rtd))
+//			{
+//				//sceneDrawSphereCast(lineEnd, rtd.contact.point, 0.01f, gVector4ColorBlue);
+//				sphereTraceVector3AddAndScaleByRef(&pSphereTraceData->sphereCenter, dir.v, rtd.distance);
+//			}
+//			pSphereTraceData->traceDistance = sphereTraceVector3Distance(pSphereTraceData->sphereCenter, pSphereTraceData->rayTraceData.startPoint);
+//			pSphereTraceData->rayTraceData.contact.point = lineEnd;
+//			pSphereTraceData->rayTraceData.contact.normal = sphereTraceDirectionNegative(rtd.contact.normal);
+//			pSphereTraceData->rayTraceData.contact.collisionType = ST_COLLISION_EDGE;
+//			pSphereTraceData->rayTraceData.distance = sphereTraceVector3Distance(pSphereTraceData->rayTraceData.contact.point, pSphereTraceData->rayTraceData.startPoint);
+//			return 1;
+//		}
+//	}
+//	return 0;
+//}
 
 b32 sphereTraceColliderEdgeSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_Edge* const pEdge, ST_SphereTraceData* const pSphereTraceData)
 {
