@@ -2356,7 +2356,7 @@ b32 sphereTraceColliderEdgeSphereTrace1(ST_Vector3 from, ST_Direction dir, float
 	if (sphereTraceAbs(dist) <= radius)
 	{
 		ST_Vector3 dirRight = sphereTraceVector3Cross(dir.v, cross);
-		float theta = acosf(dist, radius);
+		float theta = acosf(dist / radius);
 		float cbeta = sphereTraceVector3Dot(dir.v, pEdge->dir.v);
 		float ringRad = sinf(theta) * cbeta * radius;
 		ST_Vector3 lineStart = sphereTraceVector3AddAndScale(sphereTraceVector3AddAndScale(from, cross, -dist),
