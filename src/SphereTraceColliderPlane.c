@@ -1371,7 +1371,7 @@ b32 sphereTraceColliderImposedPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction 
 				}
 				else
 				{
-					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
 
 					if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
 					{
@@ -1400,7 +1400,7 @@ b32 sphereTraceColliderImposedPlaneEdgeTrace(ST_Edge* const pEdge, ST_Direction 
 				}
 				else
 				{
-					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
 
 					if (sphereTraceColliderEdgeEdgeTrace(pEdge, dir, &edge, pEdgeTraceData))
 					{
@@ -1474,7 +1474,7 @@ b32 sphereTraceColliderImposedPlaneEdgeTrace1(ST_Edge* const pEdge, ST_Direction
 				}
 				else
 				{
-					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
 
 					if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
 					{
@@ -1503,7 +1503,7 @@ b32 sphereTraceColliderImposedPlaneEdgeTrace1(ST_Edge* const pEdge, ST_Direction
 				}
 				else
 				{
-					ST_Edge edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
+					edge = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeToPoint(pPlanePos, pPlaneRight, pPlaneForward, xHalfExtents, zHalfExtents, pEdgeTraceData->contact1.point);
 
 					if (sphereTraceColliderEdgeEdgeTrace(pEdge, *pDir, &edge, pEdgeTraceData))
 					{

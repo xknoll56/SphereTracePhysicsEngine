@@ -916,7 +916,7 @@ void sphereTraceColliderPlaneBoxFaceTangentialEdgeCollisionTest(ST_BoxCollider* 
 		ST_PlaneEdgeDirection pe1 = sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(pPlaneCollider, edge.point2);
 		if (pe0 != pe1)
 		{
-			ST_Direction dirNormal = sphereTraceColliderPlaneEdgeDirectionToDirection(pPlaneCollider, pe1);
+			dirNormal = sphereTraceColliderPlaneEdgeDirectionToDirection(pPlaneCollider, pe1);
 			if (sphereTraceColliderEdgeEdgeCollisionTest(&edge, &pPlaneCollider->transformedEdges[pe1], &cp) && sphereTraceVector3Dot(dirNormal.v, cp.normal.v) >= 0.0f
 				&& sphereTraceVector3Dot(inwardDir1->v, dirNormal.v) >= 0.0f && sphereTraceVector3Dot(inwardDir2->v, dirNormal.v) >= 0.0f)
 			{
@@ -946,7 +946,7 @@ void sphereTraceColliderPlaneBoxFaceTangentialEdgeCollisionTest(ST_BoxCollider* 
 		ST_PlaneEdgeDirection pe1 = sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(pPlaneCollider, edge.point2);
 		if (pe0 != pe1)
 		{
-			ST_Direction dirNormal = sphereTraceColliderPlaneEdgeDirectionToDirection(pPlaneCollider, pe1);
+			dirNormal = sphereTraceColliderPlaneEdgeDirectionToDirection(pPlaneCollider, pe1);
 			if (sphereTraceColliderEdgeEdgeCollisionTest(&edge, &pPlaneCollider->transformedEdges[pe1], &cp) && sphereTraceVector3Dot(dirNormal.v, cp.normal.v) >= 0.0f
 				&& sphereTraceVector3Dot(inwardDir1->v, dirNormal.v) >= 0.0f && sphereTraceVector3Dot(inwardDir2->v, dirNormal.v) >= 0.0f)
 			{
@@ -2007,7 +2007,7 @@ b32 sphereTraceColliderPlaneBoxCollisionTest_(ST_BoxCollider* const pBoxCollider
 		{
 			int checkInd = sphereTraceColliderPlaneGetClosestTransformedEdgeToPoint(pPlaneCollider, rtd.contact.point);
 			b32 notFound = ST_TRUE;
-			for (int i = 0; i < numEdgeTests; i++)
+			for (i = 0; i < numEdgeTests; i++)
 			{
 				if (edgesToCheck[i] == checkInd)
 				{
@@ -2093,7 +2093,7 @@ void sphereTraceColliderImposedPlaneBoxDetermineContactPoints(const ST_Direction
 			{
 				int checkInd = sphereTraceColliderImposedPlaneGetClosestTransformedEdgeDirectionToPoint(&planePos, &planeRight, &planeForward, xHalfExtents, zHalfExtents, rtd.contact.point);
 				b32 notFound = ST_TRUE;
-				for (int i = 0; i < numEdgeTests; i++)
+				for (i = 0; i < numEdgeTests; i++)
 				{
 					if (edgesToCheck[i] == checkInd)
 					{

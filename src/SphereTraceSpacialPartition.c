@@ -188,12 +188,12 @@ void sphereTraceOctTreeNodeReLeafColliders(ST_OctTreeNode* const pNode, ST_Index
 		sphereTraceSortedIndexListRemove(&pCollider->pLeafBucketLists[bucketIndex], pNode);
 		if (sphereTraceOctTreeNodeAABBIntersectionWithChildren(pNode, &pCollider->aabb, childIntersections))
 		{
-			for (int i = 0; i < 8; i++)
+			for (int j = 0; j < 8; j++)
 			{
-				if (childIntersections[i])
+				if (childIntersections[j])
 				{
-					sphereTraceSortedIndexListAddUnique(&pNode->children[i]->colliderEntries, pCollider);
-					sphereTraceSortedIndexListAddUnique(&pCollider->pLeafBucketLists[bucketIndex], pNode->children[i]);
+					sphereTraceSortedIndexListAddUnique(&pNode->children[j]->colliderEntries, pCollider);
+					sphereTraceSortedIndexListAddUnique(&pCollider->pLeafBucketLists[bucketIndex], pNode->children[j]);
 				}
 			}
 		}
