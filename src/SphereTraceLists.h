@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include "SphereTraceMath.h"
 
@@ -94,3 +100,7 @@ void sphereTraceVector3ListPrint(const ST_Vector3List* const pVector3List);
 ST_Vector3 sphereTraceVector3ListAverage(const ST_Vector3List* const pVector3List);
 
 void sphereTraceVector3ListMoveOffset(const ST_Vector3List* const pVector3List, ST_Vector3 offset);
+
+#ifdef __cplusplus
+}
+#endif

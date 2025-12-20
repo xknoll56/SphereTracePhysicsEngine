@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceLists.h"
 
 typedef struct ST_RigidBody
@@ -70,4 +76,8 @@ void sphereTraceRigidBodyRotateAroundPoint(ST_RigidBody* const pRigidBody, ST_Ve
 void sphereTraceRigidBodyRotateAroundPointToSetRotation(ST_RigidBody* const pRigidBody, ST_Vector3 point, const ST_Quaternion newRotation);
 
 void sphereTraceRigidBodyClearDPDM(ST_RigidBody* const pRigidBody);
+
+#ifdef __cplusplus
+}
+#endif
 

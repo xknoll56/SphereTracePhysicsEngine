@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceMaterial.h"
@@ -142,3 +146,6 @@ void sphereTraceSimulationOctTreeGridSolveDiscrete(ST_SimulationSpace* const pSi
 b32 sphereTraceSimulationRayTrace(ST_SimulationSpace* const pSimulationSpace, ST_Vector3 start, ST_Direction dir, float maxDist, ST_RayTraceData* const pData);
 
 
+#ifdef __cplusplus
+}
+#endif

@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceCollider.h"
@@ -71,3 +77,7 @@ const ST_BoxEdgeConnection gEdgeConnections[8];
 #define ST_FALSE 0
 
 #define ST_OBJECT_POOL_FOR_EACH(pObject, pObjectPool) \
+
+#ifdef __cplusplus
+}
+#endif

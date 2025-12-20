@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceCollider.h"
 
 
@@ -54,3 +60,7 @@ b32 sphereTraceColliderPlaneBoxTraceOut1(ST_BoxCollider* const pBoxCollider, ST_
 b32 sphereTraceColliderBoxBoxTraceOut1(ST_BoxCollider* const pBoxCollider, ST_Direction clipoutDir, ST_BoxCollider* const pOtherBox, ST_DirectionType faceDir, ST_BoxTraceData* const pBoxTraceData);
 
 b32 sphereTraceColliderBoxBoxTraceOut2(ST_BoxCollider* const pBoxCollider, ST_Direction clipoutDir, ST_BoxCollider* const pOtherBox, ST_BoxTraceData* const pBoxTraceData);
+
+#ifdef __cplusplus
+}
+#endif

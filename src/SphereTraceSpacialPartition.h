@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceCollider.h"
@@ -98,3 +102,7 @@ b32 sphereTraceOctTreeGridRayTrace_(ST_Vector3 start, ST_Direction dir, float ma
 ST_Index sphereTraceOctTreeGridGetLargestDepth(const ST_OctTreeGrid* const pGrid);
 
 b32 sphereTraceOctTreeGridVerifyColliderListHaveProperLeafs(ST_OctTreeGrid* const pGrid, ST_Collider* const pColliders);
+
+#ifdef __cplusplus
+}
+#endif

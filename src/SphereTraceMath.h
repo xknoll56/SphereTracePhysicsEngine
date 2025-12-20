@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
@@ -349,3 +355,7 @@ float sphereTraceDirectionGetMagnitudeInDirection(ST_Direction dir, ST_Vector3 v
 ST_Color sphereTraceColorConstruct(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
 ST_Vector4 sphereTraceVector4FromColor(ST_Color color);
+
+#ifdef __cplusplus
+}
+#endif

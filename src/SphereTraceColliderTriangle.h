@@ -1,3 +1,10 @@
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceCollider.h"
 
 //
@@ -24,3 +31,7 @@ b32 sphereTraceColliderTriangleRayTrace(ST_Vector3 from, ST_Direction dir, const
 b32 sphereTraceColliderTriangleSphereTrace(ST_Vector3 from, ST_Direction dir, float radius, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);
 //
 b32 sphereTraceColliderTriangleSphereTraceOut(ST_Vector3 spherePos, float sphereRadius, ST_Direction clipoutDir, ST_TriangleCollider* const pTriangleCollider, ST_SphereTraceData* const pSphereCastData);
+
+#ifdef __cplusplus
+}
+#endif

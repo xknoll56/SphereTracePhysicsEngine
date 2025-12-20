@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceCollider.h"
 
 
@@ -42,3 +48,7 @@ ST_UniformTerrainSpherePrecomputedSampler sphereTraceColliderUniformTerrainSpher
 b32 sphereTraceColliderUniformTerrainSpherePrecomputedSamplerSphereCollisionTest(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, ST_SphereCollider* const pSphereCollider, ST_SphereContact* const pContact);
 
 void sphereTraceColliderUniformTerrainSpherePrecomputedSamplerWriteToFile(ST_UniformTerrainSpherePrecomputedSampler* const pPrecompSampler, const char* path);
+
+#ifdef __cplusplus
+}
+#endif

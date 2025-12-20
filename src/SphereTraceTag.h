@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 
 typedef uintptr_t ST_Index;
@@ -12,3 +18,7 @@ typedef struct ST_Tag
 
 
 ST_Tag sphereTraceTagConstruct(const char* tag);
+
+#ifdef __cplusplus
+}
+#endif

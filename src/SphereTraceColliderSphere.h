@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceCollider.h"
 
 //
@@ -61,3 +67,7 @@ void sphereTraceColliderSpherePairSetRotation(ST_SpherePair* const pSpherePair, 
 void sphereTraceColliderSpherePairRotate(ST_SpherePair* const pSpherePair, ST_Quaternion rotation);
 
 void sphereTraceColliderSpherePairSetAABB(ST_SpherePair* const pSpherePair);
+
+#ifdef __cplusplus
+}
+#endif

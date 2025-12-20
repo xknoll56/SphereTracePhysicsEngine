@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 #include "SphereTraceRigidBody.h"
@@ -619,3 +625,7 @@ typedef struct ST_UniformTerrainSpherePrecomputedSampler
 #include "SphereTraceColliderSphere.h"
 #include "SphereTraceColliderTerrain.h"
 #include "SphereTraceColliderTriangle.h"
+
+#ifdef __cplusplus
+}
+#endif

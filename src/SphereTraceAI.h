@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceMath.h"
 #include "SphereTraceLists.h"
 
@@ -73,3 +79,7 @@ ST_StateMachineLinearWaypointFollower sphereTraceStateMachineLinearWaypointFollo
 void sphereTraceStateMachineLinearWaypointFollowerStart(ST_StateMachineLinearWaypointFollower* const context, int startIndex);
 
 void sphereTraceStateMachineLinearWaypointFollowerUpdate(ST_StateMachineLinearWaypointFollower* context, float dt);
+
+#ifdef __cplusplus
+}
+#endif

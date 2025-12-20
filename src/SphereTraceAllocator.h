@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include "SphereTraceLists.h"
 //#include "SphereTraceCollider.h"
@@ -121,4 +127,8 @@ void sphereTraceAllocatorIndexListArrayResize(ST_Index size);
 //debug functions
 #ifdef ST_DEBUG
 	ST_Index sphereTraceAllocatorGetBytesAllocated();
+#endif
+
+#ifdef __cplusplus
+}
 #endif

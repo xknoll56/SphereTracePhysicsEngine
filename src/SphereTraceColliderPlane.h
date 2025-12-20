@@ -1,5 +1,10 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "SphereTraceCollider.h"
 //
 ST_PlaneCollider sphereTraceColliderPlaneConstruct(ST_Vector3 normal, float angle, float xHalfExtent, float zHalfExtent, ST_Vector3 position);
@@ -80,3 +85,7 @@ b32 sphereTraceColliderPlanePlaneTrace(ST_Vector3 planePos, ST_Direction planeNo
 //
 b32 sphereTraceColliderPlanePlaneTrace1(ST_Vector3* const pPlanePos, ST_Direction* const pPlaneNormal, ST_Direction* const pPlaneRight, ST_Direction* const pPlaneForward,
 	float xHalfExtents, float zHalfExtents, ST_Direction* const pDir, ST_PlaneCollider* const pPlaneCollider, ST_BoxTraceData* const pBoxTraceData);
+
+#ifdef __cplusplus
+}
+#endif
